@@ -201,24 +201,6 @@ class ApiMethods {
   String getbranchandsite       = 'branchandsite/getbranchandsite';
   String getapprovername        = 'approvername/getapprovername';
 
-  ///Payment Request
-  //String paymentrequestentry        = 'paymentrequest/paymentrequestentry';
-  //String paymentRequestList         = 'paymentrequest/paymentrequestlist';
-  //String updatePaymentRequestStatus = 'paymentrequest/updatepaymentrequest';
-
-  String paymentRequestList         = 'GetPaymentRequestList';
-  String paymentrequestentry        = 'SavePaymentRequest';
-  String paymentRequestDropdown     = 'PaymentRequestDropdown';
-  String updatePaymentRequestStatus = 'SavePaymentRequest';
-
-  String updateCustomerLocation = 'updatepartylocation/updatelocation';
-  String updateCustomerRemark   = 'updatepartyremarks/clientremark';
-  String getDsrPdf              = 'executivedsr/getdsrpdf';
-
-  String paymentEntrySubmit     = 'Voucherentry/uservoucherentry';
-  String collectionEntrySubmit  = 'Voucherentry/uservoucherentry';
-  String showCashAndBankAccount = 'Cashandbankaccount/showCashandbankaccount';
-
   ///new
   ///Collection
   String listWithFilter  = 'Accountentrylist/showaccountentrydetail';
@@ -278,30 +260,5 @@ class ApiMethods {
 
   String downloadSalarySleep = "Downloadsalaryslip/showsalarylist";
 
-
-
-  ///MRN module
-  String getMrnDropdownList    = 'Getmrndropdownlist';
-  String getPendingPo          = 'getpendingpo';
-  String processPendingPoList  = 'processpendingpolist';
-  String saveMrnEntry          = 'savemrnentry';
-  String getItemDetail         = 'itemdetail';
-  String getMrnList            = 'getmrnlist';
-  String getMrnDetail          = 'mrnfulldetail';
-  String getDependentAllDetail = 'getdependentalldetail';
-
-
-  ///GRN Module
-  String getGrnDetail       = 'grnfulldetailController';
-  String getGrnList         = 'getgrnlist';
-  String saveGrnEntry       = 'savegrnentry';
-  String getGrnDropdownList = 'Getmrndropdownlist';
-  String getGrnItemDetail   = 'itemdetail';
-  String getAddress         = 'getledgeraddressandvaluepercent';
-
-  ///MRN QC Module
-  String getMrnQcList        = 'getmrnlist';
-  String getMrnQcDetail      = 'mrnandqcdetail';
-  String saveQcEntry         = 'saveqcentry';
 //  static const String getPendingPoItems = 'getpendingpo';
 }
