@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/attendance_model.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
@@ -47,7 +47,7 @@ class ExecutiveAttendanceListController extends AppBaseController {
       body[RequestKeys.filter] = 'yes';
       var res = await api.getAttendanceList(body);
       if (res.status == 200) {
-        dayList = res.data;
+        dayList = (res.data ?? []).cast<DayDetails>();
 
         /// For sorting date wise List
         dayList?.sort((a, b) {

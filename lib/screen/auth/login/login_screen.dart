@@ -1,10 +1,10 @@
-//import 'package:newdigitalerp/utils/app_constant.dart';
+//import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 
 import 'login_controller.dart';
-import 'package:newdigitalerp/screen/base/base_controller.dart';
+
 
 class LoginView extends StatelessWidget {
   const LoginView({Key? key}) : super(key: key);

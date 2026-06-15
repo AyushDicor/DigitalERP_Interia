@@ -1,11 +1,11 @@
-// // // import 'package:digitalerp/Menu_new_list_responce.dart';
-// // // import 'package:digitalerp/homeview_new_controller.dart';
-// // // import 'package:digitalerp/new_menu_defalut_screen.dart';
-// // // import 'package:digitalerp/screen/base/base_controller.dart';
-// // // import 'package:digitalerp/screen/ui/home/approval/approval_list/approval_list_Screen.dart';
-// // // import 'package:digitalerp/utils/app_constant.dart';
-// // // import 'package:digitalerp/utils/app_constant_new.dart';
-// // // import 'package:digitalerp/utils/app_profile_image.dart';
+// // // import 'package:newdigitalerp/Menu_new_list_responce.dart';
+// // // import 'package:newdigitalerp/homeview_new_controller.dart';
+// // // import 'package:newdigitalerp/new_menu_defalut_screen.dart';
+// // // 
+// // // import 'package:newdigitalerp/screen/ui/home/approval/approval_list/approval_list_Screen.dart';
+// // // import 'package:newdigitalerp/utils/app_constant_new.dart';
+// // // import 'package:newdigitalerp/utils/app_constant_new.dart';
+// // // import 'package:newdigitalerp/utils/app_profile_image.dart';
 // // // import 'package:flutter/material.dart';
 // // // import 'package:get/get.dart';
 // // //
@@ -215,13 +215,13 @@
 // // //   }
 // // // }
 // //
-// // import 'package:digitalerp/Menu_new_list_responce.dart';
-// // import 'package:digitalerp/homeview_new_controller.dart';
-// // import 'package:digitalerp/new_menu_defalut_screen.dart';
-// // import 'package:digitalerp/screen/base/base_controller.dart';
-// // import 'package:digitalerp/screen/ui/home/approval/approval_list/approval_list_Screen.dart';
-// // import 'package:digitalerp/utils/app_constant_new.dart';
-// // import 'package:digitalerp/utils/app_profile_image.dart';
+// // import 'package:newdigitalerp/Menu_new_list_responce.dart';
+// // import 'package:newdigitalerp/homeview_new_controller.dart';
+// // import 'package:newdigitalerp/new_menu_defalut_screen.dart';
+// // 
+// // import 'package:newdigitalerp/screen/ui/home/approval/approval_list/approval_list_Screen.dart';
+// // import 'package:newdigitalerp/utils/app_constant_new.dart';
+// // import 'package:newdigitalerp/utils/app_profile_image.dart';
 // // import 'package:flutter/material.dart';
 // // import 'package:get/get.dart';
 // //
@@ -553,12 +553,12 @@
 // //      MenuDefaultController.initMenu() now handles the stack internally.
 // //      No other logic changed.
 //
-// import 'package:digitalerp/Menu_new_list_responce.dart';
-// import 'package:digitalerp/homeview_new_controller.dart';
-// import 'package:digitalerp/new_menu_defalut_screen.dart';
-// import 'package:digitalerp/screen/ui/home/approval/approval_list/approval_list_Screen.dart';
-// import 'package:digitalerp/utils/app_constant_new.dart';
-// import 'package:digitalerp/utils/app_profile_image.dart';
+// import 'package:newdigitalerp/Menu_new_list_responce.dart';
+// import 'package:newdigitalerp/homeview_new_controller.dart';
+// import 'package:newdigitalerp/new_menu_defalut_screen.dart';
+// import 'package:newdigitalerp/screen/ui/home/approval/approval_list/approval_list_Screen.dart';
+// import 'package:newdigitalerp/utils/app_constant_new.dart';
+// import 'package:newdigitalerp/utils/app_profile_image.dart';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 //

@@ -1,10 +1,10 @@
 // import 'dart:io';
 // import 'package:battery_plus/battery_plus.dart';
 // import 'package:device_info_plus/device_info_plus.dart';
-// import 'package:digitalerp/controller/user_data_controller.dart';
-// import 'package:digitalerp/response/add_to_cart_response.dart';
-// import 'package:digitalerp/services/api_service/api.dart';
-// import 'package:digitalerp/utils/app_assets.dart';
+// import 'package:newdigitalerp/controller/user_data_controller.dart';
+// import 'package:newdigitalerp/response/add_to_cart_response.dart';
+// import 'package:newdigitalerp/services/api_service/api.dart';
+// import 'package:newdigitalerp/utils/app_assets.dart';
 // import 'package:dio/dio.dart';
 // import 'package:external_path/external_path.dart';
 // import 'package:flutter/foundation.dart';
@@ -20,7 +20,7 @@
 // import 'package:upgrader/upgrader.dart';
 // import 'package:url_launcher/url_launcher.dart';
 //
-// import '../../app_routes/app_routes.dart';
+// import '../../../app_routes/app_routes.dart';
 // import '../../home/home_contoller.dart';
 // import '../../services/api_service/request_keys.dart';
 // import '../../utils/app_constant_new.dart';
@@ -1047,7 +1047,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
-import 'package:newdigitalerp/auth/login/login_model.dart';
+import 'package:newdigitalerp/screen/auth/login/login_model.dart';
 import 'package:newdigitalerp/controller/user_data_controller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/services/api_service/api.dart';

@@ -5,7 +5,7 @@ import 'package:newdigitalerp/services/api_Inspector/alice.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
-import '../../app_routes/app_routes.dart';
+import '../../../app_routes/app_routes.dart';
 
 class ApiClient extends GetConnect {
   static final ApiClient _apiClient = ApiClient._internal();

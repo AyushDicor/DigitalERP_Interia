@@ -1,10 +1,10 @@
 // import 'dart:convert';
 // import 'dart:developer';
 //
-// import 'package:digitalerp/Menu_new_list_responce.dart';
-// import 'package:digitalerp/app_routes/app_routes.dart';
-// import 'package:digitalerp/screen/base/base_controller.dart';
-// import 'package:digitalerp/utils/app_assets.dart';
+// import 'package:newdigitalerp/Menu_new_list_responce.dart';
+// import 'package:newdigitalerp/app_routes/app_routes.dart';
+// 
+// import 'package:newdigitalerp/utils/app_assets.dart';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 //
@@ -232,7 +232,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/Menu_new_list_responce.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/response/update_approvalstatus_responce.dart';
 import 'package:newdigitalerp/utils/app_assets.dart';

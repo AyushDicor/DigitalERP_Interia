@@ -1,9 +1,9 @@
 
 import 'package:get/get.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/change_company/Company_list_responce.dart';
 import 'package:newdigitalerp/change_company/branch_list_response.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
 import 'package:newdigitalerp/utils/show_message.dart';
 

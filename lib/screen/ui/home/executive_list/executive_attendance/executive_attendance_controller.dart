@@ -1,11 +1,11 @@
-// import 'package:digitalerp/app_routes/app_routes.dart';
-// import 'package:digitalerp/response/attendance_summary_response.dart';
-// import 'package:digitalerp/response/executive_list_with_lat_long_response.dart';
-// import 'package:digitalerp/screen/base/base_controller.dart';
-// import 'package:digitalerp/screen/ui/home/home_controller.dart';
-// import 'package:digitalerp/services/api_service/request_keys.dart';
-// import 'package:digitalerp/utils/app_constant.dart';
-// import 'package:digitalerp/utils/show_message.dart';
+// import 'package:newdigitalerp/app_routes/app_routes.dart';
+// import 'package:newdigitalerp/response/attendance_summary_response.dart';
+// import 'package:newdigitalerp/response/executive_list_with_lat_long_response.dart';
+// 
+// import 'package:newdigitalerp/screen/ui/home/home_controller.dart';
+// import 'package:newdigitalerp/services/api_service/request_keys.dart';
+// import 'package:newdigitalerp/utils/app_constant_new.dart';
+// import 'package:newdigitalerp/utils/show_message.dart';
 // import 'package:geolocator/geolocator.dart';
 // import 'package:get/get.dart';
 //
@@ -115,7 +115,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/response/executive_list_with_lat_long_response.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/attendance_model.dart';
@@ -293,7 +293,7 @@ class ExecutiveAttendanceController extends AppBaseController {
       body[RequestKeys.filter] = 'yes';
       var res = await api.getAttendanceSummary(body);
       if (res.status == 200) {
-        attendanceSummaryData = res.data;
+        attendanceSummaryData = (res.data ?? []).cast<AttendanceSummaryData>();
 
         enableBtn = (attendanceSummaryData?[0].details?.last.date.toString() ==
                     formatDate(DateTime.now().toString(),

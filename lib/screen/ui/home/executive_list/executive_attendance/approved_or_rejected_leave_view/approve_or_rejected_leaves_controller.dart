@@ -1,6 +1,6 @@
 
 import 'package:get/get.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/approved_or_reject_leave_model.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_attendance/executive_attendance_controller.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
@@ -37,7 +37,7 @@ class ExecutiveApproveOrRejectedLeavesController extends AppBaseController {
       body[RequestKeys.leaveStatus] = isApproved ? 'approved' : 'reject';
       var res = await api.getLeaveDetail(body);
       if (res.status == 200) {
-        leaveList.addAll(res.data ?? []);
+        leaveList.addAll((res.data ?? []).cast<LeaveData>());
 
         /// For sorting date wise List
         leaveList.sort((a, b) {

@@ -5,9 +5,9 @@ import 'package:another_xlider/models/handler.dart';
 import 'package:another_xlider/models/handler_animation.dart';
 import 'package:another_xlider/models/tooltip/tooltip.dart';
 import 'package:another_xlider/models/trackbar.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
-import 'package:newdigitalerp/screen/base/base_controller.dart';
+
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_list/attendance_list_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/leave_history_view/leave_history_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_attendance/executive_attendance_controller.dart';
@@ -356,7 +356,7 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
                   .copyWith(fontSize: 11, fontWeight: FontWeight.normal, color: msgTextColor),
               overflow: TextOverflow.ellipsis,
             ),
-            valueListenable: ValueNotifier(selectedDropdown1Value),
+            value: selectedDropdown1Value,
             buttonStyleData: ButtonStyleData(
               height: 40,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
@@ -379,22 +379,22 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
             ),
             items: dropdown1List.map((items) {
               if (dialogType == orderFilter) {
-                return DropdownItem(
+                return DropdownMenuItem(
                   value: items,
                   child: Text(items.executiveName.toString()),
                 );
               } else if (dialogType == orderDetailEdit) {
-                return DropdownItem(
+                return DropdownMenuItem(
                   value: items,
                   child: Text(items.toString()),
                 );
               } else if (dialogType == productListFilter) {
-                return DropdownItem(
+                return DropdownMenuItem(
                   value: items,
                   child: Text(items.subcategoryname.toString()),
                 );
               } else {
-                return DropdownItem(
+                return DropdownMenuItem(
                   value: items,
                   child: Text(items),
                 );
@@ -430,7 +430,7 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
                   .copyWith(fontSize: 11, fontWeight: FontWeight.normal, color: msgTextColor),
               overflow: TextOverflow.ellipsis,
             ),
-            valueListenable: ValueNotifier(selectedDropdown2Value),
+            value: selectedDropdown2Value,
             iconStyleData: IconStyleData(
               icon: Image.asset(AppAssets.dropdownIcon, width: 15, height: 15),
             ),
@@ -456,9 +456,9 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
             ),
             items: dropdown2List.map((items) {
               if (dialogType == orderFilter) {
-                return DropdownItem(value: items, child: Text(items.partyname.toString()));
+                return DropdownMenuItem(value: items, child: Text(items.partyname.toString()));
               } else {
-                return DropdownItem(value: items, child: Text(items.name.toString()));
+                return DropdownMenuItem(value: items, child: Text(items.name.toString()));
               }
             }).toList(),
             onChanged: (newValue) => setSelectDropdownValue(newValue, type),
@@ -482,24 +482,24 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
         ? [orangeColor.withValues(alpha: 0.2), red2Color.withValues(alpha: 0.2)]
         : [yellowColor.withValues(alpha: 0.2), yellowColor.withValues(alpha: 0.2)];
 
-    final List<DropdownItem<dynamic>> dropItems = (type == 0
+    final List<DropdownMenuItem<dynamic>> dropItems = (type == 0
         ? dropdown1List.map((items) {
       if (dialogType == orderFilter) {
-        return DropdownItem(value: items, child: Text(items.executiveName.toString()));
+        return DropdownMenuItem(value: items, child: Text(items.executiveName.toString()));
       } else {
-        return DropdownItem(value: items, child: Text(items.name.toString()));
+        return DropdownMenuItem(value: items, child: Text(items.name.toString()));
       }
     })
         : type == 1
         ? dropdown2List.map((items) {
       if (dialogType == orderFilter) {
-        return DropdownItem(value: items, child: Text(items.partyname.toString()));
+        return DropdownMenuItem(value: items, child: Text(items.partyname.toString()));
       } else {
-        return DropdownItem(value: items, child: Text(items.name.toString()));
+        return DropdownMenuItem(value: items, child: Text(items.name.toString()));
       }
     })
         : dropdown3List.map((items) {
-      return DropdownItem(value: items, child: Text(items.name.toString()));
+      return DropdownMenuItem(value: items, child: Text(items.name.toString()));
     }))
         .toList();
 
@@ -523,7 +523,7 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
                   .copyWith(fontSize: 11, fontWeight: FontWeight.normal, color: msgTextColor),
               overflow: TextOverflow.ellipsis,
             ),
-            valueListenable: ValueNotifier(currentValue),
+            value: selectedMonthDropdownValue,
             iconStyleData: IconStyleData(
               icon: Image.asset(AppAssets.dropdownIcon, width: 15, height: 15),
             ),
@@ -567,7 +567,7 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
             .copyWith(fontSize: 11, fontWeight: FontWeight.normal, color: msgTextColor),
         overflow: TextOverflow.ellipsis,
       ),
-      valueListenable: ValueNotifier(selectedMonthDropdownValue),
+      value: selectedMonthDropdownValue,
       iconStyleData: IconStyleData(
         icon: Image.asset(AppAssets.dropdownIcon, width: 15, height: 15),
       ),
@@ -587,7 +587,7 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
         ),
       ),
       items: monthDropdownList.map((items) {
-        return DropdownItem<MonthData?>(
+        return DropdownMenuItem<MonthData?>(
           value: items,
           child: Text(items.name),
         );

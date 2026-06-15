@@ -1,7 +1,7 @@
 
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_attendance/executive_attendance_controller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';

@@ -2,8 +2,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
-import 'package:newdigitalerp/auth/fotgot_password/forgot_pass_otp/forgot_pass_otp_controller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/fotgot_password/forgot_pass_otp/forgot_pass_otp_controller.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/show_message.dart';

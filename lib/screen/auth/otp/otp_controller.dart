@@ -2,7 +2,7 @@
 // import 'package:flutter/cupertino.dart';
 // import 'package:get/get.dart';
 //
-// import '../../app_routes/app_routes.dart';
+// import '../../../app_routes/app_routes.dart';
 // import '../../services/api_service/request_keys.dart';
 // import '../../utils/shared_pre.dart';
 // import '../../utils/show_message.dart';
@@ -143,7 +143,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../app_routes/app_routes.dart';
+
+import '../../../app_routes/app_routes.dart';
 
 // ── Dummy OTP for static testing ─────────────────────────────────────────────
 const int _dummyOtp = 123456;

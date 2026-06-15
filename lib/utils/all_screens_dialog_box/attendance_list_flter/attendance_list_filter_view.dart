@@ -1,4 +1,4 @@
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart' hide formatDate;
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/custom_dialogbox.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -269,7 +269,7 @@ class _AttendanceListFilterViewState extends State<AttendanceListFilterView>
               hint: Text('Select month',
                   style: TextStyle(
                       color: _neutral.withValues(alpha: 0.6), fontSize: 13)),
-              valueListenable: ValueNotifier(controller.selectedMonthDropdownValue),
+              value:controller.selectedMonthDropdownValue,
               iconStyleData: const IconStyleData(
                 icon: Icon(Icons.keyboard_arrow_down_rounded,
                     color: _navy, size: 20),
@@ -286,7 +286,7 @@ class _AttendanceListFilterViewState extends State<AttendanceListFilterView>
                 ),
               ),
               items: controller.monthDropdownList.map((items) {
-                return DropdownItem<MonthData?>(
+                return DropdownMenuItem<MonthData?>(
                   value: items,
                   child: Text(items.name,
                       style: const TextStyle(

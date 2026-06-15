@@ -1,10 +1,10 @@
-// import 'package:digitalerp/response/get_executive_dropdown_response.dart';
-// import 'package:digitalerp/screen/base/base_controller.dart';
-// import 'package:digitalerp/screen/ui/home/attendance/leave_history_view/leave_history_controller.dart';
-// import 'package:digitalerp/utils/all_screens_dialog_box/leave_history_filter/leave_history_filter_view.dart';
-// import 'package:digitalerp/utils/app_assets.dart';
-// import 'package:digitalerp/utils/app_constant.dart';
-// import 'package:digitalerp/utils/my_app_bar_new.dart';
+// import 'package:newdigitalerp/response/get_executive_dropdown_response.dart';
+// 
+// import 'package:newdigitalerp/screen/ui/home/attendance/leave_history_view/leave_history_controller.dart';
+// import 'package:newdigitalerp/utils/all_screens_dialog_box/leave_history_filter/leave_history_filter_view.dart';
+// import 'package:newdigitalerp/utils/app_assets.dart';
+// import 'package:newdigitalerp/utils/app_constant_new.dart';
+// import 'package:newdigitalerp/utils/my_app_bar_new.dart';
 // import 'package:dropdown_button2/dropdown_button2.dart';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
@@ -769,7 +769,7 @@ class LeaveHistoryView extends StatelessWidget {
         isExpanded: true,
         hint: Text('Select Executive',
             style: GoogleFonts.dmSans(color: _kSub, fontSize: 14)),
-        valueListenable: ValueNotifier(controller.selectedDropdownValue),
+        value: controller.selectedDropdownValue,
         iconStyleData: const IconStyleData(
           icon: Icon(Icons.keyboard_arrow_down, color: _kSub, size: 22),
         ),
@@ -790,7 +790,7 @@ class LeaveHistoryView extends StatelessWidget {
           ),
         ),
         items: controller.executiveList.map((item) {
-          return DropdownItem<ExecutiveDropdownData>(
+          return DropdownMenuItem<ExecutiveDropdownData>(
             value: item,
             child: Text(item.executiveName.toString(),
                 style: GoogleFonts.dmSans(fontSize: 14, color: _kText)),

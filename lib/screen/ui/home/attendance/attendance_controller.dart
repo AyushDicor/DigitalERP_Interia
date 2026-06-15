@@ -5,7 +5,7 @@
 // import 'package:get/get.dart';
 // import 'package:image_picker/image_picker.dart';
 // import 'package:newdigitalerp/app_routes/app_routes.dart';
-// import 'package:newdigitalerp/auth/base/base_contoller.dart';
+// import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 // import 'package:newdigitalerp/home/home_contoller.dart';
 // import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/attendance_model.dart';
 // import 'package:newdigitalerp/services/api_service/request_keys.dart';
@@ -193,7 +193,7 @@
 
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/attendance_model.dart';
 

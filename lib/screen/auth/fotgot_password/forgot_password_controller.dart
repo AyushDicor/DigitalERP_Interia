@@ -2,7 +2,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/response/forgot_pass_response.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';

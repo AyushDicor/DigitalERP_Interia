@@ -123,7 +123,7 @@ class _SearchDropdown extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          valueListenable: ValueNotifier(controller.selectedDropdownValue),
+          value:controller.selectedDropdownValue,
           iconStyleData: const IconStyleData(
             icon: Icon(Icons.keyboard_arrow_down_rounded,
                 size: 20, color: _textPrimary),
@@ -144,7 +144,7 @@ class _SearchDropdown extends StatelessWidget {
             ),
           ),
           items: controller.executiveDropdownList!.map((item) {
-            return DropdownItem<ExecutiveDropdownData>(
+            return DropdownMenuItem<ExecutiveDropdownData>(
               value: item,
               child: Text(
                 item.executiveName.toString(),

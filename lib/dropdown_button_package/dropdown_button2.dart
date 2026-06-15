@@ -1,10 +1,3 @@
-/*
- * Created by AHMED ELSAYED on 30 Nov 2021.
- * email: ahmedelsaayid@gmail.com
- * Edits made on original source code by Flutter.
- * Copyright 2014 The Flutter Authors. All rights reserved.
-*/
-
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

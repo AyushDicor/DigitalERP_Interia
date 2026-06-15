@@ -1,10 +1,13 @@
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:get/get_navigation/src/routes/transitions_type.dart';
-import 'package:newdigitalerp/auth/fotgot_password/forgot_pass_otp/forgot_pass_otp_view.dart';
-import 'package:newdigitalerp/auth/fotgot_password/forgot_pass_otp/reset_password/reset_password_view.dart';
-import 'package:newdigitalerp/auth/fotgot_password/forgot_password_view.dart';
 import 'package:newdigitalerp/change_company/change_company_view.dart';
 import 'package:newdigitalerp/home_view_new.dart';
+import 'package:newdigitalerp/screen/auth/fotgot_password/forgot_pass_otp/forgot_pass_otp_view.dart';
+import 'package:newdigitalerp/screen/auth/fotgot_password/forgot_pass_otp/reset_password/reset_password_view.dart';
+import 'package:newdigitalerp/screen/auth/fotgot_password/forgot_password_view.dart';
+import 'package:newdigitalerp/screen/auth/login/login_screen.dart';
+import 'package:newdigitalerp/screen/auth/otp/otp_view.dart';
+import 'package:newdigitalerp/screen/auth/splash/splash_view.dart';
 import 'package:newdigitalerp/screen/ui/home/approval_management/approval_hub_screens/approval_hub_dashboard.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/approved_or_rejected_leave_view/approve_or_rejected_leaves_view.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_list/attendance_list_view.dart';
@@ -17,10 +20,6 @@ import 'package:newdigitalerp/screen/ui/home/executive_list/executive_attendance
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_attendance/executive_attendance_list/executive_attendance_list_view.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_attendance/executive_attendance_view.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_view.dart';
-
-import '../auth/login/login_screen.dart';
-import '../auth/otp/otp_view.dart';
-import '../auth/splash/splash_view.dart';
 
 import '../home/home_view.dart';
 import 'app_routes.dart';

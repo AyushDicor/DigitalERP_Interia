@@ -1,6 +1,6 @@
 
 import 'package:get/get.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/approved_or_reject_leave_model.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/executive_list_model.dart';
@@ -115,7 +115,7 @@ class LeaveHistoryController extends AppBaseController {
 
       var res = await api.getLeaveHistoryDetail(body);
       if (res.status == 200) {
-        leaveHistoryList.addAll(res.data ?? []);
+        leaveHistoryList.addAll((res.data ?? []).cast<LeaveData>());
 
         /// Sort by date
         leaveHistoryList.sort((a, b) {
@@ -146,7 +146,7 @@ class LeaveHistoryController extends AppBaseController {
       body[RequestKeys.compId] = attendanceController.homeController.currentUserData?.compId.toString() ?? '';
       var res = await api.getExecutiveDropdown(body);
       if (res.status == 200) {
-        executiveList.addAll(res.data!);
+        executiveList.addAll((res.data ?? []).cast<ExecutiveDropdownData>());
         if (executiveList.length == 1) {
           setSelectDropdownValue(executiveList[0]);
         }
@@ -172,7 +172,7 @@ class LeaveHistoryController extends AppBaseController {
           toDate ?? formatDate(DateTime.now().toString(), AppString.dateTimeFormat, AppString.yyyyMMdd);
       var res = await api.getPendingLeaveList(body);
       if (res.status == 200) {
-        pendingLeaveList.addAll(res.data ?? []);
+        pendingLeaveList.addAll((res.data ?? []).cast<PendingLeaveData>());
 
         /// For sorting date wise List
         pendingLeaveList.sort((a, b) {

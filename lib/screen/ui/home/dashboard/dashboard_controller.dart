@@ -7,7 +7,7 @@
 // import 'package:flutter/foundation.dart';
 // import 'package:get/get.dart';
 // import 'package:newdigitalerp/app_routes/app_routes.dart';
-// import 'package:newdigitalerp/auth/base/base_contoller.dart';
+// import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 // import 'package:newdigitalerp/home/home_contoller.dart';
 // import 'package:newdigitalerp/response/get_cart_list_response.dart';
 // import 'package:newdigitalerp/screen/ui/home/dashboard/dashboard_model.dart';
@@ -313,7 +313,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/dashboard_model.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/executive_list_model.dart';

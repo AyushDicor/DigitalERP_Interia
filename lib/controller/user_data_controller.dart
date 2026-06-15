@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:newdigitalerp/auth/login/login_model.dart';
+import 'package:newdigitalerp/screen/auth/login/login_model.dart';
 import 'package:newdigitalerp/utils/shared_pre.dart';
 
 class UserDataController extends GetxController {

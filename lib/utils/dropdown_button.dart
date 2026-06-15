@@ -178,7 +178,7 @@ class _ErpDropdownState<T> extends State<ErpDropdown<T>> {
       ),
       child: DropdownButton2<T>(
         isExpanded: true,
-        valueListenable: ValueNotifier(widget.value),
+        value: widget.value,
         onChanged: widget.enabled ? widget.onChanged : null,
         onMenuStateChange: (isOpen) {
           setState(() => _isOpen = isOpen);
@@ -188,7 +188,7 @@ class _ErpDropdownState<T> extends State<ErpDropdown<T>> {
         // ── Items ──────────────────────────────────────────────────────────
         items: widget.items.isEmpty
             ? [
-          DropdownItem<T>(
+          DropdownMenuItem<T>(
             enabled: false,
             child: Text(
               widget.noItemsText,
@@ -202,7 +202,7 @@ class _ErpDropdownState<T> extends State<ErpDropdown<T>> {
         ]
             : widget.items.map((item) {
           final isSelected = item == widget.value;
-          return DropdownItem<T>(
+          return DropdownMenuItem<T>(
             value: item,
             child: _ItemRow(
               label: widget.itemLabel(item),
@@ -225,7 +225,7 @@ class _ErpDropdownState<T> extends State<ErpDropdown<T>> {
             isHint: false,
             prefixIcon: widget.prefixIcon,
           );
-        }),
+        }).toList(),  // <-- add .toList()
 
         // ── Button chrome ─────────────────────────────────────────────────
         // ── Button chrome ─────────────────────────────────────────────────
@@ -295,8 +295,8 @@ class _ErpDropdownState<T> extends State<ErpDropdown<T>> {
         dropdownSearchData: widget.isSearchable
             ? DropdownSearchData<T>(
           searchController: _searchCtrl,
-          searchBarWidgetHeight: 58,        // was: searchInnerWidgetHeight
-          searchBarWidget: _SearchBox(controller: _searchCtrl), // was: searchInnerWidget
+          searchInnerWidgetHeight: 58,
+          searchInnerWidget: _SearchBox(controller: _searchCtrl),
           searchMatchFn: (item, query) {
             if (item.value == null) return false;
             return widget

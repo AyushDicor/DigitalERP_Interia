@@ -1,13 +1,15 @@
+
+import 'package:newdigitalerp/screen/ui/home/executive_list/executetive_list_controller.dart';
+import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/app_profile_image.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:newdigitalerp/screen/ui/home/executive_list/executetive_list_controller.dart';
-import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/executive_list_model.dart';
-import 'package:newdigitalerp/utils/app_constant_new.dart';
-import 'package:newdigitalerp/utils/app_profile_image.dart';
+
+import '../../../../fab/menu_fab.dart';
 
 
-//  Color tokens matching Figma 
+//  Color tokens matching Figma
 const Color _bgPage = Color(0xFFF4F6FA);
 const Color _white = Color(0xFFFFFFFF);
 const Color _textPrimary = Color(0xFF1A1A2E);
@@ -36,29 +38,29 @@ class ExecutiveListView extends StatelessWidget {
               child: controller.isBusy
                   ? const Center(child: CircularProgressIndicator())
                   : ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-                      children: [
-                        _SearchDropdown(controller: controller),
-                        const SizedBox(height: 4),
-                        ...List.generate(
-                          controller.executiveList.length,
-                          (i) => _ExecutiveCard(
-                            controller: controller,
-                            index: i,
-                          ),
-                        ),
-                      ],
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                children: [
+                  _SearchDropdown(controller: controller),
+                  const SizedBox(height: 4),
+                  ...List.generate(
+                    controller.executiveList.length,
+                        (i) => _ExecutiveCard(
+                      controller: controller,
+                      index: i,
                     ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-      //  floatingActionButton: MenuFab(parentMenuId: 2377),
+        floatingActionButton: MenuFab(parentMenuId: 2377),
       ),
     );
   }
 }
 
-//  App Bar 
+//  App Bar
 class _AppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -109,7 +111,7 @@ class _AppBar extends StatelessWidget {
   }
 }
 
-//  Search / Dropdown 
+//  Search / Dropdown
 class _SearchDropdown extends StatelessWidget {
   final ExecutiveListController controller;
   const _SearchDropdown({required this.controller});
@@ -124,41 +126,21 @@ class _SearchDropdown extends StatelessWidget {
         border: Border.all(color: _borderColor, width: 1.5),
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton2<ExecutiveDropdownData>(
+        child: DropdownButton2(
           isExpanded: true,
+          value: controller.selectedDropdownValue,
           hint: const Text(
             'Search Executive',
-            style: TextStyle(
-              fontSize: 14,
-              color: _textSub,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 14, color: _textSub, fontWeight: FontWeight.w500),
           ),
-          // ✅ OLD: value: ... → NEW: use valueListenable OR just pass value via items
-          // Since you're using a plain value (not listenable), keep as-is but
-          // the new API removed direct `value`. Use valueListenable instead:
-          valueListenable: ValueNotifier(controller.selectedDropdownValue),
-
-          // ✅ OLD: buttonHeight, buttonPadding, buttonDecoration → NEW: buttonStyleData
-          buttonStyleData: ButtonStyleData(
+          buttonStyleData: const ButtonStyleData(
             height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.all(Radius.circular(14)),
               color: Colors.transparent,
             ),
           ),
-
-          // ✅ OLD: icon → NEW: iconStyleData
-          iconStyleData: const IconStyleData(
-            icon: Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 20,
-              color: _textPrimary,
-            ),
-          ),
-
-          // ✅ OLD: dropdownDecoration → NEW: dropdownStyleData
           dropdownStyleData: DropdownStyleData(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
@@ -166,22 +148,18 @@ class _SearchDropdown extends StatelessWidget {
               border: Border.all(color: _borderColor),
             ),
           ),
-
-          // ✅ OLD: DropdownMenuItem → NEW: DropdownItem
+          iconStyleData: const IconStyleData(
+            icon: Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: _textPrimary),
+          ),
           items: controller.executiveDropdownList!.map((item) {
-            return DropdownItem<ExecutiveDropdownData>(
+            return DropdownMenuItem(
               value: item,
               child: Text(
                 item.executiveName.toString(),
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: _textPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: const TextStyle(fontSize: 14, color: _textPrimary, fontWeight: FontWeight.w500),
               ),
             );
           }).toList(),
-
           onChanged: controller.setSelectDropdownValue,
         ),
       ),

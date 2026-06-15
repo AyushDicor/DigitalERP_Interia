@@ -3,7 +3,7 @@
 //     final otpVerifyResponse = otpVerifyResponseFromJson(jsonString);
 
 import 'dart:convert';
-import 'package:newdigitalerp/auth/login/login_model.dart';
+import 'package:newdigitalerp/screen/auth/login/login_model.dart';
 
 OtpVerifyResponse otpVerifyResponseFromJson(String str) =>
     OtpVerifyResponse.fromJson(json.decode(str));

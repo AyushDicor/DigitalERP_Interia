@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:newdigitalerp/auth/splash/splash_controller.dart';
+import 'package:newdigitalerp/screen/auth/splash/splash_controller.dart';
 
 class SplashView extends StatelessWidget {
   const SplashView({Key? key}) : super(key: key);

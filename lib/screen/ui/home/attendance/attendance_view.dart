@@ -1,14 +1,14 @@
 // import 'dart:convert';
-// import 'package:digitalerp/screen/base/base_controller.dart';
-// import 'package:digitalerp/screen/ui/home/attendance/attendance_controller.dart';
-// import 'package:digitalerp/screen/ui/home/attendance/leave_apply_view/leave_apply_controller.dart';
-// import 'package:digitalerp/screen/ui/setup/setup_controller.dart';
-// import 'package:digitalerp/utils/app_assets.dart';
-// import 'package:digitalerp/utils/app_constant.dart';
-// import 'package:digitalerp/utils/app_network_image.dart';
-// import 'package:digitalerp/utils/custom_clipper.dart';
-// import 'package:digitalerp/utils/dottedline.dart';
-// import 'package:digitalerp/utils/my_app_bar_new.dart';
+// 
+// import 'package:newdigitalerp/screen/ui/home/attendance/attendance_controller.dart';
+// import 'package:newdigitalerp/screen/ui/home/attendance/leave_apply_view/leave_apply_controller.dart';
+// import 'package:newdigitalerp/screen/ui/setup/setup_controller.dart';
+// import 'package:newdigitalerp/utils/app_assets.dart';
+// import 'package:newdigitalerp/utils/app_constant_new.dart';
+// import 'package:newdigitalerp/utils/app_network_image.dart';
+// import 'package:newdigitalerp/utils/custom_clipper.dart';
+// import 'package:newdigitalerp/utils/dottedline.dart';
+// import 'package:newdigitalerp/utils/my_app_bar_new.dart';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 // import 'package:image_picker/image_picker.dart';

@@ -1,8 +1,8 @@
-// import 'package:digitalerp/Menu_new_list_responce.dart';
-// import 'package:digitalerp/app_routes/app_routes.dart';
-// import 'package:digitalerp/screen/base/base_controller.dart';
-// import 'package:digitalerp/screen/ui/home/home_controller.dart';
-// import 'package:digitalerp/utils/show_message.dart';
+// import 'package:newdigitalerp/Menu_new_list_responce.dart';
+// import 'package:newdigitalerp/app_routes/app_routes.dart';
+// 
+// import 'package:newdigitalerp/screen/ui/home/home_controller.dart';
+// import 'package:newdigitalerp/utils/show_message.dart';
 // import 'package:get/get.dart';
 //
 // import 'services/api_service/request_keys.dart';
@@ -71,7 +71,7 @@
 
 import 'package:get/get.dart';
 import 'package:newdigitalerp/Menu_new_list_responce.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/utils/show_message.dart';
 

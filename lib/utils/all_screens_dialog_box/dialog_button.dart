@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 
 class DialogButton extends StatelessWidget {

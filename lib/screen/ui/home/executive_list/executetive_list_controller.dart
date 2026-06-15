@@ -1,7 +1,7 @@
 
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/response/executive_list_with_lat_long_response.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/executive_list_model.dart';
@@ -37,7 +37,7 @@ class ExecutiveListController extends AppBaseController {
           homeController.currentUserData?.compId.toString() ?? '';
       var res = await api.getExecutiveDropdown(body);
       if (res.status == 200) {
-        executiveDropdownList?.addAll(res.data!);
+        executiveDropdownList?.addAll((res.data ?? []).cast<ExecutiveDropdownData>());
         // if (dropdownList?.length == 1) {
         //   setSelectDropdownValue(dropdownList?[0]);
         // }

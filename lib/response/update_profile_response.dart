@@ -4,7 +4,7 @@
 
 import 'dart:convert';
 
-import 'package:newdigitalerp/auth/login/login_model.dart';
+import 'package:newdigitalerp/response/login_response.dart';
 
 UpdateProfileResponse updateProfileResponseFromJson(String str) =>
     UpdateProfileResponse.fromJson(json.decode(str));

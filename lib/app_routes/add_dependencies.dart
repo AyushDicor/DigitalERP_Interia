@@ -1,7 +1,8 @@
 
 import 'package:get/get.dart';
-import 'package:newdigitalerp/auth/login/login_controller.dart';
-import 'package:newdigitalerp/auth/login/login_screen.dart';
+
+import 'package:newdigitalerp/screen/auth/login/login_controller.dart';
+import 'package:newdigitalerp/screen/auth/login/login_screen.dart';
 
 
 class AppDependencies {

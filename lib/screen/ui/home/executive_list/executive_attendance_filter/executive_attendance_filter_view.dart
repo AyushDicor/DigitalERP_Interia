@@ -1,7 +1,7 @@
-// import 'package:digitalerp/screen/base/base_controller.dart';
-// import 'package:digitalerp/utils/app_assets.dart';
-// import 'package:digitalerp/utils/app_constant.dart';
-// import 'package:digitalerp/utils/custom_dialogbox.dart';
+// 
+// import 'package:newdigitalerp/utils/app_assets.dart';
+// import 'package:newdigitalerp/utils/app_constant_new.dart';
+// import 'package:newdigitalerp/utils/custom_dialogbox.dart';
 // import 'package:dropdown_button2/dropdown_button2.dart';
 // import 'package:flutter/foundation.dart';
 // import 'package:flutter/material.dart';
@@ -396,7 +396,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:newdigitalerp/auth/base/base_contoller.dart';
+import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/custom_dialogbox.dart';
 
@@ -636,7 +636,7 @@ class _BottomSheetState extends State<_BottomSheet> {
           'Select Month',
           style: TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
         ),
-        valueListenable: ValueNotifier(controller.selectedMonthDropdownValue),
+        value: controller.selectedMonthDropdownValue,
         iconStyleData: const IconStyleData(
           icon: Icon(Icons.keyboard_arrow_down_rounded,
               color: Color(0xFF9E9E9E), size: 22),
@@ -666,7 +666,7 @@ class _BottomSheetState extends State<_BottomSheet> {
           ),
         ),
         items: controller.monthDropdownList.map((items) {
-          return DropdownItem<MonthData?>(
+          return DropdownMenuItem<MonthData?>(
             value: items,
             child: Text(
               items.name,
