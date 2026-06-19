@@ -17,6 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
+import '../add_company/add_company_view.dart';
+
 class CustomerListController extends AppBaseController {
   HomeController homeController = Get.find<HomeController>();
   final TextEditingController searchController = TextEditingController();

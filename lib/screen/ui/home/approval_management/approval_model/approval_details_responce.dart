@@ -294,6 +294,7 @@ class ApprovalItemData {
   final String expenseLedger;
   final String description;
   final double amount;
+  final double quantity;
   final double approvedAmt;
   final String status;
   final String? referenceFile;
@@ -310,6 +311,7 @@ class ApprovalItemData {
     this.expenseLedger = '',
     this.description = '',
     this.amount = 0.0,
+    this.quantity = 0.0,
     this.approvedAmt = 0.0,
     this.status = 'Pending',
     this.referenceFile,
@@ -328,6 +330,7 @@ class ApprovalItemData {
         expenseLedger: json['ExpenseLedger'] as String? ?? '',
         description: json['Description'] as String? ?? '',
         amount: (json['Amount'] as num?)?.toDouble() ?? 0.0,
+        quantity: (json['Quantity'] as num?)?.toDouble() ?? 0.0,
         approvedAmt: (json['ApprovedAmt'] as num?)?.toDouble() ?? 0.0,
         status: json['Status'] as String? ?? 'Pending',
         referenceFile: json['ReferenceFile'] as String?,

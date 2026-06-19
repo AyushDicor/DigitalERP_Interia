@@ -289,6 +289,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
+import 'package:newdigitalerp/services/api_service/api.dart';
+import 'package:newdigitalerp/utils/shared_pre.dart';
 
 const String _dummyMobile   = '9999999999';
 const String _dummyPassword = 'Test@1234';
@@ -321,16 +323,35 @@ class LoginController extends GetxController {
     final mobile   = mobileCtrl.text.trim();
     final password = passwordCtrl.text.trim();
 
+    // Offline dummy bypass (kept for quick UI testing).
     if (mobile == _dummyMobile && password == _dummyPassword) {
-      // Register HomeController with dummy data before navigating
-      if (!Get.isRegistered<HomeController>()) {
-        Get.put(HomeController());
-      }
+      if (!Get.isRegistered<HomeController>()) Get.put(HomeController());
       Get.toNamed(AppRoutes.otp, arguments: [mobile, password]);
-    } else {
-      _showSnack('Login Failed', 'Invalid mobile number or password');
+      _setBusy(false);
+      return;
     }
-    _setBusy(false);
+
+    // Real login against the mobile API (/api/Login).
+    try {
+      final res = await Api().loginApi({
+        'mobile': mobile,
+        'password': password,
+        'deviceid': 'flutter-app',
+      });
+
+      if (res.status == 200 && res.data != null) {
+        // Credentials valid → go to OTP verification (pass login id + password).
+        // The OTP screen finalizes login (saves user, navigates home).
+        Get.toNamed(AppRoutes.otp, arguments: [mobile, password]);
+      } else {
+        _showSnack('Login Failed',
+            (res.message?.isNotEmpty ?? false) ? res.message! : 'Invalid mobile number or password');
+      }
+    } catch (e) {
+      _showSnack('Login Failed', '$e');
+    } finally {
+      _setBusy(false);
+    }
   }
 
   void tapOnShowPassword() {
@@ -351,7 +372,7 @@ class LoginController extends GetxController {
 
   bool _isValidate() {
     if (mobileCtrl.text.trim().isEmpty) {
-      _showSnack('Required', 'Please enter your mobile number');
+      _showSnack('Required', 'Please enter your mobile, email or username');
       return false;
     }
     if (passwordCtrl.text.trim().isEmpty) {

@@ -16,6 +16,7 @@ class ApiMethods {
   String menuUserNew          = 'Userwisemenu/usermenu';
   //String dashboardDetails = 'Dashboard/dashboardDetails';
   String dashboardDetails     = 'dashboardnew/dashboardDetailsnew';
+  String dashboardPendency    = 'dashboardnew/dashboardpendency';
   // String attendanceSummary = 'AttendanceSummery/attendanceDetails';
   String attendanceSummary    = 'AttendanceSummerynew/attendanceDetailsnew';
   String attendanceList       = 'AttendanceList/attendanceList';
@@ -85,9 +86,18 @@ class ApiMethods {
   String createDirectTask  = 'CreateDirectTask';
   String taskDropdown      = 'TaskDropdown';
 
+  /// task module (new mobile API — taskmaster + TaskComments)
+  String taskListV2      = 'task/list';
+  String taskDetailV2    = 'task/detail';
+  String taskDropdownsV2 = 'task/dropdowns';
+  String taskCreateV2    = 'task/create';
+  String taskFollowupV2  = 'task/addfollowup';
+  String taskStatusV2    = 'task/updatestatus';
+
   /// change company
   String companylist = 'companylist/getcompany';
   String branchlist = 'branchlist/getbranch';
+  String financialYear = 'financialyear/getfinancialyear';
 
   /// DownloadDocument
   String downloadDocumentType           = 'documentnamedropdown/getdocumentname';
@@ -254,6 +264,9 @@ class ApiMethods {
   String getPendingShipping      = 'pendingshipping/getpendingshipping';
   String getAttendanceReport     = 'attendencereport/getattandencereport';
   String getOrderReport          = 'orderreport/getorderreport';
+  String orderReport             = 'orderreport/getorderreport';
+  String genericReport           = 'report/getreport';
+  String genericReportDetail     = 'report/getreportdetail';
   String getStoreName            = 'storename/getstorename';
   String getStockReport          = 'stockreport/getstockreport';
 

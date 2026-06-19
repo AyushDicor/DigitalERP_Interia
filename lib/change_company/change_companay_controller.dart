@@ -2,6 +2,7 @@
 import 'package:get/get.dart';
 import 'package:newdigitalerp/change_company/Company_list_responce.dart';
 import 'package:newdigitalerp/change_company/branch_list_response.dart';
+import 'package:newdigitalerp/change_company/financial_year_response.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
@@ -14,53 +15,125 @@ class ChangeCompanyController extends AppBaseController {
 
   List<CompanyListData> companyList = [];
   List<BranchListData> branchList = [];
+  List<FinancialYearData> fyList = [];
   CompanyListData? selectCompany;
   BranchListData? selectBranch;
+  FinancialYearData? selectFy;
+  bool isLoadingFy = false;
 
   @override
   void onInit() {
     super.onInit();
-    _loadDummyData();
+    _loadInitialData();
   }
 
-  void _loadDummyData() {
-    companyList = [
-      CompanyListData(companyname: 'Digital ERP Pvt Ltd', compid: 39),
-      CompanyListData(companyname: 'Demo Company Ltd', compid: 40),
-    ];
-
-    selectCompany = companyList.first;
-
-    branchList = [
-      BranchListData(branchname: 'Delhi Branch', branchid: 1),
-      BranchListData(branchname: 'Mumbai Branch', branchid: 2),
-    ];
-
-    selectBranch = branchList.first;
-
-    isPageLoading = false;
+  Future<void> _loadInitialData() async {
+    isPageLoading = true;
+    setBusy(true);
     update();
+    try {
+      await getCompanyListApi();
+      await getBranchListApi(compId: selectCompany?.compid);
+      await getFinancialYearApi();
+    } finally {
+      isPageLoading = false;
+      setBusy(false);
+      update();
+    }
   }
-  // ── Initial load — disabled until API is ready ──
-// Future<void> _loadInitialData() async { ... }
-// Future<void> getChangeCompanyApi() async { ... }
-// Future<void> getBranchListApi({int? compId}) async { ... }
 
-// Keep these as stubs so dropdowns still work
+  Future<void> getCompanyListApi() async {
+    try {
+      final body = <String, String>{
+        RequestKeys.userId: homeController.currentUserData?.userid.toString() ?? '',
+        RequestKeys.compId: homeController.currentUserData?.compId.toString() ?? '',
+      };
+      final res = await api.getCompanyList(body);
+      if (res.status == 200) {
+        companyList = res.data ?? [];
+        final curr = homeController.currentUserData?.compId;
+        selectCompany = null;
+        for (final c in companyList) {
+          if (c.compid == curr) { selectCompany = c; break; }
+        }
+        selectCompany ??= companyList.isNotEmpty ? companyList.first : null;
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('getCompanyList', '$e');
+    }
+  }
+
+  Future<void> getBranchListApi({int? compId}) async {
+    isLoadingBranches = true;
+    update();
+    try {
+      final body = <String, String>{
+        RequestKeys.userId: homeController.currentUserData?.userid.toString() ?? '',
+        RequestKeys.compId:
+            (compId ?? selectCompany?.compid ?? homeController.currentUserData?.compId ?? 0).toString(),
+      };
+      final res = await api.getBranchList(body);
+      if (res.status == 200) {
+        branchList = res.data ?? [];
+        final curr = homeController.currentUserData?.branchId;
+        selectBranch = null;
+        for (final b in branchList) {
+          if (b.branchid == curr) { selectBranch = b; break; }
+        }
+        selectBranch ??= branchList.isNotEmpty ? branchList.first : null;
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('getBranchList', '$e');
+    } finally {
+      isLoadingBranches = false;
+      update();
+    }
+  }
+
+  Future<void> getFinancialYearApi() async {
+    isLoadingFy = true;
+    update();
+    try {
+      final body = <String, String>{
+        RequestKeys.compId:
+            (selectCompany?.compid ?? homeController.currentUserData?.compId ?? 0).toString(),
+        RequestKeys.branchId:
+            (selectBranch?.branchid ?? homeController.currentUserData?.branchId ?? 0).toString(),
+      };
+      final res = await api.getFinancialYear(body);
+      if (res.status == 200) {
+        fyList = res.data ?? [];
+        final currYear = homeController.currentUserData?.yearId?.toString();
+        selectFy = null;
+        for (final f in fyList) {
+          if (f.fyid.toString() == currYear) { selectFy = f; break; }
+        }
+        selectFy ??= fyList.isNotEmpty ? fyList.first : null;
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('getFinancialYear', '$e');
+    } finally {
+      isLoadingFy = false;
+      update();
+    }
+  }
+
   Future<void> setSelectCompanyDropdownValue(CompanyListData? value) async {
     if (value == null || value.compid == selectCompany?.compid) return;
     selectCompany = value;
     selectBranch = null;
-    branchList = [
-      BranchListData(branchname: 'Delhi Branch', branchid: 1),
-      BranchListData(branchname: 'Mumbai Branch', branchid: 2),
-    ];
+    branchList = [];
+    fyList = [];
+    selectFy = null;
     update();
+    await getBranchListApi(compId: value.compid);
+    await getFinancialYearApi();
   }
 
-  void setSelectBranchDropdownValue(BranchListData? value) {
+  Future<void> setSelectBranchDropdownValue(BranchListData? value) async {
     selectBranch = value;
     update();
+    await getFinancialYearApi();
   }
 }
 

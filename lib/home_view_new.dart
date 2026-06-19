@@ -1294,21 +1294,13 @@ class _HomeViewNewState extends State<HomeViewNew> with WidgetsBindingObserver {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                  color: newBlueLightColor,
-                  borderRadius: BorderRadius.circular(10)),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Image.asset(
-                  ctrl.imageList()[data.menuname] ?? '',
-                  errorBuilder: (_, __, ___) => const Icon(
-                      Icons.grid_view_rounded,
-                      color: newBlueColor,
-                      size: 24),
-                ),
-              ),
+                  color: _menuColor(data).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(13)),
+              child: Icon(_menuIcon(data),
+                  color: _menuColor(data), size: 24),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -1330,10 +1322,56 @@ class _HomeViewNewState extends State<HomeViewNew> with WidgetsBindingObserver {
     );
   }
 
+  // Proper per-module icon + accent colour for the menu tiles (Quick Links grid).
+  // Keyed by menuid first, then menu name, with a sensible fallback.
+  IconData _menuIcon(MenuNewData data) {
+    switch (data.menuid) {
+      case 2384: return Icons.fact_check_outlined;   // Approval
+      case 2385: return Icons.checklist_rounded;     // Task
+      case 126:  return Icons.space_dashboard_outlined; // Dashboard
+      case 127:  return Icons.insert_chart_outlined_rounded; // MIS / Reports
+    }
+    switch ((data.menuname ?? '').trim().toLowerCase()) {
+      case 'approval':   return Icons.fact_check_outlined;
+      case 'task':       return Icons.checklist_rounded;
+      case 'dashboard':  return Icons.space_dashboard_outlined;
+      case 'mis':        return Icons.insert_chart_outlined_rounded;
+      case 'admin':      return Icons.admin_panel_settings_outlined;
+      case 'masters':    return Icons.layers_outlined;
+      case 'marketing':  return Icons.campaign_outlined;
+      case 'order':      return Icons.shopping_bag_outlined;
+      case 'sales':      return Icons.point_of_sale_outlined;
+      case 'inventory':  return Icons.inventory_2_outlined;
+      case 'accounts':   return Icons.account_balance_wallet_outlined;
+      case 'purchase':   return Icons.shopping_cart_outlined;
+      case 'store':      return Icons.store_outlined;
+      case 'production': return Icons.precision_manufacturing_outlined;
+      default:           return Icons.widgets_outlined;
+    }
+  }
+
+  Color _menuColor(MenuNewData data) {
+    switch (data.menuid) {
+      case 2384: return const Color(0xFF5B5BD6); // Approval - indigo
+      case 2385: return const Color(0xFF0EA5E9); // Task - sky
+      case 126:  return const Color(0xFF8B5CF6); // Dashboard - violet
+      case 127:  return const Color(0xFFF59E0B); // MIS - amber
+    }
+    const palette = [
+      Color(0xFF5B5BD6), Color(0xFF0EA5E9), Color(0xFF16A34A),
+      Color(0xFFF59E0B), Color(0xFFEF4444), Color(0xFF8B5CF6),
+      Color(0xFF0D9488), Color(0xFFDB2777),
+    ];
+    final n = (data.menuname ?? '').hashCode.abs();
+    return palette[n % palette.length];
+  }
+
   String? _getDirectRoute(int? menuId) {
     const directRoutes = {
+      126: AppRoutes.dashboard, // Dashboard -> pendency dashboard (stats + attendance)
+      127: AppRoutes.reportsHub, // MIS -> Reports hub (Sales Report + future reports)
       2384: AppRoutes.approvalHub,
-      2385: AppRoutes.taskManagement,
+      2385: AppRoutes.taskManagement, // Task -> Task Management module
       2754: AppRoutes.mrnScreen,
       2701: AppRoutes.reimbursement,
       2586: AppRoutes.paymentRequestListScreen,

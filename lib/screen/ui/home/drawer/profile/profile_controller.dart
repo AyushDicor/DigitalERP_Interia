@@ -106,6 +106,9 @@ class ProfileController extends AppBaseController {
         Map<String, String> body = {};
         body[RequestKeys.userId] = homeController.currentUserData!.userid.toString();
         body[RequestKeys.compId] = homeController.currentUserData!.compId.toString();
+        // Preserve current branch & financial year (profile update must not reset them).
+        body[RequestKeys.branchId] = homeController.currentUserData!.branchId.toString();
+        body[RequestKeys.yearId] = homeController.currentUserData!.yearId.toString();
         body[RequestKeys.name] = nameController.text.trim();
         body[RequestKeys.email] = emailController.text.trim();
         body[RequestKeys.address] = addressController.text.trim();

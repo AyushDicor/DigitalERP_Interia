@@ -80,7 +80,7 @@ class LoginView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Mobile Number',
+          'Mobile / Email / Username',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -91,9 +91,9 @@ class LoginView extends StatelessWidget {
         TextFormField(
           controller: controller.mobileCtrl,
           focusNode: controller.mobileFocus,
-          keyboardType: TextInputType.phone,
+          // Accept mobile no, email, or username — plain text keyboard, no length cap.
+          keyboardType: TextInputType.text,
           textInputAction: TextInputAction.next,
-          maxLength: 10,
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
@@ -101,11 +101,11 @@ class LoginView extends StatelessWidget {
           ),
           decoration: InputDecoration(
             counterText: '',
-            hintText: 'Mobile Number',
+            hintText: 'Mobile, email or username',
             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
             prefixIcon: Padding(
               padding: const EdgeInsets.all(14),
-              child: Icon(Icons.phone_outlined,
+              child: Icon(Icons.person_outline,
                   color: Colors.grey.shade500, size: 20),
             ),
             filled: true,

@@ -35,17 +35,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:newdigitalerp/app_routes/app_pages.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // MUST init local storage BEFORE anything reads the saved session, otherwise
+  // a fast cold start reads it before the box loads from disk → wrong/empty user.
+  await GetStorage.init();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
-  // Pre-register HomeController with dummy data so every screen can find it
+  // Register HomeController only AFTER storage is ready, so onInit reads the
+  // real logged-in user (not a stale/dummy fallback).
   Get.put(HomeController(), permanent: true);
   runApp(const MyApp());
 }

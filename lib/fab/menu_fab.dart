@@ -51,8 +51,10 @@ import 'package:newdigitalerp/screen/ui/home/account_module/receipt_entry/receip
 import 'package:newdigitalerp/screen/ui/home/approval_management/approval_hub_screens/approval_hub_dashboard.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 
+import '../download_document_management/download_documents_view.dart';
 import '../orderfollowup/order_followup_view.dart';
 import '../paymenfollow up/payment_followup_view.dart';
+import '../salary_sleep/salary_sleep.dart';
 import '../screen/ui/home/manager_leave_history_view/manager_leave_history_view.dart';
 import '../screen/ui/home/mis_module/attendance_report/attendance_report_view.dart';
 import '../screen/ui/home/mis_module/mis_order/mis_order_view.dart';
@@ -64,6 +66,8 @@ import '../screen/ui/home/mis_module/stock_report/stock_report_view.dart';
 import '../screen/ui/home/order/order_view.dart';
 import '../screen/ui/home/task management/create_task/create_task_screen.dart';
 import '../screen/ui/home/task management/task_list_view.dart';
+import '../shipMangement/shipping_details_view.dart';
+import '../stock _reconcillation/stock_reconciliation.dart';
 
 
 

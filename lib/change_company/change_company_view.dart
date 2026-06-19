@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/change_company/change_companay_controller.dart';
 import 'package:newdigitalerp/utils/shared_pre.dart';
-import 'package:restart_app/restart_app.dart';
+import 'package:newdigitalerp/app_routes/app_routes.dart';
+import 'package:newdigitalerp/homeview_new_controller.dart';
+import 'package:newdigitalerp/screen/ui/home/dashboard/dashboard_controller.dart';
 import '../utils/app_constant_new.dart';
 
 const Color _kWhite = Colors.white;
@@ -129,6 +131,48 @@ class ChangeCompanyView extends StatelessWidget {
                                     ),
                                   ),
 
+                            const SizedBox(height: 16),
+
+                            // ── Financial Year dropdown ──────────────────────
+                            _label('Financial Year'),
+                            ctrl.isLoadingFy
+                                ? _loadingBox()
+                                : _dropdownBox(
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<int>(
+                                        isExpanded: true,
+                                        value: ctrl.selectFy?.fyid,
+                                        hint: const Text(
+                                          'Select Financial Year',
+                                          style: TextStyle(
+                                              fontSize: 14, color: _kTextHint),
+                                        ),
+                                        icon: const Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          color: _kTextSub,
+                                        ),
+                                        onChanged: (val) {
+                                          if (val == null) return;
+                                          final fy = ctrl.fyList
+                                              .firstWhere((e) => e.fyid == val);
+                                          ctrl.selectFy = fy;
+                                          ctrl.update();
+                                        },
+                                        items: ctrl.fyList.map((f) {
+                                          return DropdownMenuItem<int>(
+                                            value: f.fyid,
+                                            child: Text(
+                                              f.financialyear ?? '',
+                                              style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: _kTextPrimary),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ),
+
                             const SizedBox(height: 32),
 
                             // ── Submit ───────────────────────────────────────
@@ -138,8 +182,9 @@ class ChangeCompanyView extends StatelessWidget {
                               child: ElevatedButton(
                                 onPressed:
                                     (ctrl.selectCompany == null ||
-                                        ctrl.selectBranch == null)
-                                    ? null // greyed out until both are selected
+                                        ctrl.selectBranch == null ||
+                                        ctrl.selectFy == null)
+                                    ? null // greyed out until all selected
                                     : () async {
                                         final userData = ctrl
                                             .homeController
@@ -148,11 +193,34 @@ class ChangeCompanyView extends StatelessWidget {
                                             ctrl.selectCompany!.compid;
                                         userData.branchId =
                                             ctrl.selectBranch!.branchid;
+                                        userData.yearId =
+                                            ctrl.selectFy!.fyid?.toString();
                                         await SharedPre.setValue(
                                           SharedPre.userData,
                                           userData.toJson(),
                                         );
-                                        Restart.restartApp();
+                                        await SharedPre.setValue(
+                                            SharedPre.currentBranchId,
+                                            ctrl.selectBranch!.branchid);
+                                        await SharedPre.setValue(
+                                            SharedPre.currentBranchName,
+                                            ctrl.selectBranch!.branchname ?? '');
+                                        ctrl.homeController.update();
+                                        // Stay logged in and RELOAD data in place
+                                        // for the new branch (don't delete the
+                                        // controllers — that left them un-created
+                                        // and data wouldn't reload).
+                                        if (Get.isRegistered<
+                                            HomeViewNewController>()) {
+                                          Get.find<HomeViewNewController>()
+                                              .getNewMenuList(0);
+                                        }
+                                        if (Get.isRegistered<
+                                            DashboardController>()) {
+                                          Get.find<DashboardController>()
+                                              .fetchPendency();
+                                        }
+                                        Get.offAllNamed(AppRoutes.home);
                                       },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: purpleColor,

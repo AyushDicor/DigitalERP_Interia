@@ -163,23 +163,22 @@ class DashboardView extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-            child: _statCard('TOTAL ORDERS', '1200',
-                Icons.shopping_bag_outlined, newBlueColor, newBlueLightColor,
-                badge: '+5.2%')),
+            child: _statCard('PENDING APPROVALS', '${controller.pendency.pendingApprovals}',
+                Icons.fact_check_outlined, newBlueColor, newBlueLightColor)),
         const SizedBox(width: 12),
         Expanded(
             child: _statCard(
-                'PENDING VISITS',
-                '15',
-                Icons.person_pin_circle_outlined,
+                'PENDING SALE ORDERS',
+                '${controller.pendency.pendingSaleOrders}',
+                Icons.shopping_bag_outlined,
                 newOrangeColor,
                 newOrangeLightColor)),
         const SizedBox(width: 12),
         Expanded(
             child: _statCard(
-                'PAYMENT DUE',
-                '₹1.2L',
-                Icons.account_balance_wallet_outlined,
+                'PENDING PO',
+                '${controller.pendency.pendingPO}',
+                Icons.receipt_long_outlined,
                 newRedColor,
                 newRedLightColor)),
       ],

@@ -1,7 +1,9 @@
 class AppUrls {
   // static const baseUrl = "http://salewebservice.digitalerp.biz/api/";
   // static const baseUrl = "http://demoservice.digitalerp.biz/api/";
-  static const baseUrl = "http://supportapi.digitalerp.biz/api/";
+  // Local mobile API (Android emulator reaches host via 10.0.2.2).
+  // static const baseUrl = "http://supportapi.digitalerp.biz/api/";
+  static const baseUrl = "http://10.0.2.2:5080/api/";
 }
 
 class MethodName {

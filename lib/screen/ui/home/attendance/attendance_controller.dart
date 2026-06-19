@@ -195,7 +195,7 @@ import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
-import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/attendance_model.dart';
+import 'package:newdigitalerp/response/attendance_summary_response.dart';
 
 class AttendanceController extends AppBaseController {
   HomeController homeController = Get.find<HomeController>();
@@ -215,8 +215,28 @@ class AttendanceController extends AppBaseController {
 
   @override
   void onInit() {
-    _loadDummyData();
+    loadAttendanceSummary();
     super.onInit();
+  }
+
+  Future<void> loadAttendanceSummary() async {
+    setBusy(true);
+    try {
+      final u = homeController.currentUserData;
+      final body = <String, String>{
+        'compid': u?.compId?.toString() ?? '',
+        'branchid': u?.branchId?.toString() ?? '',
+        'userid': u?.userid?.toString() ?? '',
+      };
+      final res = await api.getAttendanceSummary(body);
+      attendanceSummaryData =
+          (res.status == 200) ? (res.data ?? <AttendanceSummaryData>[]) : <AttendanceSummaryData>[];
+    } catch (e) {
+      attendanceSummaryData = <AttendanceSummaryData>[];
+    } finally {
+      isBusy = false;
+      update();
+    }
   }
 
   void _loadDummyData() {
@@ -279,12 +299,37 @@ class AttendanceController extends AppBaseController {
   void tapOnSeeMore() => Get.toNamed(AppRoutes.attendanceList,
       arguments: homeController.currentUserData?.userid.toString());
 
-  void tapOnMarkAttendance() {
-    isAttendanceMarked = !isAttendanceMarked;
-    update();
+  Future<void> tapOnMarkAttendance() async {
+    setBusy(true);
+    try {
+      final u = homeController.currentUserData;
+      final body = <String, String>{
+        'compid': u?.compId?.toString() ?? '',
+        'branchid': u?.branchId?.toString() ?? '',
+        'userid': u?.userid?.toString() ?? '',
+        'yearid': u?.yearId?.toString() ?? '',
+        'latitude': '28.61',
+        'longitude': '77.20',
+        'location': 'Mobile App',
+        'attendancetype': isAttendanceMarked ? 'close' : 'mark',
+        'batterylevel': '100',
+        'photo': '',
+      };
+      final res = await api.markAttendance(body);
+      Get.snackbar('Attendance', res.message ?? '');
+      if (res.status == 200) {
+        isAttendanceMarked = !isAttendanceMarked;
+        await loadAttendanceSummary();
+      }
+    } catch (e) {
+      Get.snackbar('Attendance', '$e');
+    } finally {
+      isBusy = false;
+      update();
+    }
   }
 
   void getAttendanceDetails(bool isBusy) {
-    _loadDummyData();
+    loadAttendanceSummary();
   }
 }

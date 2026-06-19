@@ -145,8 +145,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app_routes/app_routes.dart';
+import 'package:newdigitalerp/services/api_service/api.dart';
+import 'package:newdigitalerp/utils/shared_pre.dart';
+import 'package:newdigitalerp/home/home_contoller.dart';
 
-// ── Dummy OTP for static testing ─────────────────────────────────────────────
+// ── First-cut test OTP (server validates the same value) ─────────────────────
 const int _dummyOtp = 123456;
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -157,14 +160,23 @@ class OtpController extends GetxController {
   bool enableResend = false;
   bool isBusy = false;
 
-  // Exposed so the OTP view can show it as a hint during static testing
+  // Exposed so the OTP view can show it as a hint during testing
   final int dummyOtpHint = _dummyOtp;
+
+  // Login id + password passed from the login screen (Get.arguments = [loginId, password]).
+  String _loginId = '';
+  String _password = '';
 
   Timer? _timer;
 
   @override
   void onInit() {
     super.onInit();
+    final args = Get.arguments;
+    if (args is List && args.length >= 2) {
+      _loginId = args[0]?.toString() ?? '';
+      _password = args[1]?.toString() ?? '';
+    }
     _startTimer();
   }
 
@@ -204,17 +216,33 @@ class OtpController extends GetxController {
     if (!_validate()) return;
 
     _setBusy(true);
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final body = <String, String>{
+        'mobileno': _loginId,
+        'password': _password,
+        'otp': otpController.text.trim(),
+      };
+      final res = await Api().otpVerify(body);
 
-    final entered = int.tryParse(otpController.text.trim()) ?? 0;
+      if (res.status == 200 && res.data != null) {
+        // Persist user and finalize login.
+        await SharedPre.setValue(SharedPre.userData, res.data!.toJson());
+        await SharedPre.setValue(SharedPre.isLogin, true);
 
-    if (entered == _dummyOtp) {
-      Get.offAllNamed(AppRoutes.home);
-    } else {
-      _showSnack('Wrong OTP', 'The OTP you entered is incorrect. Try $_dummyOtp');
+        final home = Get.isRegistered<HomeController>()
+            ? Get.find<HomeController>()
+            : Get.put(HomeController(), permanent: true);
+        await home.loadUserData();
+        Get.offAllNamed(AppRoutes.home);
+      } else {
+        _showSnack('Wrong OTP',
+            (res.message?.isNotEmpty ?? false) ? res.message! : 'Incorrect OTP. Try $_dummyOtp');
+      }
+    } catch (e) {
+      _showSnack('Failed', '$e');
+    } finally {
+      _setBusy(false);
     }
-
-    _setBusy(false);
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────

@@ -316,6 +316,7 @@ import 'package:get/get.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/dashboard_model.dart';
+import 'package:newdigitalerp/screen/ui/home/dashboard/pendency_response.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/executive_list_model.dart';
 import 'package:newdigitalerp/response/get_cart_list_response.dart';
 
@@ -330,6 +331,9 @@ class DashboardController extends AppBaseController {
   String? earnPoint = '0';
   String? usedPoint = '0';
   String? balance  = '0';
+
+  // Pendency dashboard counts (real, from API).
+  PendencyData pendency = PendencyData();
 
   List<DashboardDetailsData>? dashboardDetailsData = [];
   List<ExecutiveDropdownData>? dropdownList = [];
@@ -349,7 +353,23 @@ class DashboardController extends AppBaseController {
   @override
   void onInit() {
     _loadDummyData();
+    fetchPendency();
     super.onInit();
+  }
+
+  Future<void> fetchPendency() async {
+    try {
+      final body = <String, String>{
+        'compid': homeController.currentUserData?.compId.toString() ?? '',
+        'branchid': homeController.currentUserData?.branchId.toString() ?? '',
+        'userid': homeController.currentUserData?.userid.toString() ?? '',
+      };
+      final res = await api.getDashboardPendency(body);
+      if (res.status == 200 && res.data != null) {
+        pendency = res.data!;
+        update();
+      }
+    } catch (_) {/* keep zeros on failure */}
   }
 
   void _loadDummyData() {

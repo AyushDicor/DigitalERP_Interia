@@ -245,11 +245,15 @@ class ForgotPasswordView extends StatelessWidget {
                     children: [
                       const SizedBox(height: 52),
 
-                      //  Logo 
+                      //  Logo
                       Image.asset(
                         AppAssets.appLogo,
                         height: 44,
                         fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                            Icons.lock_reset_rounded,
+                            size: 44,
+                            color: newBlueColor),
                       ),
 
                       const SizedBox(height: 40),

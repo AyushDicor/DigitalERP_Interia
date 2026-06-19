@@ -37,7 +37,15 @@ class ExecutiveListController extends AppBaseController {
           homeController.currentUserData?.compId.toString() ?? '';
       var res = await api.getExecutiveDropdown(body);
       if (res.status == 200) {
-        executiveDropdownList?.addAll((res.data ?? []).cast<ExecutiveDropdownData>());
+        // api.getExecutiveDropdown returns the response/ ExecutiveDropdownData type,
+        // but this controller uses the executive_list_model one (same shape, different
+        // class) — map across to avoid a runtime "is not a subtype" cast error.
+        executiveDropdownList?.addAll((res.data ?? []).map(
+          (e) => ExecutiveDropdownData(
+            executiveId: e.executiveId,
+            executiveName: e.executiveName,
+          ),
+        ));
         // if (dropdownList?.length == 1) {
         //   setSelectDropdownValue(dropdownList?[0]);
         // }

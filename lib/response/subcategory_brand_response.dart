@@ -135,10 +135,11 @@ class ProductDataList {
       itemdescription: json["itemdescription"],
       itemimage: json["itemimage"],
       unit: json["unit"],
-      rate: json["rate"],
-      requiredpoint: json["requiredpoint"],
-      quantity: json["quantity"],
-      isInCart: json["isInCart"] == null ? false : json["quantity"],
+      // API may send whole numbers as int (0); coerce num -> double so parsing never throws.
+      rate: (json["rate"] as num?)?.toDouble(),
+      requiredpoint: (json["requiredpoint"] as num?)?.toDouble(),
+      quantity: (json["quantity"] as num?)?.toDouble(),
+      isInCart: json["isInCart"] == null ? false : json["isInCart"],
       unitid: json["unitid"],
       isTextField: json["isTextField"] ?? false);
 

@@ -242,6 +242,7 @@ import 'package:newdigitalerp/screen/auth/login/login_model.dart';
 import 'package:newdigitalerp/homeview_new_controller.dart';
 import 'package:newdigitalerp/response/bottom_tab_item.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:newdigitalerp/utils/shared_pre.dart';
 
 // ── Static dummy user — no API, no SharedPreferences needed ──────────────────
 UserData _dummyUser() => UserData.fromJson({
@@ -281,8 +282,12 @@ class HomeController extends AppBaseController {
 
   @override
   void onInit() async {
-    // ── Inject dummy user directly — no SharedPreferences, no API ────────────
-    currentUserData = _dummyUser();
+    // Load ONLY the real logged-in user saved at login. Never fall back to a
+    // dummy user — that previously surfaced "someone else's" id on a fast restart.
+    final saved = SharedPre.getObjs(SharedPre.userData);
+    currentUserData = (saved != null && saved.isNotEmpty)
+        ? UserData.fromJson(saved)
+        : null;
     isCustomer = currentUserData?.usertype == 'Customer'; // false → Manager
     name = currentUserData?.name;
     scaffoldKey = GlobalKey<ScaffoldState>();
@@ -309,6 +314,19 @@ class HomeController extends AppBaseController {
   void collectLocations() {}
   Future<void> saveLocationAPI() async {}
   Future<void> updateToken(String? token) async {}
-  Future<void> loadUserData() async {}
-  Future<void> refreshUserData() async {}
+  Future<void> loadUserData() async {
+    final saved = SharedPre.getObjs(SharedPre.userData);
+    if (saved != null && saved.isNotEmpty) {
+      currentUserData = UserData.fromJson(saved);
+      isCustomer = currentUserData?.usertype == 'Customer';
+      name = currentUserData?.name;
+      update();
+      // Reload the menu for the now-logged-in user.
+      if (Get.isRegistered<HomeViewNewController>()) {
+        Get.find<HomeViewNewController>().getNewMenuList(0);
+      }
+    }
+  }
+
+  Future<void> refreshUserData() async => loadUserData();
 }

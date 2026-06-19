@@ -207,7 +207,7 @@ class ProductListController extends AppBaseController {
 
         if (subCategoryList.length > 1) {
           isManager = true;
-        } else {
+        } else if (subCategoryList.isNotEmpty) {
           selectedBrand = subCategoryList.first;
         }
         update();

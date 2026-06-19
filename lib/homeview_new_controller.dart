@@ -240,7 +240,11 @@ import 'services/api_service/request_keys.dart';
 import 'utils/show_message.dart';
 
 class HomeViewNewController extends AppBaseController {
-  HomeController homeController = Get.find<HomeController>();
+  // Lazy getter (NOT a field initializer): HomeController.onInit creates this
+  // controller, so resolving HomeController at construction time caused a
+  // circular init → StackOverflow (hard crash in release builds). Deferring the
+  // lookup to first use breaks the cycle.
+  HomeController get homeController => Get.find<HomeController>();
   RxInt unApprovalCount = 0.obs;
   List< UpdateApprovalstatusResponse> value = [];
   List<MenuNewData> menuListData = [];
@@ -252,9 +256,9 @@ class HomeViewNewController extends AppBaseController {
   @override
   void onInit() {
     super.onInit();
-    //getUnApprovalCount();
-    //getNewMenuList(0);
-    _loadDummyMenuList();
+    // Load the real menu from the mobile API for the logged-in user.
+    getNewMenuList(0);
+    // _loadDummyMenuList();
   }
 
   void _loadDummyMenuList() {
@@ -333,7 +337,10 @@ class HomeViewNewController extends AppBaseController {
       isBusy = true;
       update();
 
-      await _waitForUserDataReady();
+      // Not logged in yet (this controller can init before login) → skip the
+      // menu fetch silently. No error toast on the login screen; the menu loads
+      // normally once real user data is available after login.
+      if (!await _waitForUserDataReady()) return;
 
       if (menuId == 0) {
         await Future.delayed(const Duration(milliseconds: 150));
@@ -397,18 +404,21 @@ class HomeViewNewController extends AppBaseController {
     }
   }
 
-  Future<void> _waitForUserDataReady() async {
-    for (int i = 0; i < 30; i++) {
+  /// Returns true once the logged-in user's compId/branchId/userId are set.
+  /// Returns false (no throw) if they never arrive — caller skips the fetch
+  /// quietly instead of showing an error toast before login.
+  Future<bool> _waitForUserDataReady() async {
+    for (int i = 0; i < 20; i++) {
       final u = homeController.currentUserData;
       if (u != null &&
           u.compId != null &&
           u.branchId != null &&
           u.userid != null) {
-        return;
+        return true;
       }
       await Future.delayed(const Duration(milliseconds: 100));
     }
-    throw StateError("User data not ready (compId/branchId/userId are null).");
+    return false;
   }
 
   Map<String, dynamic> imageList() {

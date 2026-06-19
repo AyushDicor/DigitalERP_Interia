@@ -1752,6 +1752,7 @@ class ApprovalHubController extends AppBaseController {
   ApprovalDetailHeader? get detailHeader => currentDetail?.header;
   List<ApprovalChainStep> get approvalChain => currentDetail?.approvalChain ?? [];
   List<RelatedDoc> get relatedDocs => currentDetail?.relatedDocs ?? [];
+  List<ApprovalItemData> get itemsList => currentDetail?.itemsList ?? [];
 
   // Action state
   ApprovalAction? pickedAction;
@@ -1787,8 +1788,65 @@ class ApprovalHubController extends AppBaseController {
     filterFrom = DateTime.now().subtract(const Duration(days: 30));
     filterTo   = DateTime.now();
     selectedCategory = '';
-    _loadDummyDashboard(); // TODO: replace with _loadDashboard() when API ready
-    _loadDummyForwardOptions(); // TODO: replace with _loadForwardOptions()
+    _loadDashboard(); // real API
+    _loadDummyForwardOptions(); // forward list still local for now
+  }
+
+  /// Real dashboard loader — fetches approvals from the API and builds categories.
+  Future<void> _loadDashboard() async {
+    setBusy(true);
+    try {
+      final u = homeController.currentUserData;
+      String fmt(DateTime d) =>
+          '${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year}';
+
+      final body = <String, dynamic>{
+        'userid': u?.userid?.toString() ?? '',
+        'compid': u?.compId?.toString() ?? '',
+        'branchid': u?.branchId?.toString() ?? '',
+        'documentname': '',
+        'status': filterStatus.isEmpty ? 'Pending' : filterStatus,
+        'fromdate': fmt(filterFrom),
+        'todate': fmt(filterTo),
+      };
+
+      final res = await api.getApprovalListData(body);
+      if (res.status == 200) {
+        allApprovals = res.data ?? [];
+      } else {
+        allApprovals = [];
+      }
+
+      // Build categories from approval types (same grouping as before).
+      final keys = allApprovals
+          .map((a) => a.approvalTypeCode ?? a.approvalType)
+          .whereType<String>()
+          .toSet()
+          .toList();
+      categories = [];
+      for (int i = 0; i < keys.length; i++) {
+        categories.add(_buildCat(keys[i], i));
+      }
+      for (final item in allApprovals) {
+        final cat = categories.firstWhereOrNull(
+            (c) => c.key == item.approvalTypeCode || c.key == item.approvalType);
+        if (cat != null) cat.count++;
+      }
+
+      statusList = [
+        StatusListData(statusid: 1, statusname: 'Approved'),
+        StatusListData(statusid: 2, statusname: 'Reject'),
+        StatusListData(statusid: 3, statusname: 'Hold'),
+      ];
+
+      _recalcStats();
+    } catch (e) {
+      allApprovals = [];
+      categories = [];
+    } finally {
+      setBusy(false);
+      update();
+    }
   }
 
   @override
@@ -1970,28 +2028,39 @@ class ApprovalHubController extends AppBaseController {
     if (currentItem == null) return;
 
     setBusy(true);
-    await Future.delayed(const Duration(milliseconds: 600)); // simulate network
+    try {
+      final res = await api.updateApprovalStatusApi(<String, dynamic>{
+        'approvalid': currentItem!.navigateId ?? currentItem!.documentId ?? 0,
+        'id': currentItem!.navigateId ?? currentItem!.documentId ?? 0,
+        'compid': homeController.currentUserData?.compId ?? 0,
+        'userid': homeController.currentUserData?.userid ?? 0,
+        'status': pickedAction!.label,        // Approved / Reject / Hold / ...
+        'remarks': remarkCtrl.text.trim(),
+      });
 
-    // Locally remove the item to reflect the action
-    actionSuccess = true;
-    _removeItem(currentItem!);
-
-    final actionName = pickedAction!.title;
-    final docNo = currentItem!.documentNo ?? '';
-
-    Get.snackbar(
-      '$actionName ✓',
-      'You have $actionName "$docNo" successfully. (Demo)',
-      backgroundColor: pickedAction!.bgColor,
-      colorText: pickedAction!.color,
-      icon: Text(pickedAction!.emoji, style: const TextStyle(fontSize: 22)),
-      duration: const Duration(seconds: 4),
-      snackPosition: SnackPosition.TOP,
-    );
-
-    setBusy(false);
-    update();
-    // TODO: when API is ready, replace the above with the real submitAction logic
+      if (res.status == 200) {
+        actionSuccess = true;
+        _removeItem(currentItem!);
+        final actionName = pickedAction!.title;
+        final docNo = currentItem!.documentNo ?? '';
+        Get.snackbar(
+          '$actionName ✓',
+          (res.message?.isNotEmpty ?? false) ? res.message! : 'You have $actionName "$docNo" successfully.',
+          backgroundColor: pickedAction!.bgColor,
+          colorText: pickedAction!.color,
+          icon: Text(pickedAction!.emoji, style: const TextStyle(fontSize: 22)),
+          duration: const Duration(seconds: 4),
+          snackPosition: SnackPosition.TOP,
+        );
+      } else {
+        ShowMessage.showSnackBar('Failed', res.message ?? 'Action failed');
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('Failed', '$e');
+    } finally {
+      setBusy(false);
+      update();
+    }
   }
 
   /// TODO: replace with real bulk API call
@@ -2023,20 +2092,20 @@ class ApprovalHubController extends AppBaseController {
     filterFrom = from;
     filterTo   = to;
     filterStatus = status;
-    _loadDummyDashboard(); // TODO: replace with refreshDashboard() when API ready
+    _loadDashboard(); // real API with new filters
   }
 
   void resetFilter() {
     filterFrom   = DateTime.now().subtract(const Duration(days: 30));
     filterTo     = DateTime.now();
     filterStatus = '';
-    _loadDummyDashboard(); // TODO: replace with refreshDashboard()
+    _loadDashboard(); // real API with default range
   }
 
   Future<void> refreshDashboard() async {
-    allApprovals.clear();
-    categories.clear();
-    _loadDummyDashboard(); // TODO: replace with real _loadDashboard()
+    // Keep the current view on screen while re-fetching so the dashboard
+    // doesn't flash/reset; _loadDashboard() rebuilds the lists in place.
+    await _loadDashboard(); // real API (was loading dummy data → screen changed)
   }
 
   // ─────────────────────────────────────────────
@@ -2045,12 +2114,27 @@ class ApprovalHubController extends AppBaseController {
 
   Future<void> openDetail(ApprovalListData item) async {
     _prepareDetail(item);
-    _loadDummyDetail(item); // TODO: replace with real openDetail logic
+    await loadDetailData();
   }
 
   Future<void> loadDetailData() async {
     if (currentItem == null) return;
-    _loadDummyDetail(currentItem!); // TODO: replace with real fetch
+    isLoadingDetail = true;
+    update();
+    try {
+      final res = await api.getApprovalDetails(<String, String>{
+        'approvalid': (currentItem!.navigateId ?? currentItem!.documentId ?? 0).toString(),
+        'compid': homeController.currentUserData?.compId.toString() ?? '',
+      });
+      if (res.status == 200 && res.data != null) {
+        currentDetail = res.data;
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('loadDetail', '$e');
+    } finally {
+      isLoadingDetail = false;
+      update();
+    }
   }
 
   void loadApprovalReimbursementItems(List<dynamic> apiItems) {

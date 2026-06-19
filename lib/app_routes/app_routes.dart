@@ -55,7 +55,12 @@ class AppRoutes {
   static const catalougeListView = '/catalouge-List-View';
   static const homeNew = '/home-view-new';
   static const approvalList = '/approval-list';
+  static const salesReport = '/sales-report';
+  static const reportsHub = '/reports-hub';
+  static const reportScreen = '/report-screen';
+  static const reportDetail = '/report-detail';
   static const taskManagement = '/task-management';
+  static const taskDetail = '/task-management/detail';
   static const createTask = '/createTask';
   static const documentDownload = '/document-download';
   static const orderFollowup = '/order-followup';

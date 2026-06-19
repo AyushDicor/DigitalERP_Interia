@@ -71,12 +71,13 @@ class GetCartListData {
       productid: json["productid"],
       productname: json["productname"],
       unit: json["unit"],
-      quantity: json["quantity"],
-      itemrate: json["itemrate"],
-      total: json["total"],
-      subtotal: json["subtotal"],
-      shippingamount: json["shippingamount"],
-      grandtotal: json["grandtotal"],
+      // Coerce num -> double so whole-number JSON (e.g. 2) doesn't throw on a double? field.
+      quantity: (json["quantity"] as num?)?.toDouble(),
+      itemrate: (json["itemrate"] as num?)?.toDouble(),
+      total: (json["total"] as num?)?.toDouble(),
+      subtotal: (json["subtotal"] as num?)?.toDouble(),
+      shippingamount: (json["shippingamount"] as num?)?.toDouble(),
+      grandtotal: (json["grandtotal"] as num?)?.toDouble(),
       isTextField: json["isTextField"] ?? false);
 
   Map<String, dynamic> toJson() => {

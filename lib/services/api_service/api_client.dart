@@ -14,7 +14,21 @@ class ApiClient extends GetConnect {
     return _apiClient;
   }
   ApiClient._internal();
-  static const baseAppUrl = 'http://erpcoreapi.digitalerp.biz/api';
+  // ── Mobile API endpoint ──────────────────────────────────────
+  // LOCAL DEV (emulator -> host:5080, API on ERPPlatform_Dev). TODO: revert to live before release.
+  static const baseAppUrl = 'http://10.0.2.2:5080/api/';
+  // Production (live on IIS): 'http://newcoreerp.digitalerp.biz/api/'
+  // Earlier: 'http://103.180.212.12:5080/api/'
+
+  // Shared API key — sent as "X-Api-Key" on every request. Must match the
+  // backend's Security:ApiKey in appsettings.json.
+  static const apiKey = 'nd3rp-M0b!le-2026-a7F3kQ9zR2xL8vN5pT4w';
+
+  /// Merge the API key into any per-call headers.
+  static Map<String, String> withApiKey([Map<String, String>? header]) {
+    return {if (header != null) ...header, 'X-Api-Key': apiKey};
+  }
+
   @override
   void onInit() {
     baseUrl = baseAppUrl;
@@ -66,7 +80,7 @@ class ApiClient extends GetConnect {
       // final response = await get('$baseAppUrl$method', headers: header);
       final response = await http.get(
         Uri.parse('$baseAppUrl$method'),
-        headers: header,
+        headers: withApiKey(header),
       );
       log(response.body);
       final json = jsonDecode(response.body);
@@ -111,7 +125,7 @@ class ApiClient extends GetConnect {
       final response = await http.post(
         Uri.parse('$baseAppUrl$method'),
         body: body,
-        headers: header,
+        headers: withApiKey(header),
       );
       log("RES -------------> ${response.statusCode}");
       log("RES --------B-----> ${response.body}");
@@ -169,7 +183,7 @@ class ApiClient extends GetConnect {
       final response = await http.post(
         Uri.parse('$baseAppUrl$method'),
         body: body,
-        headers: header,
+        headers: withApiKey(header),
       );
       AliceInterceptor.getAlice.onHttpResponse(response);
       final json = jsonDecode(response.body);
@@ -251,7 +265,7 @@ class ApiClient extends GetConnect {
       final response = await post(
         url,
         formData,
-        headers: headers,
+        headers: withApiKey(headers),
       );
       log(response.bodyString.toString());
       if (response.body['code'].toString() == '401') {
@@ -271,6 +285,7 @@ class ApiClient extends GetConnect {
   }
 
   Future<String> postMethodMultipart(http.MultipartRequest request) async {
+    request.headers['X-Api-Key'] = apiKey;
     log(request.fields.toString());
     if (request.files.isNotEmpty) {
       for (var element in request.files) {

@@ -5,6 +5,11 @@ import 'package:newdigitalerp/Menu_new_list_responce.dart';
 import 'package:newdigitalerp/catalouge/catalogue_list_response.dart';
 import 'package:newdigitalerp/change_company/Company_list_responce.dart';
 import 'package:newdigitalerp/change_company/branch_list_response.dart';
+import 'package:newdigitalerp/change_company/financial_year_response.dart';
+import 'package:newdigitalerp/screen/ui/home/dashboard/pendency_response.dart';
+import 'package:newdigitalerp/screen/ui/home/sales_report/order_report_response.dart';
+import 'package:newdigitalerp/screen/ui/home/sales_report/report_models.dart';
+import 'package:newdigitalerp/screen/ui/home/task_module/task_models.dart';
 import 'package:newdigitalerp/contactsview/Designation_dropdown_responce.dart';
 import 'package:newdigitalerp/contactsview/add_contacts_details_responce.dart';
 import 'package:newdigitalerp/contactsview/contacts_view_responce.dart';
@@ -21,7 +26,7 @@ import 'package:newdigitalerp/contactsview/contacts_view_responce.dart';
 import 'package:newdigitalerp/response/add_customer_to_visit_response.dart';
 import 'package:newdigitalerp/response/add_to_cart_response.dart';
 import 'package:newdigitalerp/response/all_visit_data_response.dart';
-import 'package:newdigitalerp/response/approvals_list_responce.dart';
+import 'package:newdigitalerp/screen/ui/home/approval_management/approval_model/approvals_list_responce.dart';
 import 'package:newdigitalerp/response/approved_or_rejected_leave_response.dart';
 import 'package:newdigitalerp/response/area_data_response.dart';
 import 'package:newdigitalerp/response/attendance_list_response.dart';
@@ -121,12 +126,16 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as dio;
 
 
+import '../../download_document_management/download_document-list_responce.dart';
+import '../../download_document_management/download_document_print_response.dart';
+import '../../download_document_management/download_document_type_.dart';
 import '../../orderfollowup/order_followup_details_response.dart';
 import '../../orderfollowup/order_followup_save_response.dart';
 import '../../orderfollowup/orderfollowup_list_response.dart';
 import '../../paymenfollow up/payment_followup_response/payment_followup_details_response.dart';
 import '../../paymenfollow up/payment_followup_response/payment_followup_list_response.dart';
 import '../../paymenfollow up/payment_followup_response/payment_followup_save_response.dart';
+import '../../performace_management/perfomace_list_response.dart';
 import '../../response/select_category_list_response.dart';
 import '../../response/subcategory_brand_response.dart';
 import '../../response/task_dropdown_response.dart';
@@ -141,6 +150,10 @@ import '../../screen/ui/home/task management/task models/Assign_task_responce.da
 import '../../screen/ui/home/task management/task models/Task_details_responce.dart';
 import '../../screen/ui/home/task management/task models/Task_list_responce.dart';
 import '../../screen/ui/home/task management/task models/Task_update_responce.dart';
+import '../../shipMangement/shipping_details_list_response.dart';
+import '../../shipMangement/shipping_status_response.dart';
+import '../../shipMangement/shipping_update_details_response.dart';
+import '../../shipMangement/update_shipping_value_response.dart';
 
 class Api {
   final ApiMethods _apiMethods = ApiMethods();
@@ -1209,6 +1222,248 @@ class Api {
       }
     } else {
       return BranchListResponse(status: 500, message: 'No Internet');
+    }
+  }
+
+  Future<ReportResponse> getReportGeneric(Map<String, String> body) async {
+    List<ConnectivityResult> connectivityResults =
+    await connectivity.checkConnectivity();
+    if (connectivityResults.contains(ConnectivityResult.wifi) ||
+        connectivityResults.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.genericReport, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return reportResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return ReportResponse(status: 500, message: e.toString());
+        }
+      }
+      return ReportResponse(status: 500, message: 'Something went wrong');
+    }
+    return ReportResponse(status: 500, message: 'No Internet');
+  }
+
+  Future<ReportDetailResponse> getReportDetailGeneric(Map<String, String> body) async {
+    List<ConnectivityResult> connectivityResults =
+    await connectivity.checkConnectivity();
+    if (connectivityResults.contains(ConnectivityResult.wifi) ||
+        connectivityResults.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.genericReportDetail, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return reportDetailResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return ReportDetailResponse(status: 500, message: e.toString());
+        }
+      }
+      return ReportDetailResponse(status: 500, message: 'Something went wrong');
+    }
+    return ReportDetailResponse(status: 500, message: 'No Internet');
+  }
+
+  Future<OrderReportResponse> getSalesOrderReport(Map<String, String> body) async {
+    List<ConnectivityResult> connectivityResults =
+    await connectivity.checkConnectivity();
+
+    if (connectivityResults.contains(ConnectivityResult.wifi) ||
+        connectivityResults.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.orderReport, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return orderReportResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) {
+            print(e);
+          }
+          return OrderReportResponse(status: 500, message: e.toString());
+        }
+      } else {
+        return OrderReportResponse(status: 500, message: 'Something went wrong');
+      }
+    } else {
+      return OrderReportResponse(status: 500, message: 'No Internet');
+    }
+  }
+
+  Future<PendencyResponse> getDashboardPendency(Map<String, String> body) async {
+    List<ConnectivityResult> connectivityResults =
+    await connectivity.checkConnectivity();
+
+    if (connectivityResults.contains(ConnectivityResult.wifi) ||
+        connectivityResults.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.dashboardPendency, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return pendencyResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) {
+            print(e);
+          }
+          return PendencyResponse(status: 500, message: e.toString());
+        }
+      } else {
+        return PendencyResponse(status: 500, message: 'Something went wrong');
+      }
+    } else {
+      return PendencyResponse(status: 500, message: 'No Internet');
+    }
+  }
+
+  // ─────────────────────────── Task module ───────────────────────────
+  Future<TaskListResp> getTaskList(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) || c.contains(ConnectivityResult.mobile)) {
+      String res =
+          await _apiClient.postMethod(method: _apiMethods.taskListV2, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return taskListRespFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return TaskListResp(
+              success: false, status: 500, message: e.toString(),
+              rows: [], summary: TaskSummary());
+        }
+      }
+      return TaskListResp(
+          success: false, status: 500, message: 'Something went wrong',
+          rows: [], summary: TaskSummary());
+    }
+    return TaskListResp(
+        success: false, status: 500, message: 'No Internet',
+        rows: [], summary: TaskSummary());
+  }
+
+  Future<TaskDetailResponse> getTaskDetailV2(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) || c.contains(ConnectivityResult.mobile)) {
+      String res =
+          await _apiClient.postMethod(method: _apiMethods.taskDetailV2, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return taskDetailResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return TaskDetailResponse(
+              success: false, status: 500, message: e.toString(),
+              task: null, followups: []);
+        }
+      }
+      return TaskDetailResponse(
+          success: false, status: 500, message: 'Something went wrong',
+          task: null, followups: []);
+    }
+    return TaskDetailResponse(
+        success: false, status: 500, message: 'No Internet',
+        task: null, followups: []);
+  }
+
+  Future<TaskDropdownResp> getTaskDropdownsV2(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) || c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.taskDropdownsV2, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return taskDropdownRespFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return TaskDropdownResp(
+              success: false, status: 500, message: e.toString(),
+              assignees: [], statuses: [], priorities: []);
+        }
+      }
+      return TaskDropdownResp(
+          success: false, status: 500, message: 'Something went wrong',
+          assignees: [], statuses: [], priorities: []);
+    }
+    return TaskDropdownResp(
+        success: false, status: 500, message: 'No Internet',
+        assignees: [], statuses: [], priorities: []);
+  }
+
+  Future<TaskActionResponse> createTaskV2(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) || c.contains(ConnectivityResult.mobile)) {
+      String res =
+          await _apiClient.postMethod(method: _apiMethods.taskCreateV2, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return taskActionResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return TaskActionResponse(success: false, status: 500, message: e.toString());
+        }
+      }
+      return TaskActionResponse(success: false, status: 500, message: 'Something went wrong');
+    }
+    return TaskActionResponse(success: false, status: 500, message: 'No Internet');
+  }
+
+  Future<TaskActionResponse> addTaskFollowupV2(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) || c.contains(ConnectivityResult.mobile)) {
+      String res =
+          await _apiClient.postMethod(method: _apiMethods.taskFollowupV2, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return taskActionResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return TaskActionResponse(success: false, status: 500, message: e.toString());
+        }
+      }
+      return TaskActionResponse(success: false, status: 500, message: 'Something went wrong');
+    }
+    return TaskActionResponse(success: false, status: 500, message: 'No Internet');
+  }
+
+  Future<TaskActionResponse> updateTaskStatusV2(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) || c.contains(ConnectivityResult.mobile)) {
+      String res =
+          await _apiClient.postMethod(method: _apiMethods.taskStatusV2, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return taskActionResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return TaskActionResponse(success: false, status: 500, message: e.toString());
+        }
+      }
+      return TaskActionResponse(success: false, status: 500, message: 'Something went wrong');
+    }
+    return TaskActionResponse(success: false, status: 500, message: 'No Internet');
+  }
+
+  Future<FinancialYearResponse> getFinancialYear(Map<String, String> body) async {
+    List<ConnectivityResult> connectivityResults =
+    await connectivity.checkConnectivity();
+
+    if (connectivityResults.contains(ConnectivityResult.wifi) ||
+        connectivityResults.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.financialYear, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return financialYearResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) {
+            print(e);
+          }
+          return FinancialYearResponse(status: 500, message: e.toString());
+        }
+      } else {
+        return FinancialYearResponse(status: 500, message: 'Something went wrong');
+      }
+    } else {
+      return FinancialYearResponse(status: 500, message: 'No Internet');
     }
   }
 

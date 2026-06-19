@@ -1,6 +1,6 @@
 class AppAssets {
   // static const String appLogo = 'assets/images/app_logo.png';
-  static const String appLogo               = 'assets/images/digitalerp_newlogo.png';
+  static const String appLogo               = 'assets/images/logo.png';
   static const String splashBg              = 'assets/images/splash_bg.png';
   static const String splashScreen          = 'assets/images/splash_screen.png';
   static const String setupBg               = 'assets/images/setup_bg.png';

@@ -61,6 +61,7 @@ class _ApprovalHubDetailState extends State<ApprovalHubDetail> {
                             emoji: emoji),
                         if (!ctrl.isLoadingDetail) ...[
                           // these only show after load
+                          _ItemsCard(ctrl: ctrl),
                           _DocPreview(ctrl: ctrl),
                           _ChainCard(ctrl: ctrl),
                           _RelatedCard(ctrl: ctrl),
@@ -652,6 +653,69 @@ class _DocBtn extends StatelessWidget {
                   fontSize: 11, fontWeight: FontWeight.w700, color: fg)),
         ),
       );
+}
+
+//  Document items
+class _ItemsCard extends StatelessWidget {
+  final ApprovalHubController ctrl;
+  const _ItemsCard({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = ctrl.itemsList;
+    if (items.isEmpty) return const SizedBox.shrink();
+    return _Card(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _SecHead('Items (${items.length})'),
+        ...List.generate(items.length, (i) {
+          final it = items[i];
+          final name = it.description.isNotEmpty ? it.description : it.expenseLedger;
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFEEF0F4))),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 22,
+                  child: Text('${it.sno}',
+                      style: const TextStyle(
+                          color: newTextSecondary, fontSize: 12)),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name,
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: newTextPrimary)),
+                      if (it.quantity > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                              'Qty: ${it.quantity.toStringAsFixed(it.quantity % 1 == 0 ? 0 : 2)}',
+                              style: const TextStyle(
+                                  fontSize: 11, color: newTextSecondary)),
+                        ),
+                    ],
+                  ),
+                ),
+                Text('₹${it.amount.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: newBlueColor)),
+              ],
+            ),
+          );
+        }),
+      ]),
+    );
+  }
 }
 
 //  Approval chain

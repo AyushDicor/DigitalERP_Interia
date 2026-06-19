@@ -50,6 +50,8 @@ class ResetPasswordView extends StatelessWidget {
           child: Image.asset(
             AppAssets.appLogo,
             // fit: BoxFit.fill,
+            errorBuilder: (_, __, ___) =>
+                const Icon(Icons.lock_reset_rounded, size: 64),
           ),
         ),
       ),

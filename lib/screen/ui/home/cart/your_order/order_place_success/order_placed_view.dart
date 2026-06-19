@@ -45,6 +45,10 @@ class _OrderPlacedViewState extends State<OrderPlacedView> {
                         AppAssets.appLogo,
                         height: Get.height * .12,
                         fit: BoxFit.fill,
+                        errorBuilder: (_, __, ___) => Icon(
+                            Icons.check_circle_outline,
+                            size: Get.height * .12,
+                            color: Colors.white),
                       ),
                       SizedBox(height: Get.height * .04),
                       Image.asset(
