@@ -1,3 +1,6 @@
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/bindings_interface.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
 import 'package:get/get_navigation/src/routes/transitions_type.dart';
 import 'package:newdigitalerp/change_company/change_company_view.dart';
@@ -56,6 +59,9 @@ import '../screen/ui/home/cart/your_order/select_company/select_company_view.dar
 import '../screen/ui/home/cart/your_order/your_order_view.dart';
 import '../screen/ui/home/customer_list/customer_list_view.dart';
 import '../screen/ui/home/grn/grn_screens/grn_list_screen.dart';
+import '../screen/ui/home/indent/indent_controller/indent_list_controller.dart';
+import '../screen/ui/home/indent/indent_screens/indent_list_screen.dart';
+import '../screen/ui/home/issue item/issue_item_screens/issue_item_list_screen.dart';
 import '../screen/ui/home/mis_module/attendance_report/attendance_report_view.dart';
 import '../screen/ui/home/mis_module/mis_module_view.dart';
 import '../screen/ui/home/mis_module/mis_order/mis_order_view.dart';
@@ -64,6 +70,8 @@ import '../screen/ui/home/mis_module/pending_shipping/pending_shipping_view.dart
 import '../screen/ui/home/mis_module/print_report/print_report_view.dart';
 import '../screen/ui/home/mis_module/stock_report/stock_report_view.dart';
 import '../screen/ui/home/mrn_module/mrn_screens/mrn_list_screen.dart';
+import '../screen/ui/home/mrn_qc/mrn_qc_list/mrn_qc_list_screen.dart';
+import '../screen/ui/home/mrn_qc/mrn_qc_screens/mrn_qc_screen.dart';
 import '../screen/ui/home/order/order_detail/order_detail_view.dart';
 import '../screen/ui/home/order/order_list/order_list_view.dart';
 import '../screen/ui/home/order/select_brand/select_brand_view.dart';
@@ -435,6 +443,25 @@ class AppPages {
     GetPage(
       name: AppRoutes.grnScreen,
       page: () => GrnListScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.mrnQcList,
+      page: () => MrnQcListScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.mrnQcScreen,
+      page: () => MrnQcScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.indentList,
+      page: () => const IndentListScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => IndentListController());
+      }),
+    ),
+    GetPage(
+      name: AppRoutes.issueItemList,
+      page: () => IssueItemListScreen(),
     ),
     GetPage(
       name: AppRoutes.paymentRequestScreen,

@@ -66,9 +66,10 @@ class ProductDetailsData {
     itemDescription: json["itemdescription"],
     itemImage: json["itemimage"],
     unit: json["unit"],
-    rate: json["rate"],
-    requiredPoint: json["requiredpoint"],
-    quantity: json["quantity"],
+    // Coerce num -> double so whole-number JSON (e.g. 0/1) doesn't throw on a double? field.
+    rate: (json["rate"] as num?)?.toDouble(),
+    requiredPoint: (json["requiredpoint"] as num?)?.toDouble(),
+    quantity: (json["quantity"] as num?)?.toDouble(),
   );
 
   Map<String, dynamic> toJson() => {

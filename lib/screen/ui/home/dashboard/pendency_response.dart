@@ -25,6 +25,7 @@ class PendencyData {
   int pendingSaleOrders;
   int pendingPO;
   int pendingMRN;
+  int pendingIndent;
   int pendingTasks;
   int customers;
 
@@ -33,6 +34,7 @@ class PendencyData {
     this.pendingSaleOrders = 0,
     this.pendingPO = 0,
     this.pendingMRN = 0,
+    this.pendingIndent = 0,
     this.pendingTasks = 0,
     this.customers = 0,
   });
@@ -42,6 +44,7 @@ class PendencyData {
         pendingSaleOrders: (json['pendingSaleOrders'] as num?)?.toInt() ?? 0,
         pendingPO: (json['pendingPO'] as num?)?.toInt() ?? 0,
         pendingMRN: (json['pendingMRN'] as num?)?.toInt() ?? 0,
+        pendingIndent: (json['pendingIndent'] as num?)?.toInt() ?? 0,
         pendingTasks: (json['pendingTasks'] as num?)?.toInt() ?? 0,
         customers: (json['customers'] as num?)?.toInt() ?? 0,
       );

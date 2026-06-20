@@ -117,8 +117,10 @@ const String dummyTextMed =
 const String dummyTextLong =
     'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled';
 
+// Fallback image when an item/product has no image. The old statinfer URL was dead (404)
+// and spammed the logs on screens with many images; use a reliable placeholder service.
 const String dummyImageUrlTxt =
-    'https://statinfer.com/wp-content/uploads/dummy-user.png';
+    'https://via.placeholder.com/150';
 const String dummyImage2UrlTxt =
     'https://source.unsplash.com/user/c_v_r/1600x900';
 const String dummyImage3UrlTxt = 'https://picsum.photos/300/150';

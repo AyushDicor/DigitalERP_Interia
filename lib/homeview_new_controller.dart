@@ -3,7 +3,7 @@
 //
 // import 'package:newdigitalerp/Menu_new_list_responce.dart';
 // import 'package:newdigitalerp/app_routes/app_routes.dart';
-// 
+//
 // import 'package:newdigitalerp/utils/app_assets.dart';
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
@@ -227,7 +227,6 @@
 //   }
 // }
 
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/Menu_new_list_responce.dart';
@@ -246,10 +245,9 @@ class HomeViewNewController extends AppBaseController {
   // lookup to first use breaks the cycle.
   HomeController get homeController => Get.find<HomeController>();
   RxInt unApprovalCount = 0.obs;
-  List< UpdateApprovalstatusResponse> value = [];
+  List<UpdateApprovalstatusResponse> value = [];
   List<MenuNewData> menuListData = [];
-  bool get hasApprovalAccess =>
-      menuListData.any((m) => m.menuid == 2384);
+  bool get hasApprovalAccess => menuListData.any((m) => m.menuid == 2384);
 
   bool isOpeningExternalFile = false;
 
@@ -264,9 +262,9 @@ class HomeViewNewController extends AppBaseController {
   void _loadDummyMenuList() {
     menuListData = [
       MenuNewData()
-        ..menuid   = 2384
+        ..menuid = 2384
         ..menuname = 'Approval'
-        ..child    = 0,
+        ..child = 0,
       // MenuNewData()
       //   ..menuid   = 2385
       //   ..menuname = 'Task Management'
@@ -312,8 +310,8 @@ class HomeViewNewController extends AppBaseController {
       final body = {
         RequestKeys.compId: homeController.currentUserData!.compId.toString(),
         RequestKeys.userId: homeController.currentUserData!.userid.toString(),
-        RequestKeys.branchId:
-            homeController.currentUserData!.branchId.toString(),
+        RequestKeys.branchId: homeController.currentUserData!.branchId
+            .toString(),
       };
       final res = await api.getUnApprovalCount(body);
       if (res.status == 200) {
@@ -348,7 +346,8 @@ class HomeViewNewController extends AppBaseController {
 
       final body = <String, String>{
         RequestKeys.compId: homeController.currentUserData!.compId.toString(),
-        RequestKeys.branchId: homeController.currentUserData!.branchId.toString(),
+        RequestKeys.branchId: homeController.currentUserData!.branchId
+            .toString(),
         RequestKeys.userId: homeController.currentUserData!.userid.toString(),
         RequestKeys.menuId: menuId.toString(),
       };
@@ -364,32 +363,60 @@ class HomeViewNewController extends AppBaseController {
       } else if (rawData is List<MenuNewData>) {
         // Already correctly typed
         menuListData = rawData;
-        debugPrint("[OK] already-parsed MenuNewData, items=${menuListData.length}");
+        debugPrint(
+          "[OK] already-parsed MenuNewData, items=${menuListData.length}",
+        );
       } else if (rawData is List) {
         // Safely map each item — skip anything that isn't a Map
-        menuListData = rawData.whereType<Map<String, dynamic>>().map((e) {
-          try {
-            return MenuNewData.fromJson(e);
-          } catch (parseErr) {
-            debugPrint("[SKIP] Failed to parse menu item: $parseErr");
-            return null;
-          }
-        }).whereType<MenuNewData>().toList();
+        menuListData = rawData
+            .whereType<Map<String, dynamic>>()
+            .map((e) {
+              try {
+                return MenuNewData.fromJson(e);
+              } catch (parseErr) {
+                debugPrint("[SKIP] Failed to parse menu item: $parseErr");
+                return null;
+              }
+            })
+            .whereType<MenuNewData>()
+            .toList();
         debugPrint("[OK] json-parsed, items=${menuListData.length}");
       } else {
         menuListData = [];
         debugPrint("[ERR] Unexpected res.data type: ${rawData.runtimeType}");
       }
 
+      // Ensure new mobile modules are visible even when the logged-in user's menu
+      // permissions don't include them. These menuIds already route correctly
+      // (2701 → reimbursement, 2586 → paymentRequestListScreen). Added so the new
+      // modules can be reached without changing prod/master menu-permission tables.
+      void ensureMenu(int id, String name) {
+        if (menuListData.isNotEmpty &&
+            !menuListData.any((m) => m.menuid == id)) {
+          menuListData.add(
+            MenuNewData()
+              ..menuid = id
+              ..menuname = name
+              ..child = 0,
+          );
+        }
+      }
+
+      ensureMenu(2701, 'Reimbursement');
+      ensureMenu(2586, 'Payment Request');
+      ensureMenu(2754, 'MRN');
+
       if (menuListData.isEmpty) {
         debugPrint("Empty menu list — logging out with message");
         await logout(); // clears session
         Get.offAllNamed(
           AppRoutes.login,
-          arguments: {'error': 'Menu not configured for your account. Please contact your administrator.'},
+          arguments: {
+            'error':
+                'Menu not configured for your account. Please contact your administrator.',
+          },
         );
       }
-
     } catch (e, st) {
       debugPrint("getNewMenuList error: $e\n$st");
       ShowMessage.showSnackBar('getMenuList catch', '$e');
@@ -423,28 +450,28 @@ class HomeViewNewController extends AppBaseController {
 
   Map<String, dynamic> imageList() {
     return {
-      'Executive'            : 'assets/iconsnew/Executive2.png',
-      'Order Module'         : AppAssets.ordernewIcon,
-      'Visit'                : AppAssets.visitnewIcon,
-      'Payment Request'      : AppAssets.expensenewIcon,
-      'Party List'           : AppAssets.partylistnewIcon,
-      'Image'                : AppAssets.imagenewIcon,
-      'Accounts'             : AppAssets.accountNewIcon,
-      'MIS'                  : AppAssets.misnewIcon,
-      'Approval'             : AppAssets.approvalnewIcon,
-      'Task Management'      : AppAssets.taskManagementnewIcon,
-      'Document Management'  : AppAssets.documentnewIcon,
-      'Follow Up'            : AppAssets.orderfollowpnewIcon,
-      'Lead Management'      : AppAssets.leadManagementNewIcon,
-      'Category Catalouge'   : 'assets/iconsnew/Category Catalogue.png',
-      'Complaints'           : AppAssets.complaintsIcon,
-      'Reimbursement'        : 'assets/iconsnew/Reimbursements.png',
-      'Performance'          : AppAssets.performancenewIcon,
-      'Attendance'           : AppAssets.attendencenewIcon,
-      'MRN'                  : AppAssets.mrnIcon,
-      'GRN Entry'            : AppAssets.grnIcon,
-      'Mrn QC'               : AppAssets.mrnQcIcon,
-      'Material Received'    : AppAssets.mrnrIcon,
+      'Executive': 'assets/iconsnew/Executive2.png',
+      'Order Module': AppAssets.ordernewIcon,
+      'Visit': AppAssets.visitnewIcon,
+      'Payment Request': AppAssets.expensenewIcon,
+      'Party List': AppAssets.partylistnewIcon,
+      'Image': AppAssets.imagenewIcon,
+      'Accounts': AppAssets.accountNewIcon,
+      'MIS': AppAssets.misnewIcon,
+      'Approval': AppAssets.approvalnewIcon,
+      'Task Management': AppAssets.taskManagementnewIcon,
+      'Document Management': AppAssets.documentnewIcon,
+      'Follow Up': AppAssets.orderfollowpnewIcon,
+      'Lead Management': AppAssets.leadManagementNewIcon,
+      'Category Catalouge': 'assets/iconsnew/Category Catalogue.png',
+      'Complaints': AppAssets.complaintsIcon,
+      'Reimbursement': 'assets/iconsnew/Reimbursements.png',
+      'Performance': AppAssets.performancenewIcon,
+      'Attendance': AppAssets.attendencenewIcon,
+      'MRN': AppAssets.mrnIcon,
+      'GRN Entry': AppAssets.grnIcon,
+      'Mrn QC': AppAssets.mrnQcIcon,
+      'Material Received': AppAssets.mrnrIcon,
     };
   }
 
@@ -467,7 +494,7 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2701) return AppRoutes.reimbursement;
     if (menuId == 2754) return AppRoutes.mrnScreen;
     if (menuId == 2760) return AppRoutes.grnScreen;
-    //if (menuId == 2761) return AppRoutes.mrnQcList;
+    // if (menuId == 2761) return AppRoutes.mrnQcList;
     if (menuId == 2755) return AppRoutes.materialReceiptScreen;
     return AppRoutes.homeNew;
   }

@@ -315,7 +315,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
-import 'package:newdigitalerp/screen/ui/home/dashboard/dashboard_model.dart';
+import 'package:newdigitalerp/response/dashboard_details_response.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/pendency_response.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/executive_list_model.dart';
 import 'package:newdigitalerp/response/get_cart_list_response.dart';
@@ -354,6 +354,7 @@ class DashboardController extends AppBaseController {
   void onInit() {
     _loadDummyData();
     fetchPendency();
+    fetchActivity();
     super.onInit();
   }
 
@@ -370,6 +371,22 @@ class DashboardController extends AppBaseController {
         update();
       }
     } catch (_) {/* keep zeros on failure */}
+  }
+
+  // Recent-activity feed for the Action Center (Activitylogmaster via dashboardDetailsnew).
+  Future<void> fetchActivity() async {
+    try {
+      final body = <String, String>{
+        'userid': homeController.currentUserData?.userid.toString() ?? '',
+        'compid': homeController.currentUserData?.compId.toString() ?? '',
+        'branchid': homeController.currentUserData?.branchId.toString() ?? '',
+      };
+      final res = await api.getDashboardDetails(body);
+      if (res.status == 200 && res.data != null) {
+        dashboardDetailsData = res.data;
+        update();
+      }
+    } catch (_) {/* keep empty on failure */}
   }
 
   void _loadDummyData() {

@@ -22,6 +22,10 @@ class ReportsHubView extends StatelessWidget {
         Icons.inventory_2_outlined, Color(0xFF16A34A), 'mrn'),
     _Report('Indent Report', 'Indent-wise list with date filter',
         Icons.assignment_outlined, Color(0xFFF59E0B), 'indent'),
+    // Attendance Report opens its own dedicated screen (not the generic ReportScreen).
+    _Report('Attendance Report', 'Employee working/present/absent by month',
+        Icons.people_alt_outlined, Color(0xFF8B5CF6), 'attendance',
+        route: AppRoutes.misAttendanceReport),
   ];
 
   @override
@@ -43,8 +47,10 @@ class ReportsHubView extends StatelessWidget {
           final r = _reports[i];
           return InkWell(
             borderRadius: BorderRadius.circular(14),
-            onTap: () => Get.toNamed(AppRoutes.reportScreen,
-                arguments: {'type': r.type, 'title': r.title}),
+            onTap: () => r.route != null
+                ? Get.toNamed(r.route!)
+                : Get.toNamed(AppRoutes.reportScreen,
+                    arguments: {'type': r.type, 'title': r.title}),
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -96,5 +102,7 @@ class _Report {
   final IconData icon;
   final Color color;
   final String type; // report type -> generic ReportScreen
-  const _Report(this.title, this.subtitle, this.icon, this.color, this.type);
+  final String? route; // if set, open this dedicated route instead of ReportScreen
+  const _Report(this.title, this.subtitle, this.icon, this.color, this.type,
+      {this.route});
 }

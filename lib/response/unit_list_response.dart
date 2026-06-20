@@ -50,7 +50,8 @@ class UnitListData {
   factory UnitListData.fromJson(Map<String, dynamic> json) => UnitListData(
         unitid: json["unitid"],
         unitname: json["unitname"],
-        rate: json["rate"],
+        // Coerce num -> double so whole-number JSON doesn't throw on a double? field.
+        rate: (json["rate"] as num?)?.toDouble(),
       );
 
   Map<String, dynamic> toJson() => {

@@ -145,6 +145,8 @@ class ReimbursementRepo {
       log('UploadReimbursementFile → $filePath');
 
       final request = http.MultipartRequest('POST', Uri.parse(url));
+      // Multipart bypasses requestHeader(); send the API key explicitly.
+      request.headers['X-Api-Key'] = 'nd3rp-M0b!le-2026-a7F3kQ9zR2xL8vN5pT4w';
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
 
       final streamed = await request.send();

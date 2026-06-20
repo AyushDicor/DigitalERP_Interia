@@ -1,15 +1,15 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
-import 'package:newdigitalerp/homeview_new_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_controller.dart';
+import 'package:newdigitalerp/response/dashboard_details_response.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/dashboard_controller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/app_profile_image.dart';
 
-
-
+/// Action Center dashboard: tappable pending-action tiles + a recent-activity
+/// feed (both backed by /api/dashboardnew/* ), plus the attendance summary.
 class DashboardView extends StatelessWidget {
   const DashboardView({Key? key}) : super(key: key);
 
@@ -25,32 +25,38 @@ class DashboardView extends StatelessWidget {
             children: [
               _dashAppBar(controller, context),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _profileCard(controller),
-                      const SizedBox(height: 20),
-                      _statsRow(controller),
-                      const SizedBox(height: 24),
-                      _sectionTitle('Revenue'),
-                      const SizedBox(height: 12),
-                      _revenueChart(controller),
-                      const SizedBox(height: 24),
-                      _sectionTitle('Users Visits'),
-                      const SizedBox(height: 12),
-                      _visitsChart(controller),
-                      const SizedBox(height: 24),
-                      _sectionTitle('Attendance'),
-                      const SizedBox(height: 12),
-                      _attendanceTable(
-                        Get.isRegistered<AttendanceController>()
-                            ? Get.find<AttendanceController>()
-                            : Get.put(AttendanceController()),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                child: RefreshIndicator(
+                  color: newBlueColor,
+                  onRefresh: () async {
+                    controller.fetchPendency();
+                    controller.fetchActivity();
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _profileCard(controller),
+                        const SizedBox(height: 22),
+                        _sectionTitle('Action Center'),
+                        const SizedBox(height: 12),
+                        _actionGrid(controller),
+                        const SizedBox(height: 24),
+                        _sectionTitle('Recent Activity'),
+                        const SizedBox(height: 12),
+                        _activityFeed(controller),
+                        const SizedBox(height: 24),
+                        _sectionTitle('Attendance'),
+                        const SizedBox(height: 12),
+                        _attendanceTable(
+                          Get.isRegistered<AttendanceController>()
+                              ? Get.find<AttendanceController>()
+                              : Get.put(AttendanceController()),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -61,12 +67,8 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  //  App bar
+  // ── App bar ──────────────────────────────────────────────────────────────
   Widget _dashAppBar(DashboardController controller, BuildContext context) {
-    final hasApproval = Get.isRegistered<HomeViewNewController>()
-        ? Get.find<HomeViewNewController>().menuListData.any((m) => m.menuid == 2384)
-        : false;
-
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
@@ -88,32 +90,12 @@ class DashboardView extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: newTextPrimary)),
           ),
-          // if (hasApproval)
-          //   GestureDetector(
-          //     onTap: () => Get.to(() => const ApprovalHubDashboard()),
-          //     child: Padding(
-          //       padding: const EdgeInsets.only(right: 16),
-          //       child: Container(
-          //         width: 38,
-          //         height: 38,
-          //         decoration: BoxDecoration(
-          //           color: newBlueLightColor,
-          //           borderRadius: BorderRadius.circular(10),
-          //         ),
-          //         child: const Icon(
-          //           Icons.approval_outlined,
-          //           size: 20,
-          //           color: newBlueColor,
-          //         ),
-          //       ),
-          //     ),
-          //   ),
         ],
       ),
     );
   }
 
-  //  Profile card
+  // ── Profile card ─────────────────────────────────────────────────────────
   Widget _profileCard(DashboardController controller) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -158,638 +140,218 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  //  Stats row
-  Widget _statsRow(DashboardController controller) {
-    return Row(
-      children: [
-        Expanded(
-            child: _statCard('PENDING APPROVALS', '${controller.pendency.pendingApprovals}',
-                Icons.fact_check_outlined, newBlueColor, newBlueLightColor)),
-        const SizedBox(width: 12),
-        Expanded(
-            child: _statCard(
-                'PENDING SALE ORDERS',
-                '${controller.pendency.pendingSaleOrders}',
-                Icons.shopping_bag_outlined,
-                newOrangeColor,
-                newOrangeLightColor)),
-        const SizedBox(width: 12),
-        Expanded(
-            child: _statCard(
-                'PENDING PO',
-                '${controller.pendency.pendingPO}',
-                Icons.receipt_long_outlined,
-                newRedColor,
-                newRedLightColor)),
-      ],
-    );
-  }
-
-  Widget _statCard(
-      String label,
-      String value,
-      IconData icon,
-      Color color,
-      Color bgColor, {
-        String? badge,
-      }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                    color: bgColor, borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, size: 18, color: color),
-              ),
-              if (badge != null) ...[
-                const Spacer(),
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                      color: newGreenLightColor,
-                      borderRadius: BorderRadius.circular(6)),
-                  child: Text(badge,
-                      style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: newGreenColor)),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: newTextPrimary)),
-          const SizedBox(height: 2),
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  color: newTextSecondary),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
-        ],
-      ),
-    );
-  }
-
-  //  Section title
   Widget _sectionTitle(String title) => Text(title,
       style: const TextStyle(
           fontSize: 16, fontWeight: FontWeight.w800, color: newTextPrimary));
 
-  //  Period tab pill
-  Widget _periodTab(String label, bool isActive) {
-    return Container(
-      margin: const EdgeInsets.only(left: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isActive ? newBlueColor : Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: isActive ? Colors.white : newTextSecondary)),
-    );
-  }
-
-  //  Revenue line chart
-  Widget _revenueChart(DashboardController controller) {
-    final spots = [
-      const FlSpot(0, 20),
-      const FlSpot(1, 30),
-      const FlSpot(2, 35),
-      const FlSpot(3, 28),
-      const FlSpot(4, 50),
-      const FlSpot(5, 18),
-      const FlSpot(6, 25),
+  // ── Action tile grid ─────────────────────────────────────────────────────
+  Widget _actionGrid(DashboardController controller) {
+    final p = controller.pendency;
+    final tiles = <_ActionTile>[
+      _ActionTile('Approvals', p.pendingApprovals, Icons.fact_check_outlined,
+          const Color(0xFF4361EE), AppRoutes.approvalList),
+      _ActionTile('Sale Orders', p.pendingSaleOrders,
+          Icons.shopping_bag_outlined, const Color(0xFFF59E0B),
+          AppRoutes.orderView),
+      _ActionTile('Purchase Orders', p.pendingPO, Icons.receipt_long_outlined,
+          const Color(0xFFEF4444), null),
+      _ActionTile('MRN', p.pendingMRN, Icons.inventory_2_outlined,
+          const Color(0xFF16A34A), AppRoutes.mrnScreen),
+      _ActionTile('Indent', p.pendingIndent, Icons.assignment_outlined,
+          const Color(0xFF8B5CF6), AppRoutes.indentScreen),
+      _ActionTile('Tasks', p.pendingTasks, Icons.task_alt_outlined,
+          const Color(0xFF0EA5E9), AppRoutes.taskManagement),
     ];
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Amount (left) | Tabs (right)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Text('₹11,642',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: newTextPrimary)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: newSurfaceColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: newBorderColor),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: ['D', 'W', 'M', 'Y']
-                      .map((t) => _periodTab(t, t == 'W'))
-                      .toList(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          // Row 2: Badge + subtitle (own line, no competition for space)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                    color: newGreenLightColor,
-                    borderRadius: BorderRadius.circular(6)),
-                child: const Text('+4%',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: newGreenColor)),
-              ),
-              const SizedBox(width: 6),
-              const Text('from last period',
-                  style: TextStyle(fontSize: 11, color: newTextSecondary)),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          SizedBox(
-            height: 140,
-            child: LineChart(
-              LineChartData(
-                minY: 0,
-                maxY: 100,
-                gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (_) => FlLine(
-                        color: newBorderColor.withValues(alpha: 0.5),
-                        strokeWidth: 1)),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                          showTitles: true,
-                          interval: 50,
-                          getTitlesWidget: (v, _) => Text('₹${v.toInt()}k',
-                              style: const TextStyle(
-                                  fontSize: 9, color: newTextSecondary)),
-                          reservedSize: 36)),
-                  bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (v, _) {
-                            final i = v.toInt();
-                            if (i >= 0 && i < days.length) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(days[i],
-                                    style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: i == 4
-                                            ? FontWeight.w700
-                                            : FontWeight.normal,
-                                        color: i == 4
-                                            ? newBlueColor
-                                            : newTextSecondary)),
-                              );
-                            }
-                            return const SizedBox();
-                          },
-                          reservedSize: 22)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                ),
-                lineTouchData: LineTouchData(
-                  enabled: true,
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => const Color(0xFF0A1628),
-                    tooltipPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    getTooltipItems: (spots) => spots
-                        .map((s) => LineTooltipItem(
-                      '₹${s.y.toInt()}k',
-                      const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ))
-                        .toList(),
-                  ),
-                  getTouchedSpotIndicator: (_, indices) => indices
-                      .map((_) => TouchedSpotIndicatorData(
-                    FlLine(
-                      color: newBlueColor.withValues(alpha: 0.4),
-                      strokeWidth: 1.5,
-                      dashArray: [4, 4],
-                    ),
-                    FlDotData(
-                      show: true,
-                      getDotPainter: (_, __, ___, ____) =>
-                          FlDotCirclePainter(
-                            radius: 6,
-                            color: Colors.white,
-                            strokeColor: newBlueColor,
-                            strokeWidth: 2.5,
-                          ),
-                    ),
-                  ))
-                      .toList(),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    color: newBlueColor,
-                    barWidth: 2.5,
-                    dotData: FlDotData(
-                        show: true,
-                        checkToShowDot: (spot, _) => spot.x == 4,
-                        getDotPainter: (_, __, ___, ____) => FlDotCirclePainter(
-                            radius: 5,
-                            color: Colors.white,
-                            strokeColor: newBlueColor,
-                            strokeWidth: 2)),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                          colors: [
-                            newBlueColor.withValues(alpha: 0.15),
-                            newBlueColor.withValues(alpha: 0.0),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 1.42,
+      children: tiles.map(_actionCard).toList(),
     );
   }
 
-  //  Visits bar chart
-  Widget _visitsChart(DashboardController controller) {
-    final vals = [1000.0, 3000, 10000, 1000, 10000, 700, 1500];
-    final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: total visits value (left) | Tabs pill (right)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Text('10,700',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: newTextPrimary)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: newSurfaceColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: newBorderColor),
+  Widget _actionCard(_ActionTile t) {
+    return GestureDetector(
+      onTap: t.route == null ? null : () => Get.toNamed(t.route!),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                      color: t.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10)),
+                  child: Icon(t.icon, size: 20, color: t.color),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: ['D', 'W', 'M', 'Y']
-                      .map((t) => _periodTab(t, t == 'W'))
-                      .toList(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          // Row 2: badge + subtitle
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                    color: newGreenLightColor,
-                    borderRadius: BorderRadius.circular(6)),
-                child: const Text('+3.4%',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: newGreenColor)),
-              ),
-              const SizedBox(width: 6),
-              const Text('from last period',
-                  style: TextStyle(fontSize: 11, color: newTextSecondary)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 140,
-            child: BarChart(
-              BarChartData(
-                maxY: 12000,
-                minY: 0,
-                gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (_) => FlLine(
-                        color: newBorderColor.withValues(alpha: 0.5),
-                        strokeWidth: 1)),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                          showTitles: true,
-                          interval: 4000,
-                          getTitlesWidget: (v, _) => Text(v.toInt().toString(),
-                              style: const TextStyle(
-                                  fontSize: 9, color: newTextSecondary)),
-                          reservedSize: 38)),
-                  bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (v, _) {
-                            final i = v.toInt();
-                            if (i >= 0 && i < days.length) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(days[i],
-                                    style: const TextStyle(
-                                        fontSize: 11, color: newTextSecondary)),
-                              );
-                            }
-                            return const SizedBox();
-                          },
-                          reservedSize: 20)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                ),
-                barTouchData: BarTouchData(
-                  enabled: true,
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => const Color(0xFF0A1628),
-                    tooltipPadding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) =>
-                        BarTooltipItem(
-                          '${rod.toY.toInt()}',
-                          const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                  ),
-                ),
-                barGroups: List.generate(
-                    vals.length,
-                        (i) => BarChartGroupData(
-                      x: i,
-                      barRods: [
-                        BarChartRodData(
-                          toY: vals[i].toDouble(),
-                          width: 16,
-                          color: newBlueColor,
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4)),
-                        ),
-                      ],
-                    )),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  //  Recent orders table (dynamic from API)
-  Widget _recentOrdersTable(DashboardController controller) {
-    final data = controller.dashboardDetailsData;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      child: Column(
-        children: [
-          //  Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: newSurfaceColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Row(
-              children: const [
-                Expanded(
-                    flex: 3,
-                    child: Text('Doc No.',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: newTextSecondary))),
-                Expanded(
-                    flex: 3,
-                    child: Text('Description',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: newTextSecondary))),
-                Expanded(
-                    flex: 3,
-                    child: Text('Executive',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: newTextSecondary))),
+                const Spacer(),
+                if (t.route != null)
+                  Icon(Icons.chevron_right_rounded,
+                      size: 20, color: newTextSecondary.withValues(alpha: 0.6)),
               ],
             ),
-          ),
-
-          //  Empty state
-          if (data == null || data.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.receipt_long_outlined,
-                        size: 36,
-                        color: newTextSecondary.withValues(alpha: 0.3)),
-                    const SizedBox(height: 8),
-                    const Text('No recent data',
-                        style:
-                        TextStyle(fontSize: 13, color: newTextSecondary)),
-                  ],
-                ),
-              ),
-            )
-          else
-          //  Data rows
-            ...data.take(5).map((item) => Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
-                border: Border(
-                    top: BorderSide(color: newBorderColor, width: 0.5)),
-              ),
-              child: Row(
-                children: [
-                  // Doc number with badge style
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: newBlueLightColor,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        item.documentNumber?.toString() ?? '—',
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: newBlueColor),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Description
-                  Expanded(
-                    flex: 3,
-                    child: Text(
-                      item.description?.toString() ?? '—',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: newTextPrimary),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Executive name
-                  Expanded(
-                    flex: 3,
-                    child: Text(
-                      item.executiveName?.toString() ?? '—',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: newTextSecondary),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                ],
-              ),
-            )),
-
-          //  View all button
-          if (data != null && data.isNotEmpty)
-            Container(
-              decoration: const BoxDecoration(
-                border:
-                Border(top: BorderSide(color: newBorderColor, width: 0.5)),
-                borderRadius:
-                BorderRadius.vertical(bottom: Radius.circular(16)),
-              ),
-              child: TextButton(
-                onPressed: () {},
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('View All',
-                        style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: newBlueColor)),
-                    SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_rounded,
-                        size: 14, color: newBlueColor),
-                  ],
-                ),
-              ),
-            ),
-        ],
+            const Spacer(),
+            Text('${t.count}',
+                style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: newTextPrimary)),
+            const SizedBox(height: 2),
+            Text(t.title,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: newTextSecondary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ],
+        ),
       ),
     );
   }
 
+  // ── Recent activity feed ─────────────────────────────────────────────────
+  Widget _activityFeed(DashboardController controller) {
+    final data = controller.dashboardDetailsData ?? [];
+
+    if (data.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 36),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.history_rounded,
+                size: 36, color: newTextSecondary.withValues(alpha: 0.3)),
+            const SizedBox(height: 8),
+            const Text('No recent activity',
+                style: TextStyle(fontSize: 13, color: newTextSecondary)),
+          ],
+        ),
+      );
+    }
+
+    final items = data.take(8).toList();
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        children: List.generate(items.length, (i) {
+          final item = items[i];
+          final isLast = i == items.length - 1;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              border: isLast
+                  ? null
+                  : const Border(
+                      bottom: BorderSide(color: newBorderColor, width: 0.5)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                      color: newBlueLightColor,
+                      borderRadius: BorderRadius.circular(9)),
+                  child: Icon(_activityIcon(item.documentType),
+                      size: 17, color: newBlueColor),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _activityTitle(item),
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: newTextPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          item.executiveName,
+                          item.documentDate,
+                        ].where((e) => (e ?? '').trim().isNotEmpty && e != 'null').join('  •  '),
+                        style: const TextStyle(
+                            fontSize: 11, color: newTextSecondary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  String _activityTitle(DashboardDetailsData item) {
+    final parts = <String>[];
+    final type = (item.documentType ?? '').trim();
+    final no = (item.documentNumber ?? '').trim();
+    if (type.isNotEmpty && type != 'null') parts.add(type);
+    if (no.isNotEmpty && no != 'null') parts.add(no);
+    final head = parts.join(' ');
+    final desc = (item.description ?? '').trim();
+    if (head.isNotEmpty) return head;
+    if (desc.isNotEmpty && desc != 'null') return desc;
+    return (item.title ?? 'Activity');
+  }
+
+  IconData _activityIcon(String? type) {
+    final t = (type ?? '').toLowerCase();
+    if (t.contains('order')) return Icons.shopping_bag_outlined;
+    if (t.contains('mrn') || t.contains('receipt')) return Icons.inventory_2_outlined;
+    if (t.contains('indent')) return Icons.assignment_outlined;
+    if (t.contains('approv')) return Icons.fact_check_outlined;
+    if (t.contains('task')) return Icons.task_alt_outlined;
+    if (t.contains('attend')) return Icons.access_time_rounded;
+    if (t.contains('payment') || t.contains('voucher')) return Icons.payments_outlined;
+    return Icons.description_outlined;
+  }
+
+  // ── Attendance summary (unchanged, real data) ────────────────────────────
   Widget _attendanceTable(AttendanceController controller) {
     final summary = controller.attendanceSummaryData;
-    // ✅ Guard: no data yet → show empty state immediately
     if (summary == null || summary.isEmpty) {
       return Container(
         decoration: BoxDecoration(
@@ -803,7 +365,6 @@ class DashboardView extends StatelessWidget {
         ),
       );
     }
-
 
     final details = controller.attendanceSummaryData?[0].details ?? [];
     final displayList = details.take(5).toList();
@@ -821,7 +382,6 @@ class DashboardView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ✅ Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: const BoxDecoration(
@@ -869,10 +429,7 @@ class DashboardView extends StatelessWidget {
               ],
             ),
           ),
-
           const Divider(height: 1, color: newBorderColor),
-
-          // ✅ Empty state
           if (displayList.isEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
@@ -888,7 +445,7 @@ class DashboardView extends StatelessWidget {
               final bool inProgress =
                   item.outTime == null || item.outTime!.isEmpty;
               final statusColor =
-              inProgress ? const Color(0xFFF59E0B) : newGreenColor;
+                  inProgress ? const Color(0xFFF59E0B) : newGreenColor;
               final statusLabel = inProgress ? 'In Progress' : 'Present';
               final isLast = index == displayList.length - 1;
 
@@ -896,11 +453,10 @@ class DashboardView extends StatelessWidget {
                 children: [
                   Container(
                     padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     color: index.isOdd ? newSurfaceColor : Colors.white,
                     child: Row(
                       children: [
-                        // Date
                         Expanded(
                           flex: 3,
                           child: Text(
@@ -911,8 +467,6 @@ class DashboardView extends StatelessWidget {
                                 color: newTextPrimary),
                           ),
                         ),
-
-                        // In Time
                         Expanded(
                           flex: 3,
                           child: Text(
@@ -923,8 +477,6 @@ class DashboardView extends StatelessWidget {
                                 color: newGreenColor),
                           ),
                         ),
-
-                        // Out Time
                         Expanded(
                           flex: 3,
                           child: Text(
@@ -939,8 +491,6 @@ class DashboardView extends StatelessWidget {
                                     : newRedColor),
                           ),
                         ),
-
-                        // Status — just a colored dot + text, no chip
                         Expanded(
                           flex: 3,
                           child: Row(
@@ -974,8 +524,6 @@ class DashboardView extends StatelessWidget {
                 ],
               );
             }),
-
-          // ✅ View All button
           Container(
             decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: newBorderColor, width: 0.5)),
@@ -1004,4 +552,13 @@ class DashboardView extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ActionTile {
+  final String title;
+  final int count;
+  final IconData icon;
+  final Color color;
+  final String? route; // null = not tappable (no dedicated screen)
+  const _ActionTile(this.title, this.count, this.icon, this.color, this.route);
 }
