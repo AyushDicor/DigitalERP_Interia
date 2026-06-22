@@ -193,6 +193,7 @@
 
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
+import 'package:newdigitalerp/repo/reimbursement_repo.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/response/attendance_summary_response.dart';
@@ -303,22 +304,45 @@ class AttendanceController extends AppBaseController {
     setBusy(true);
     try {
       final u = homeController.currentUserData;
+
+      // Upload the captured selfie (if any) and send only its filename as `photo`
+      // (the photo column is varchar(500); the file is served back as a URL by the API).
+      String photoName = await _uploadSelfie();
+
+      // Capture the device's current GPS + address for both mark (check-in) and
+      // close (check-out). The proc stores latitudein/out + location/locationout.
+      // Best-effort: if location is unavailable, fall back so attendance still marks.
+      String lat = '0', lng = '0', loc = 'Mobile App';
+      try {
+        final pos = await getUserCurrentPosition();
+        lat = pos.latitude.toString();
+        lng = pos.longitude.toString();
+        try {
+          final addr = await getUserCurrentAddress();
+          if (addr.trim().isNotEmpty) loc = addr.trim();
+        } catch (_) {/* geocoding failed — keep coords, generic label */}
+      } catch (_) {/* location off/denied — proceed with defaults */}
+
       final body = <String, String>{
         'compid': u?.compId?.toString() ?? '',
         'branchid': u?.branchId?.toString() ?? '',
         'userid': u?.userid?.toString() ?? '',
         'yearid': u?.yearId?.toString() ?? '',
-        'latitude': '28.61',
-        'longitude': '77.20',
-        'location': 'Mobile App',
+        'latitude': lat,
+        'longitude': lng,
+        'location': loc,
         'attendancetype': isAttendanceMarked ? 'close' : 'mark',
         'batterylevel': '100',
-        'photo': '',
+        'photo': photoName,
       };
       final res = await api.markAttendance(body);
       Get.snackbar('Attendance', res.message ?? '');
       if (res.status == 200) {
         isAttendanceMarked = !isAttendanceMarked;
+        // Clear the captured selfie so the next punch doesn't reuse it.
+        selectedImage.value = '';
+        selectedImageBase64.value = '';
+        selectedImageFileName.value = '';
         await loadAttendanceSummary();
       }
     } catch (e) {
@@ -327,6 +351,28 @@ class AttendanceController extends AppBaseController {
       isBusy = false;
       update();
     }
+  }
+
+  /// Uploads the captured selfie file and returns the stored filename (empty if none).
+  /// Reuses the shared file-upload endpoint (wwwroot/ReimbursementFiles); the API turns
+  /// the filename back into an image URL on the attendance detail/list.
+  Future<String> _uploadSelfie() async {
+    final path = selectedImage.value;
+    if (path.isEmpty) return '';
+    try {
+      final res = await ReimbursementRepo.uploadReimbursementFile(path);
+      if (res.status == true && res.statusCode == 200) {
+        final jsonData = res.data as Map<String, dynamic>?;
+        String fn = jsonData?['data']?['filename'] as String? ??
+            jsonData?['data']?['file_name'] as String? ??
+            jsonData?['filename'] as String? ??
+            jsonData?['file_name'] as String? ??
+            '';
+        if (fn.contains('/')) fn = fn.split('/').last;
+        return fn;
+      }
+    } catch (_) {/* non-blocking: mark attendance even if photo upload fails */}
+    return '';
   }
 
   void getAttendanceDetails(bool isBusy) {

@@ -1692,7 +1692,8 @@ class ApprovalHubController extends AppBaseController {
           (a.siteName?.toLowerCase().contains(q) ?? false) ||
           (a.remarks?.toLowerCase().contains(q) ?? false)).toList();
     }
-    if (filterStatus.isNotEmpty) {
+    // 'All' (and empty) = no status filter — show every status returned by the API.
+    if (filterStatus.isNotEmpty && filterStatus.toLowerCase() != 'all') {
       list = list.where((a) {
         final s = (a.status ?? '').trim().toLowerCase();
         final f = filterStatus.trim().toLowerCase();

@@ -413,10 +413,11 @@ class OrderView extends StatelessWidget {
           backgroundColor: newSurfaceColor,
           resizeToAvoidBottomInset: false,
 
-          /// ✅ FIXED FAB (perfect spacing)
+          /// FAB sits in the bottom corner, below the list, so it never covers
+          /// the last order card's amount.
           floatingActionButton: Padding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).padding.bottom + 70,
+              bottom: MediaQuery.of(context).padding.bottom + 12,
             ),
             child: GradientIconButton(
               onPressed: () => controller.tapOnAdd(),
@@ -470,7 +471,8 @@ class OrderView extends StatelessWidget {
                                           return orderCard(controller, index);
                                         },
                                       ),
-                            const SizedBox(height: 120),
+                            // Bottom clearance so the last card clears the corner FAB.
+                            SizedBox(height: MediaQuery.of(context).padding.bottom + 96),
                           ],
                         ),
                 ),

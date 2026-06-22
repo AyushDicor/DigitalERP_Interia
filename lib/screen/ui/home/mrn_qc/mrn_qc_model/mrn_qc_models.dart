@@ -55,6 +55,10 @@ class MrnQcListItem {
   final double grandTotal;
   final String printUrl;   // ← from "printurl" in Qclist response
 
+  // Currency carried from the source MRN (₹ fallback for legacy/INR rows).
+  final String currencySymbol;
+  String get displaySymbol => currencySymbol.isNotEmpty ? currencySymbol : '₹';
+
   MrnQcListItem({
     required this.id,
     required this.MrnNo,
@@ -71,6 +75,7 @@ class MrnQcListItem {
     this.qcDate = '',
     this.grandTotal = 0,
     this.printUrl = '',
+    this.currencySymbol = '',
   });
 
   factory MrnQcListItem.fromJson(Map<String, dynamic> json) {
@@ -96,6 +101,9 @@ class MrnQcListItem {
       qcDate: json['QcDate']?.toString() ?? json['qcdate']?.toString() ?? '',
       grandTotal: _parseDouble(json['GrandTotal'] ?? json['grandtotal']),
       printUrl: json['printurl']?.toString() ?? '',
+      currencySymbol: json['CurrencySymbol']?.toString() ??
+          json['currencysymbol']?.toString() ??
+          '',
     );
   }
 
@@ -334,6 +342,8 @@ class MrnQcDetail {
   final int jobtypeid;
   final String billno;
   final int godownid;
+  final String currencysymbol;
+  String get displaySymbol => currencysymbol.isNotEmpty ? currencysymbol : '₹';
   List<MrnQcItem> qcitems; // mutable: patched in-memory per item save
 
   MrnQcDetail({
@@ -358,6 +368,7 @@ class MrnQcDetail {
     required this.jobtypeid,
     required this.billno,
     required this.godownid,
+    this.currencysymbol = '',
     required this.qcitems,
   });
 
@@ -387,6 +398,9 @@ class MrnQcDetail {
     jobtypeid: json['jobtypeid'] ?? 0,
     billno: json['billno'] ?? '',
     godownid: json['godownid'] ?? 0,
+    currencysymbol: json['currencysymbol']?.toString() ??
+        json['CurrencySymbol']?.toString() ??
+        '',
     qcitems: (json['qcitems'] as List? ?? [])
         .map((e) => MrnQcItem.fromJson(e as Map<String, dynamic>))
         .toList(),

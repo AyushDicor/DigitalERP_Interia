@@ -458,7 +458,7 @@ class MrnReviewScreen extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: newTextSecondary)),
                   Text(
-                    '${ctrl.additionalChargesTotal >= 0 ? "+" : ""}${_fmt(ctrl.additionalChargesTotal)}',
+                    '${ctrl.additionalChargesTotal >= 0 ? "+" : ""}${_fmt(ctrl.additionalChargesTotal, sym)}',
                     style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -517,7 +517,7 @@ class MrnReviewScreen extends StatelessWidget {
                         ]),
                       ),
                       Text(
-                        '${isPlus ? "+" : "−"}${_fmt(c.calculatedAmount)}',
+                        '${isPlus ? "+" : "−"}${_fmt(c.calculatedAmount, sym)}',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -541,7 +541,7 @@ class MrnReviewScreen extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 12, color: newTextSecondary)),
                 Text(
-                  '${ctrl.roundOff >= 0 ? '+' : ''}${ctrl.roundOff.toStringAsFixed(2)}',
+                  '${ctrl.roundOff >= 0 ? '+' : '−'}$sym${ctrl.roundOff.abs().toStringAsFixed(2)}',
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -819,6 +819,7 @@ class _ReviewChargeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPlus = charge.nature == ChargeNature.plus;
     final amt = charge.calculatedAmount;
+    final sym = ctrl.currencySymbol;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -889,7 +890,7 @@ class _ReviewChargeRow extends StatelessWidget {
                     child: Text(
                       charge.calcType == ChargeCalcType.percentage
                           ? '${charge.value.toStringAsFixed(1)}%'
-                          : '₹${charge.value.toStringAsFixed(2)} fixed',
+                          : '$sym${charge.value.toStringAsFixed(2)} fixed',
                       style: TextStyle(
                           fontSize: 8,
                           fontWeight: FontWeight.w800,
@@ -925,7 +926,7 @@ class _ReviewChargeRow extends StatelessWidget {
 
         // Amount
         Text(
-          '${isPlus ? "+" : "−"}₹${amt.toStringAsFixed(2)}',
+          '${isPlus ? "+" : "−"}$sym${amt.toStringAsFixed(2)}',
           style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,

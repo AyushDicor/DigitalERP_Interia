@@ -1079,12 +1079,16 @@ class _AttendanceViewState extends State<AttendanceView>
               false) ...[
             _sectionTitle('Recent Records'),
             const SizedBox(height: 12),
-            ...List.generate(
-              (controller.attendanceSummaryData![0].details!.length > 2)
-                  ? 2
-                  : controller.attendanceSummaryData![0].details!.length,
-              (i) => _attendanceCard(controller, i),
-            ),
+            // Show the most recent records first (details come oldest→newest),
+            // so today's punch (and its selfie) appears at the top.
+            ...() {
+              final len = controller.attendanceSummaryData![0].details!.length;
+              final count = len > 2 ? 2 : len;
+              return List.generate(
+                count,
+                (i) => _attendanceCard(controller, len - 1 - i),
+              );
+            }(),
             if ((controller.attendanceSummaryData![0].details?.length ?? 0) > 2)
               Align(
                 alignment: Alignment.centerRight,
@@ -1396,7 +1400,18 @@ class _AttendanceViewState extends State<AttendanceView>
             padding: const EdgeInsets.all(12),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: AppNetworkImage(height: 66, width: 66, image: item.photo),
+              child: AppNetworkImage(
+                height: 66,
+                width: 66,
+                image: item.photo,
+                errorWidget: Container(
+                  height: 66,
+                  width: 66,
+                  color: const Color(0xFFEEF2F7),
+                  child: const Icon(Icons.person_rounded,
+                      size: 30, color: Color(0xFF94A3B8)),
+                ),
+              ),
             ),
           ),
           Expanded(

@@ -64,14 +64,16 @@ class ExecutiveOrderData {
   String? orderstatus;
 
   factory ExecutiveOrderData.fromJson(Map<String, dynamic> json) => ExecutiveOrderData(
-        orderid: json['orderid'],
-        orderno: json['orderno'],
-        orderdate: json['orderdate'],
-        partyname: json['partyname'],
-        partyid: json['partyid'],
-        amount: json['amount'],
-        executivename: json['executivename'],
-        orderstatus: json['orderstatus'],
+        orderid: (json['orderid'] as num?)?.toInt(),
+        orderno: json['orderno']?.toString(),
+        orderdate: json['orderdate']?.toString(),
+        partyname: json['partyname']?.toString(),
+        partyid: (json['partyid'] as num?)?.toInt(),
+        // API returns amount as a JSON number that may be int (e.g. 0, 650) or
+        // double; cast via num so int values don't throw "int is not a subtype of double?".
+        amount: (json['amount'] as num?)?.toDouble(),
+        executivename: json['executivename']?.toString(),
+        orderstatus: json['orderstatus']?.toString(),
       );
 
   Map<String, dynamic> toJson() => {

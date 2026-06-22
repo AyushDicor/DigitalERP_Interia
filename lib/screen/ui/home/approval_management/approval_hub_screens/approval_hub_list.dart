@@ -163,7 +163,7 @@ class _FilterSheetState extends State<_FilterSheet> {
   final _fmt = DateFormat('dd MMM yyyy');
 
   static const _statuses = [
-    '',
+    'All',
     'Pending',
     'Approved',
     'Rejected',
@@ -352,7 +352,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               spacing: 8,
               runSpacing: 8,
               children: _statuses.map((s) {
-                final label = s.isEmpty ? 'All' : s;
+                final label = s;
                 final isOn = _status == s;
                 return GestureDetector(
                   onTap: () => setState(() => _status = s),

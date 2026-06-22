@@ -1,7 +1,9 @@
 import 'package:get/get.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
-import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/attendance_model.dart';
+// Use the SAME DayDetails the API response (AttendanceListResponse) is built from,
+// otherwise casting one DayDetails to the other throws a type error.
+import 'package:newdigitalerp/response/attendance_summary_response.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/show_message.dart';
@@ -37,7 +39,7 @@ class AttendanceListController extends AppBaseController {
       body[RequestKeys.filter] = 'yes';
       var res = await api.getAttendanceList(body);
       if (res.status == 200) {
-        dayList = (res.data ?? []).cast<DayDetails>();
+        dayList = (res.data ?? <DayDetails>[]).toList();
 
         /// For sorting date wise List
         dayList?.sort((a, b) {

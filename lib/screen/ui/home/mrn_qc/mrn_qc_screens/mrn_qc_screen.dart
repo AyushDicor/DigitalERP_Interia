@@ -253,8 +253,9 @@ class _MrnQcScreenState extends State<MrnQcScreen>
                       valueColor: newGreenColor)),
               const SizedBox(width: 14),
               Expanded(
-                  child: _infoField('Total Amount', _inr(d.totalamt),
-                      Icons.currency_rupee_rounded,
+                  child: _infoField(
+                      'Total Amount', _inr(d.totalamt, d.displaySymbol),
+                      Icons.payments_outlined,
                       valueColor: newTextPrimary)),
             ]),
           ]),
@@ -537,7 +538,7 @@ class _MrnQcScreenState extends State<MrnQcScreen>
               _qtyChip('Rejected', rejectedQty, const Color(0xFFFEE2E2),
                   const Color(0xFFDC2626)),
             const Spacer(),
-            Text(_inr(item.amount),
+            Text(_inr(item.amount, ctrl.detail?.displaySymbol ?? '₹'),
                 style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -963,11 +964,11 @@ class _MrnQcScreenState extends State<MrnQcScreen>
   // ── Helpers ────────────────────────────────────────────────────────────────
   String _formatDate(DateTime dt) => DateFormat('dd MMM yyyy').format(dt);
 
-  static String _inr(double v) {
-    if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(1)}Cr';
-    if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(1)}L';
-    if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(1)}K';
-    return '₹${v.toStringAsFixed(0)}';
+  static String _inr(double v, [String sym = '₹']) {
+    if (v >= 10000000) return '$sym${(v / 10000000).toStringAsFixed(1)}Cr';
+    if (v >= 100000) return '$sym${(v / 100000).toStringAsFixed(1)}L';
+    if (v >= 1000) return '$sym${(v / 1000).toStringAsFixed(1)}K';
+    return '$sym${v.toStringAsFixed(0)}';
   }
 
   Widget _checkedByField(MrnQcScreenController ctrl) {

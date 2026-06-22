@@ -403,8 +403,12 @@ class HomeViewNewController extends AppBaseController {
       }
 
       ensureMenu(2701, 'Reimbursement');
-      ensureMenu(2586, 'Payment Request');
+      // ensureMenu(2586, 'Payment Request'); // hidden for now (per request 2026-06-22)
       ensureMenu(2754, 'MRN');
+      ensureMenu(2761, 'MRN QC');
+
+      // Hide the Dashboard quick-link tile (menuid 126) — not needed (2026-06-22).
+      menuListData.removeWhere((m) => m.menuid == 126);
 
       if (menuListData.isEmpty) {
         debugPrint("Empty menu list — logging out with message");
@@ -494,7 +498,7 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2701) return AppRoutes.reimbursement;
     if (menuId == 2754) return AppRoutes.mrnScreen;
     if (menuId == 2760) return AppRoutes.grnScreen;
-    // if (menuId == 2761) return AppRoutes.mrnQcList;
+    if (menuId == 2761) return AppRoutes.mrnQcList;
     if (menuId == 2755) return AppRoutes.materialReceiptScreen;
     return AppRoutes.homeNew;
   }

@@ -552,7 +552,7 @@ class _MrnCard extends StatelessWidget {
                 const Spacer(),
                 // Show grandTotal for completed, totalAmt for pending
                 Text(
-                    '₹${_inr(isCompleted && item.grandTotal > 0 ? item.grandTotal : item.totalAmt)}',
+                    '${item.displaySymbol}${_inr(isCompleted && item.grandTotal > 0 ? item.grandTotal : item.totalAmt)}',
                     style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
