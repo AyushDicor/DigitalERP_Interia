@@ -130,6 +130,7 @@ flutter:
     - assets/bottomNavIcons/
     - assets/images/
     - assets/icons/
+    - assets/iconsnew/
 
 
   # To add assets to your application, add an assets section, like this:

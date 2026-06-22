@@ -149,7 +149,7 @@ class DashboardView extends StatelessWidget {
     final p = controller.pendency;
     final tiles = <_ActionTile>[
       _ActionTile('Approvals', p.pendingApprovals, Icons.fact_check_outlined,
-          const Color(0xFF4361EE), AppRoutes.approvalList),
+          const Color(0xFF4361EE), AppRoutes.approvalHub),
       _ActionTile('Sale Orders', p.pendingSaleOrders,
           Icons.shopping_bag_outlined, const Color(0xFFF59E0B),
           AppRoutes.orderView),
@@ -158,7 +158,7 @@ class DashboardView extends StatelessWidget {
       _ActionTile('MRN', p.pendingMRN, Icons.inventory_2_outlined,
           const Color(0xFF16A34A), AppRoutes.mrnScreen),
       _ActionTile('Indent', p.pendingIndent, Icons.assignment_outlined,
-          const Color(0xFF8B5CF6), AppRoutes.indentScreen),
+          const Color(0xFF8B5CF6), AppRoutes.indentList),
       _ActionTile('Tasks', p.pendingTasks, Icons.task_alt_outlined,
           const Color(0xFF0EA5E9), AppRoutes.taskManagement),
     ];
