@@ -1440,6 +1440,9 @@ class _OrderLinkCard extends StatelessWidget {
       child: Column(children: [
         const MrnSectionHead('Order Linkage'),
 
+        /* Customer PO & Job Type commented out per request (2026-06-22).
+           Controller plumbing (selectedCustomerPo/selectedJobType, setters,
+           fetchers) is left intact so the save payload is unaffected.
         // ── Customer PO ──────────────────────────────────────────────────
         MrnSearchableDropdown<MrnDropdownOption>(
           label: 'Customer PO',
@@ -1463,6 +1466,7 @@ class _OrderLinkCard extends StatelessWidget {
           hint: 'Search job type…',
         ),
         const SizedBox(height: 10),
+        */
 
         // ── Work Order ────────────────────────────────────────────────────
         // In PO mode: contextual info shows the linked PO / Site

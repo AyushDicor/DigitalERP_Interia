@@ -53,8 +53,40 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
         partyId: int.tryParse(v.id) ?? 0,
         siteId: int.tryParse(selectedSite?.id ?? '0') ?? 0,
       );
+      _resolvePartyCurrency(int.tryParse(v.id) ?? 0);
     }
     update();
+  }
+
+  void setCurrency(MrnDropdownOption? v) {
+    selectedCurrency = v;
+    update();
+  }
+
+  // Resolve the party's currency (INR for Indian/unspecified, blank for explicit
+  // foreign). Best-effort — never blocks the form. In edit mode we keep the saved one.
+  Future<void> _resolvePartyCurrency(int partyId) async {
+    if (partyId <= 0) return;
+    try {
+      final res = await api.getMrnDropdownList(
+        _mrnDropdownBody('currencybyparty', partyId: partyId),
+      );
+      if ((res.status == 200 || res.success == true) && res.data != null) {
+        if (res.data!.isNotEmpty) {
+          final resolved = res.data!.first;
+          // Prefer the matching option from the loaded currency list (so the
+          // dropdown shows it as selected), else use the resolved row directly.
+          selectedCurrency =
+              currencyList.firstWhereOrNull((c) => c.id == resolved.id) ??
+                  resolved;
+        } else {
+          selectedCurrency = null; // foreign party → blank, user selects
+        }
+        update();
+      }
+    } catch (e) {
+      if (kDebugMode) print('⚠️ resolve party currency error: $e');
+    }
   }
 
   // ── Site / Godown ──────────────────────────────────────────────────────────
@@ -119,6 +151,13 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
   MrnDropdownOption? selectedWorkOrder;
   bool isLoadingWorkOrder = false;
 
+  // ── Currency ─────────────────────────────────────────────────────────────────
+  // Full list from CurrencyMaster; auto-resolved on party change (INR for Indian
+  // parties, blank for explicit foreign parties — user can override).
+  List<MrnDropdownOption> currencyList = [];
+  MrnDropdownOption? selectedCurrency;
+  bool isLoadingCurrency = false;
+
   List<String> existingBillFiles = [];
   List<String> existingDcFiles = [];
 
@@ -156,9 +195,21 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
   // ── Step 3: Review ─────────────────────────────────────────────────────────
   final TextEditingController reviewRemarksCtrl = TextEditingController();
 
+  // ── Currency / tax applicability ─────────────────────────────────────────────
+  // Symbol to show before amounts (falls back to ₹ for INR / unselected domestic).
+  String get currencySymbol =>
+      (selectedCurrency?.symbol.isNotEmpty ?? false) ? selectedCurrency!.symbol : '₹';
+
+  // GST applies for domestic (INR id=64) or when no currency is chosen yet.
+  // For a foreign/export currency, GST does not apply.
+  bool get isGstApplicable =>
+      selectedCurrency == null || selectedCurrency!.id == '64';
+
   // ── Financials ─────────────────────────────────────────────────────────────
   double get subtotal => itemLines.fold(0, (s, i) => s + i.amount);
-  double get totalGst => itemLines.fold(0, (s, i) => s + i.gstAmount);
+  // GST excluded entirely when a foreign currency is selected (export = no GST).
+  double get totalGst =>
+      isGstApplicable ? itemLines.fold(0, (s, i) => s + i.gstAmount) : 0;
   double get grandTotal => subtotal + totalGst;
   double get totalDiscount => itemLines.fold(0, (s, i) => s + i.discountAmount);
   double get roundOff {
@@ -973,10 +1024,6 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
       ShowMessage.showSnackBar('Validation', 'Please select a party');
       return;
     }
-    if (selectedSite == null) {
-      ShowMessage.showSnackBar('Validation', 'Please select a site');
-      return;
-    }
     if (itemLines.isEmpty) {
       ShowMessage.showSnackBar('Validation', 'Please add at least one item');
       return;
@@ -1010,8 +1057,9 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
                 'rate': i.rate,
                 'quantity': i.receiveNowQty,
                 'amount': i.amount,
-                'gstpercent': i.gstPercent,
-                'gstamount': i.gstAmount,
+                // No GST for export (non-INR) currencies.
+                'gstpercent': isGstApplicable ? i.gstPercent : 0,
+                'gstamount': isGstApplicable ? i.gstAmount : 0,
                 'discountpercent': i.discountPercent,
                 'discountamount': i.discountAmount,
                 'specification': i.remarks,
@@ -1045,6 +1093,8 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
         'receiptdate': parseDate(mrnDateCtrl.text).toIso8601String(),
         'partyname': partyNameCtrl.text.trim(),
         'partyid': int.tryParse(selectedParty?.id ?? '0') ?? 0,
+        'currencyid': int.tryParse(selectedCurrency?.id ?? '0') ?? 0,
+        'currency': selectedCurrency?.label ?? '',
         'billno': billNoCtrl.text.trim(),
         'godownid': int.tryParse(selectedGodown?.id ?? '0') ?? 0,
         'receivedby': receivedByName,
@@ -1163,7 +1213,24 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
       _loadPOList(),
       fetchDocumentTypes(),
       fetchTax(),
+      fetchCurrencies(),
     ]);
+  }
+
+  Future<void> fetchCurrencies() async {
+    isLoadingCurrency = true;
+    update();
+    try {
+      final res = await api.getMrnDropdownList(_mrnDropdownBody('currency'));
+      if ((res.status == 200 || res.success == true) && res.data != null) {
+        currencyList = res.data!;
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('Currency', '$e');
+    } finally {
+      isLoadingCurrency = false;
+      update();
+    }
   }
 
   // ── Individual fetch methods ───────────────────────────────────────────────
@@ -1650,6 +1717,11 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
       selectedJobType =
           jobTypeList.firstWhereOrNull((j) => j.id == d.jobtypeid.toString()) ??
               MrnDropdownOption(id: d.jobtypeid.toString(), label: '');
+    }
+    if (d.currencyid > 0) {
+      selectedCurrency = currencyList
+              .firstWhereOrNull((c) => c.id == d.currencyid.toString()) ??
+          MrnDropdownOption(id: d.currencyid.toString(), label: d.currency);
     }
     selectedSource = d.type == 'PO'
         ? MrnSourceType.purchaseOrder

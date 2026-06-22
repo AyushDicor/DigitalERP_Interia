@@ -117,10 +117,10 @@ class MrnSourceScreen extends StatelessWidget {
                 ]),
               ),
 
-              // ── Party / Site details ──────────────────────────────────────
+              // ── Party details ─────────────────────────────────────────────
               MrnCard(
                 child: Column(children: [
-                  const MrnSectionHead('Party & Site Details'),
+                  const MrnSectionHead('Party Details'),
 
                   // ── Party Name (searchable dropdown) ──────────────────────
                   // Replace the party MrnSearchableDropdown with:
@@ -141,18 +141,6 @@ class MrnSourceScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // Site (searchable dropdown)
-                  MrnSearchableDropdown<MrnDropdownOption>(
-                    label: 'Site',
-                    value: ctrl.selectedSite,
-                    items: ctrl.siteList,
-                    isLoading: ctrl.isLoadingSite,
-                    itemLabel: (o) => o.label,
-                    onChanged: ctrl.setSite,
-                    hint: 'Search site…',
-                  ),
-                  const SizedBox(height: 10),
-
                   // Godown (searchable dropdown)
                   MrnSearchableDropdown<MrnDropdownOption>(
                     label: 'Godown',
@@ -162,6 +150,18 @@ class MrnSourceScreen extends StatelessWidget {
                     itemLabel: (o) => o.label,
                     onChanged: ctrl.setGodown,
                     hint: 'Search godown…',
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Currency (auto INR for Indian party; blank for foreign → pick)
+                  MrnSearchableDropdown<MrnDropdownOption>(
+                    label: 'Currency',
+                    value: ctrl.selectedCurrency,
+                    items: ctrl.currencyList,
+                    isLoading: ctrl.isLoadingCurrency,
+                    itemLabel: (o) => o.label,
+                    onChanged: ctrl.setCurrency,
+                    hint: 'Select currency…',
                   ),
                   const SizedBox(height: 10),
 

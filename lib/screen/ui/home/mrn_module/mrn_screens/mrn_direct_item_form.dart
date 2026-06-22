@@ -26,13 +26,18 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
   // Selected values
   MrnDropdownOption? _selectedItem;
   MrnDropdownOption? _selectedUnit;
-  MrnDropdownOption? _selectedMake;
   MrnDropdownOption? _selectedGodown;
+
+  // Currency / tax context (from controller).
+  MrnController get _ctrl => Get.find<MrnController>();
+  bool get _gstApplicable => _ctrl.isGstApplicable;
+  String get _sym => _ctrl.currencySymbol;
 
   // Computed preview
   double get _qty => double.tryParse(_qtyCtrl.text) ?? 0;
   double get _rate => double.tryParse(_rateCtrl.text) ?? 0;
-  double get _gstPct => double.tryParse(_gstCtrl.text) ?? 0;
+  // GST forced to 0 for export (non-INR) currencies.
+  double get _gstPct => _gstApplicable ? (double.tryParse(_gstCtrl.text) ?? 0) : 0;
   double get _discPct => double.tryParse(_discPctCtrl.text) ?? 0;
   double get _discAmt => double.tryParse(_discCtrl.text) ?? 0;
 
@@ -46,7 +51,6 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
   bool get _isValid =>
       _selectedItem != null &&
       _selectedUnit != null &&
-      _selectedMake != null &&
       _effectiveGodown != null &&
       _qty > 0 &&
       _rate > 0 &&
@@ -57,7 +61,6 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
     setState(() {
       _selectedItem = null;
       _selectedUnit = null;
-      _selectedMake = null;
       _selectedGodown = null;
       _qtyCtrl.clear();
       _rateCtrl.clear();
@@ -86,7 +89,7 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
       itemName: _selectedItem!.label,
       itemCode: _selectedItem!.id,
       unit: _selectedUnit!.label,
-      make: _selectedMake!.label,
+      make: '',
       godownId: godown.id,
       godownLabel: godown.label,
       qty: _qty,
@@ -130,12 +133,12 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
             onChanged: (v) async {
               setState(() {
                 _selectedItem = v;
-                _selectedMake = null;
                 // Clear old GST when item changes so user sees it refill
                 _gstCtrl.clear();
               });
-              if (v != null) {
-                // Auto-fill GST % from item detail API — but user can still edit it
+              if (v != null && _gstApplicable) {
+                // Auto-fill GST % from item detail API — but user can still edit it.
+                // Skipped entirely for export (non-INR) currencies where GST is N/A.
                 final detail = await ctrl.fetchItemDetail(
                   int.tryParse(v.id) ?? 0,
                 );
@@ -146,41 +149,22 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
                         : detail.gstpercent.toString();
                   });
                 }
-                // Load makes for this item
-                await ctrl.fetchMakes(dependentId: int.tryParse(v.id) ?? 0);
-                if (mounted) setState(() {});
               }
             },
             hasError: _selectedItem == null,
           ),
           const SizedBox(height: 10),
 
-          // ── Unit + Make ───────────────────────────────────────────────────
-          Row(children: [
-            Expanded(
-              child: _SearchableField(
-                label: 'Unit *',
-                value: _selectedUnit,
-                items: ctrl.unitList,
-                isLoading: ctrl.isLoadingUnit,
-                hint: 'Select unit…',
-                onChanged: (v) => setState(() => _selectedUnit = v),
-                hasError: _selectedUnit == null,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _SearchableField(
-                label: 'Make *',
-                value: _selectedMake,
-                items: ctrl.makeList,
-                isLoading: ctrl.isLoadingMake,
-                hint: 'Select make…',
-                onChanged: (v) => setState(() => _selectedMake = v),
-                hasError: _selectedMake == null,
-              ),
-            ),
-          ]),
+          // ── Unit ──────────────────────────────────────────────────────────
+          _SearchableField(
+            label: 'Unit *',
+            value: _selectedUnit,
+            items: ctrl.unitList,
+            isLoading: ctrl.isLoadingUnit,
+            hint: 'Select unit…',
+            onChanged: (v) => setState(() => _selectedUnit = v),
+            hasError: _selectedUnit == null,
+          ),
           const SizedBox(height: 10),
 
           // ── Godown ────────────────────────────────────────────────────────
@@ -220,18 +204,21 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
           ]),
           const SizedBox(height: 10),
 
-          // ── GST % (always editable, auto-filled as a hint) + Discount % ──
+          // ── GST % (auto-filled, editable) + Discount % ──
+          // GST is hidden for export (non-INR) currencies — tax does not apply.
           Row(children: [
-            Expanded(
-              child: _NumField(
-                label: 'GST %',
-                controller: _gstCtrl,
-                hint: '0',
-                decimal: true,
-                onChanged: (_) => setState(() {}),
+            if (_gstApplicable) ...[
+              Expanded(
+                child: _NumField(
+                  label: 'GST %',
+                  controller: _gstCtrl,
+                  hint: '0',
+                  decimal: true,
+                  onChanged: (_) => setState(() {}),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
+              const SizedBox(width: 10),
+            ],
             Expanded(
               child: _NumField(
                 label: 'Discount %',
@@ -252,11 +239,23 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
               ),
             ),
           ]),
+          if (!_gstApplicable)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(children: [
+                const Icon(Icons.info_outline_rounded,
+                    size: 13, color: newTextSecondary),
+                const SizedBox(width: 5),
+                Text('GST not applicable for ${_ctrl.selectedCurrency?.label ?? "this currency"} (export)',
+                    style: const TextStyle(
+                        fontSize: 10.5, color: newTextSecondary)),
+              ]),
+            ),
           const SizedBox(height: 10),
 
           // ── Discount ₹ (flat amount) ──────────────────────────────────────
           _NumField(
-            label: 'Discount (₹)',
+            label: 'Discount ($_sym)',
             controller: _discCtrl,
             hint: '0',
             decimal: true,
@@ -296,6 +295,8 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
               amount: _amount,
               gstAmt: _gstAmt,
               totalAmt: _totalAmt,
+              symbol: _sym,
+              showGst: _gstApplicable,
             ),
 
           if (_qty > 0 && _rate > 0) const SizedBox(height: 14),
@@ -357,6 +358,8 @@ class _MrnDirectItemFormState extends State<MrnDirectItemForm> {
 // ═══════════════════════════════════════════════════════════════════════════════
 class _CalcPreview extends StatelessWidget {
   final double qty, rate, gstPct, disc, discPct, amount, gstAmt, totalAmt;
+  final String symbol;
+  final bool showGst;
   const _CalcPreview({
     required this.qty,
     required this.rate,
@@ -366,6 +369,8 @@ class _CalcPreview extends StatelessWidget {
     required this.amount,
     required this.gstAmt,
     required this.totalAmt,
+    this.symbol = '₹',
+    this.showGst = true,
   });
 
   @override
@@ -399,14 +404,15 @@ class _CalcPreview extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        _row('Amount', '₹${amount.toStringAsFixed(2)}'),
+        _row('Amount', '$symbol${amount.toStringAsFixed(2)}'),
         if (disc > 0)
           _row(
               discPct > 0
                   ? 'Discount ${discPct.toStringAsFixed(1)}%'
                   : 'Discount',
-              '- ₹${disc.toStringAsFixed(2)}'),
-        _row('GST ${gstPct.toInt()}%', '₹${gstAmt.toStringAsFixed(2)}'),
+              '- $symbol${disc.toStringAsFixed(2)}'),
+        if (showGst)
+          _row('GST ${gstPct.toInt()}%', '$symbol${gstAmt.toStringAsFixed(2)}'),
         const Divider(color: newBlueColor, height: 16, thickness: 0.5),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -416,7 +422,7 @@ class _CalcPreview extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: newBlueColor)),
-            Text('₹${totalAmt.toStringAsFixed(2)}',
+            Text('$symbol${totalAmt.toStringAsFixed(2)}',
                 style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
@@ -487,10 +493,11 @@ class _DirectItemRow extends StatelessWidget {
               _pill(item.unit, newSurfaceColor, newTextSecondary),
               _pill('Qty: ${item.receiveNowQty.toInt()}', newGreenLightColor,
                   newGreenColor),
-              _pill('₹${item.rate.toStringAsFixed(2)}', newBlueLightColor,
-                  newBlueColor),
-              _pill('GST ${item.gstPercent.toInt()}%', newSurfaceColor,
-                  newTextSecondary),
+              _pill('${ctrl.currencySymbol}${item.rate.toStringAsFixed(2)}',
+                  newBlueLightColor, newBlueColor),
+              if (ctrl.isGstApplicable)
+                _pill('GST ${item.gstPercent.toInt()}%', newSurfaceColor,
+                    newTextSecondary),
               if (item.discountPercent > 0)
                 _pill('Disc ${item.discountPercent.toStringAsFixed(1)}%',
                     newOrangeLightColor, newOrangeColor),
@@ -504,7 +511,8 @@ class _DirectItemRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('₹${item.totalAmount.toStringAsFixed(2)}',
+          Text(
+              '${ctrl.currencySymbol}${(ctrl.isGstApplicable ? item.totalAmount : item.amount).toStringAsFixed(2)}',
               style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -553,9 +561,11 @@ class _DirectTotalsFooter extends StatelessWidget {
           color: newSurfaceColor,
           border: Border(top: BorderSide(color: newBorderColor))),
       child: Column(children: [
-        _row('Subtotal', '₹${ctrl.subtotal.toStringAsFixed(2)}'),
-        const SizedBox(height: 6),
-        _row('Total GST', '₹${ctrl.totalGst.toStringAsFixed(2)}'),
+        _row('Subtotal', '${ctrl.currencySymbol}${ctrl.subtotal.toStringAsFixed(2)}'),
+        if (ctrl.isGstApplicable) ...[
+          const SizedBox(height: 6),
+          _row('Total GST', '${ctrl.currencySymbol}${ctrl.totalGst.toStringAsFixed(2)}'),
+        ],
         const Divider(height: 16, color: newBorderColor),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -565,7 +575,7 @@ class _DirectTotalsFooter extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: newTextPrimary)),
-            Text('₹${ctrl.grandTotal.toStringAsFixed(2)}',
+            Text('${ctrl.currencySymbol}${ctrl.grandTotal.toStringAsFixed(2)}',
                 style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,

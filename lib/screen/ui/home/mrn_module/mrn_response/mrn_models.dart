@@ -215,8 +215,13 @@ class MrnListItem {
   final String jobType;
   final double totalQty;
   final double totalAmt;
+  final String currencySymbol;
+  final String currency;
   final String withRateUrl;
   final String withoutRateUrl;
+
+  /// Symbol to show before amounts; falls back to ₹ for legacy rows with no currency.
+  String get displaySymbol => currencySymbol.isNotEmpty ? currencySymbol : '₹';
 
   MrnListItem({
     required this.id,
@@ -228,6 +233,8 @@ class MrnListItem {
     required this.jobType,
     required this.totalQty,
     required this.totalAmt,
+    this.currencySymbol = '',
+    this.currency = '',
     this.withRateUrl = '',
     this.withoutRateUrl = '',
   });
@@ -247,6 +254,11 @@ class MrnListItem {
       jobType: json['JobType']?.toString() ?? json['jobtype']?.toString() ?? '',
       totalQty: _parseDouble(json['TotalQty'] ?? json['totalqty']),
       totalAmt: _parseDouble(json['TotalAmt'] ?? json['totalamt']),
+      currencySymbol: json['CurrencySymbol']?.toString() ??
+          json['currencysymbol']?.toString() ??
+          '',
+      currency:
+          json['Currency']?.toString() ?? json['currency']?.toString() ?? '',
       withRateUrl: json['withrateurl']?.toString() ?? '',
       withoutRateUrl: json['withOUTrateurl']?.toString() ?? '',
     );
@@ -324,6 +336,8 @@ class MrnDetailData {
   final String description;
   final String reason;
   final int customerpoid;
+  final int currencyid;
+  final String currency;
   final String billfile;
   final String dcfile;
   final List<MrnDetailItem> items;
@@ -358,6 +372,8 @@ class MrnDetailData {
     this.description = '',
     this.reason = '',
     this.customerpoid = 0,
+    this.currencyid = 0,
+    this.currency = '',
     this.billfile = '',
     this.dcfile = '',
     this.items = const [],
@@ -397,6 +413,8 @@ class MrnDetailData {
       description: json['description']?.toString() ?? '',
       reason: json['reason']?.toString() ?? '',
       customerpoid: _i(json['customerpoid']),
+      currencyid: _i(json['currencyid']),
+      currency: json['currency']?.toString() ?? '',
       billfile: json['billfile']?.toString() ?? '',
       dcfile: json['dcfile']?.toString() ?? '',
       items: rawItems is List
@@ -837,13 +855,17 @@ class MrnDropdownOption {
   final String id;
   final String label;
 
-  MrnDropdownOption({required this.id, required this.label});
+  /// Optional extra carried by some options (e.g. currency symbol "₹"/"$").
+  final String symbol;
+
+  MrnDropdownOption({required this.id, required this.label, this.symbol = ''});
 
   factory MrnDropdownOption.fromJson(Map<String, dynamic> json) {
     if (kDebugMode) print('🔍 MrnDropdownOption raw json: $json');
     return MrnDropdownOption(
       id: json['id']?.toString() ?? '',
       label: json['name'] ?? json['label'] ?? '',
+      symbol: json['symbol']?.toString() ?? '',
     );
   }
 

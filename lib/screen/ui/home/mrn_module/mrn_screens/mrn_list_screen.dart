@@ -216,11 +216,11 @@ class _MrnListScreenState extends State<MrnListScreen> {
         ),
       );
 
-  static String _inr(double v) {
-    if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(1)}Cr';
-    if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(1)}L';
-    if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(1)}K';
-    return '₹${v.toStringAsFixed(0)}';
+  static String _inr(double v, [String sym = '₹']) {
+    if (v >= 10000000) return '$sym${(v / 10000000).toStringAsFixed(1)}Cr';
+    if (v >= 100000) return '$sym${(v / 100000).toStringAsFixed(1)}L';
+    if (v >= 1000) return '$sym${(v / 1000).toStringAsFixed(1)}K';
+    return '$sym${v.toStringAsFixed(0)}';
   }
 
   Widget _filterBar(BuildContext context, MrnListController ctrl) {
@@ -461,7 +461,7 @@ class _MrnCard extends StatelessWidget {
                         style: const TextStyle(
                             fontSize: 11, color: newTextSecondary)),
                     const Spacer(),
-                    Text('₹${_inr(item.totalAmt)}',
+                    Text('${item.displaySymbol}${_inr(item.totalAmt)}',
                         style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
@@ -1126,7 +1126,7 @@ class _MrnTableState extends State<_MrnTable> {
                         )),
                         // Amount
                         DataCell(Text(
-                          '₹${_inr(item.totalAmt)}',
+                          _inr(item.totalAmt, item.displaySymbol),
                           style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
@@ -1183,10 +1183,10 @@ class _MrnTableState extends State<_MrnTable> {
   //   return '$buf,$last3.${parts[1]}';
   // }
 
-  static String _inr(double v) {
-    if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(1)}Cr';
-    if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(1)}L';
-    if (v >= 1000) return '₹${(v / 1000).toStringAsFixed(1)}K';
-    return '₹${v.toStringAsFixed(0)}';
+  static String _inr(double v, [String sym = '₹']) {
+    if (v >= 10000000) return '$sym${(v / 10000000).toStringAsFixed(1)}Cr';
+    if (v >= 100000) return '$sym${(v / 100000).toStringAsFixed(1)}L';
+    if (v >= 1000) return '$sym${(v / 1000).toStringAsFixed(1)}K';
+    return '$sym${v.toStringAsFixed(0)}';
   }
 }

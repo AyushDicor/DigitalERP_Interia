@@ -126,8 +126,7 @@ class MrnReviewScreen extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _infoGrid([
-          _InfoTile('Site', ctrl.selectedSite?.label ?? '—'),
-          _InfoTile('Godown', ctrl.selectedGodown?.label ?? '—'),
+          _InfoTile('Godown', ctrl.selectedGodown?.label ?? '—', full: true),
         ]),
         const SizedBox(height: 8),
         _infoGrid([
@@ -352,6 +351,8 @@ class MrnReviewScreen extends StatelessWidget {
 
   // ── Amount summary card ─────────────────────────────────────────────────────
   Widget _summaryCard(MrnController ctrl) {
+    final sym = ctrl.currencySymbol;
+    final showGst = ctrl.isGstApplicable; // GST hidden for export (non-INR)
     final Map<double, double> gstByRate = {};
     for (final item in ctrl.itemLines) {
       if (item.gstPercent > 0) {
@@ -359,7 +360,7 @@ class MrnReviewScreen extends StatelessWidget {
             (gstByRate[item.gstPercent] ?? 0) + item.gstAmount;
       }
     }
-    final sortedRates = gstByRate.keys.toList()..sort();
+    final sortedRates = showGst ? (gstByRate.keys.toList()..sort()) : <double>[];
     final totalDiscount =
     ctrl.itemLines.fold(0.0, (s, i) => s + i.discountAmount);
     final hasCharges = ctrl.additionalCharges.isNotEmpty;
@@ -372,14 +373,14 @@ class MrnReviewScreen extends StatelessWidget {
         _sumRow(
             'Gross Amount',
             _fmt(ctrl.itemLines
-                .fold(0.0, (s, i) => s + (i.receiveNowQty * i.rate)))),
+                .fold(0.0, (s, i) => s + (i.receiveNowQty * i.rate)), sym)),
 
         if (totalDiscount > 0)
-          _sumRow('Total Discount (−)', '− ${_fmt(totalDiscount)}'),
+          _sumRow('Total Discount (−)', '− ${_fmt(totalDiscount, sym)}'),
 
         _sumRow(
             'Subtotal (${ctrl.itemLines.length} items)',
-            _fmt(ctrl.subtotal)),
+            _fmt(ctrl.subtotal, sym)),
 
         if (sortedRates.isNotEmpty) ...[
           const SizedBox(height: 4),
@@ -399,7 +400,7 @@ class MrnReviewScreen extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: newTextSecondary)),
-                  Text(_fmt(ctrl.totalGst),
+                  Text(_fmt(ctrl.totalGst, sym),
                       style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -424,7 +425,7 @@ class MrnReviewScreen extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               color: newBlueColor)),
                     ),
-                    Text(_fmt(gstByRate[rate]!),
+                    Text(_fmt(gstByRate[rate]!, sym),
                         style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -434,8 +435,8 @@ class MrnReviewScreen extends StatelessWidget {
               )),
             ]),
           ),
-        ] else
-          _sumRow('Total GST', _fmt(ctrl.totalGst)),
+        ] else if (showGst)
+          _sumRow('Total GST', _fmt(ctrl.totalGst, sym)),
 
         // Additional charges breakdown (only when exist)
         if (hasCharges) ...[
@@ -569,9 +570,11 @@ class MrnReviewScreen extends StatelessWidget {
                       color: newTextPrimary)),
               Text(
                 // If additional charges exist, include them in grand total
-                _fmt(hasCharges
-                    ? ctrl.grandTotalWithCharges + ctrl.roundOff
-                    : ctrl.grandTotalRounded),
+                _fmt(
+                    hasCharges
+                        ? ctrl.grandTotalWithCharges + ctrl.roundOff
+                        : ctrl.grandTotalRounded,
+                    ctrl.currencySymbol),
                 style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -779,14 +782,14 @@ class MrnReviewScreen extends StatelessWidget {
     );
   }
 
-  static String _fmt(double v) {
-    if (v < 0) return '-${_fmt(-v)}';
-    if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(2)} Cr';
-    if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)} L';
+  static String _fmt(double v, [String sym = '₹']) {
+    if (v < 0) return '-${_fmt(-v, sym)}';
+    if (v >= 10000000) return '$sym${(v / 10000000).toStringAsFixed(2)} Cr';
+    if (v >= 100000) return '$sym${(v / 100000).toStringAsFixed(2)} L';
     final parts = v.toStringAsFixed(2).split('.');
     final whole = parts[0];
     final decimal = parts[1];
-    if (whole.length <= 3) return '₹$whole.$decimal';
+    if (whole.length <= 3) return '$sym$whole.$decimal';
     final last3 = whole.substring(whole.length - 3);
     final rest = whole.substring(0, whole.length - 3);
     final buf = StringBuffer();
@@ -794,7 +797,7 @@ class MrnReviewScreen extends StatelessWidget {
       if (i > 0 && (rest.length - i) % 2 == 0) buf.write(',');
       buf.write(rest[i]);
     }
-    return '₹$buf,$last3.$decimal';
+    return '$sym$buf,$last3.$decimal';
   }
 }
 
@@ -946,6 +949,9 @@ class _ReviewItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sym = ctrl.currencySymbol;
+    final showGst = ctrl.isGstApplicable; // export (non-INR) → no GST
+    final lineTotal = showGst ? item.totalAmount : item.amount;
     final godownLabel = item.selectedGodownId != null
         ? (ctrl.godownList
         .firstWhereOrNull(
@@ -999,14 +1005,15 @@ class _ReviewItemRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('₹${item.totalAmount.toStringAsFixed(0)}',
+              Text('$sym${lineTotal.toStringAsFixed(0)}',
                   style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: newTextPrimary)),
-              const Text('incl. GST',
-                  style: TextStyle(
-                      fontSize: 9, color: newTextSecondary)),
+              if (showGst)
+                const Text('incl. GST',
+                    style: TextStyle(
+                        fontSize: 9, color: newTextSecondary)),
             ],
           ),
           children: [
@@ -1031,15 +1038,16 @@ class _ReviewItemRow extends StatelessWidget {
             _sectionLabel('Financials'),
             const SizedBox(height: 6),
             _fieldGrid([
-              _FieldTile('Rate', '₹${item.rate.toStringAsFixed(2)}'),
+              _FieldTile('Rate', '$sym${item.rate.toStringAsFixed(2)}'),
               _FieldTile('Discount %',
                   '${item.discountPercent.toStringAsFixed(1)}%'),
-              _FieldTile('Discount (₹)',
-                  '₹${item.discountAmount.toStringAsFixed(2)}'),
-              _FieldTile('Amount', '₹${item.amount.toStringAsFixed(2)}'),
-              _FieldTile('GST ${item.gstPercent.toInt()}%',
-                  '₹${item.gstAmount.toStringAsFixed(2)}'),
-              _FieldTile('Total', '₹${item.totalAmount.toStringAsFixed(2)}',
+              _FieldTile('Discount ($sym)',
+                  '$sym${item.discountAmount.toStringAsFixed(2)}'),
+              _FieldTile('Amount', '$sym${item.amount.toStringAsFixed(2)}'),
+              if (showGst)
+                _FieldTile('GST ${item.gstPercent.toInt()}%',
+                    '$sym${item.gstAmount.toStringAsFixed(2)}'),
+              _FieldTile('Total', '$sym${lineTotal.toStringAsFixed(2)}',
                   valueColor: newBlueColor, bold: true, full: true),
             ]),
             const SizedBox(height: 12),
