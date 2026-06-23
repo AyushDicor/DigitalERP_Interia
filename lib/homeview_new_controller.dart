@@ -407,6 +407,7 @@ class HomeViewNewController extends AppBaseController {
       ensureMenu(2754, 'MRN');
       ensureMenu(2761, 'MRN QC');
       ensureMenu(2762, 'Indent');
+      ensureMenu(2760, 'GRN Entry');
 
       // Hide the Dashboard quick-link tile (menuid 126) — not needed (2026-06-22).
       menuListData.removeWhere((m) => m.menuid == 126);

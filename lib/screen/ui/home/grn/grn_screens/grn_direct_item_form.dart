@@ -53,7 +53,7 @@ class _GrnDirectItemFormState extends State<GrnDirectItemForm> {
   bool get _isValid =>
       _selectedItem != null &&
           _selectedUnit != null &&
-          _selectedMake != null &&
+          // _selectedMake != null && // Make commented out (not needed)
           _effectiveGodown != null &&
           _qty > 0 &&
           _rate > 0 &&
@@ -94,7 +94,8 @@ class _GrnDirectItemFormState extends State<GrnDirectItemForm> {
       itemName: _selectedItem!.label,
       itemCode: _selectedItem!.id,
       unit: _selectedUnit!.label,
-      make: _selectedMake!.label,
+      make: _selectedMake?.label ?? '', // Make commented out in UI
+
       godownId: godown.id,
       godownLabel: godown.label,
       qty: _qty,
@@ -164,32 +165,28 @@ class _GrnDirectItemFormState extends State<GrnDirectItemForm> {
           ),
           const SizedBox(height: 10),
 
-          // ── Unit + Make ─────────────────────────────────────────────────
-          Row(children: [
-            Expanded(
-              child: _SearchableField(
-                label: 'Unit *',
-                value: _selectedUnit,
-                items: ctrl.unitList,
-                isLoading: ctrl.isLoadingUnit,
-                hint: 'Select unit…',
-                onChanged: (v) => setState(() => _selectedUnit = v),
-                hasError: _selectedUnit == null,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _SearchableField(
-                label: 'Make *',
-                value: _selectedMake,
-                items: ctrl.makeList,
-                isLoading: ctrl.isLoadingMake,
-                hint: 'Select make…',
-                onChanged: (v) => setState(() => _selectedMake = v),
-                hasError: _selectedMake == null,
-              ),
-            ),
-          ]),
+          // ── Unit (Make commented out — not needed) ──────────────────────
+          _SearchableField(
+            label: 'Unit *',
+            value: _selectedUnit,
+            items: ctrl.unitList,
+            isLoading: ctrl.isLoadingUnit,
+            hint: 'Select unit…',
+            onChanged: (v) => setState(() => _selectedUnit = v),
+            hasError: _selectedUnit == null,
+          ),
+          // Make — commented out per request (kept for easy restore):
+          // Expanded(
+          //   child: _SearchableField(
+          //     label: 'Make *',
+          //     value: _selectedMake,
+          //     items: ctrl.makeList,
+          //     isLoading: ctrl.isLoadingMake,
+          //     hint: 'Select make…',
+          //     onChanged: (v) => setState(() => _selectedMake = v),
+          //     hasError: _selectedMake == null,
+          //   ),
+          // ),
           const SizedBox(height: 10),
 
           // ── Godown ──────────────────────────────────────────────────────

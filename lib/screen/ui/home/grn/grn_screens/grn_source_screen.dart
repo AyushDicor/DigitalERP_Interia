@@ -95,17 +95,16 @@ class GrnSourceScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // Site (searchable dropdown)
-                  GrnSearchableDropdown<GrnDropdownOption>(
-                    label: 'Site',
-                    value: ctrl.selectedSite,
-                    items: ctrl.siteList,
-                    isLoading: ctrl.isLoadingSite,
-                    itemLabel: (o) => o.label,
-                    onChanged: ctrl.setSite,
-                    hint: 'Search site…',
-                  ),
-                  const SizedBox(height: 10),
+                  // Site — commented out (only Godown needed).
+                  // GrnSearchableDropdown<GrnDropdownOption>(
+                  //   label: 'Site',
+                  //   value: ctrl.selectedSite,
+                  //   items: ctrl.siteList,
+                  //   isLoading: ctrl.isLoadingSite,
+                  //   itemLabel: (o) => o.label,
+                  //   onChanged: ctrl.setSite,
+                  //   hint: 'Search site…',
+                  // ),
 
                   // Godown (searchable dropdown)
                   GrnSearchableDropdown<GrnDropdownOption>(
@@ -320,17 +319,16 @@ class GrnSourceScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // Job Type (searchable)
-                  GrnSearchableDropdown<GrnDropdownOption>(
-                    label: 'Job Type',
-                    value: ctrl.selectedJobType,
-                    items: ctrl.jobTypeList,
-                    isLoading: ctrl.isLoadingJobType,
-                    itemLabel: (o) => o.label,
-                    onChanged: ctrl.setJobType,
-                    hint: 'Search job type…',
-                  ),
-                  const SizedBox(height: 10),
+                  // Job Type — commented out (not needed).
+                  // GrnSearchableDropdown<GrnDropdownOption>(
+                  //   label: 'Job Type',
+                  //   value: ctrl.selectedJobType,
+                  //   items: ctrl.jobTypeList,
+                  //   isLoading: ctrl.isLoadingJobType,
+                  //   itemLabel: (o) => o.label,
+                  //   onChanged: ctrl.setJobType,
+                  //   hint: 'Search job type…',
+                  // ),
 
                   // Work Order No. (searchable)
                   GrnSearchableDropdown<GrnDropdownOption>(
