@@ -303,10 +303,9 @@ class _IndentCard extends StatelessWidget {
 
             // ── Info chips ─────────────────────────────────────────────
             Wrap(spacing: 6, runSpacing: 6, children: [
-              if (item.siteName.isNotEmpty)
-                _chip(Icons.location_on_outlined, item.siteName),
-              if (item.jobType.isNotEmpty)
-                _chip(Icons.work_outline_rounded, item.jobType),
+              // Godown / department (Site & Job Type removed to match ERP Indent)
+              if (item.department.isNotEmpty)
+                _chip(Icons.warehouse_outlined, item.department),
               if (item.priority.isNotEmpty) PriorityBadge(item.priority),
             ]),
 

@@ -378,8 +378,8 @@ class IndentController extends AppBaseController {
   bool _submitting = false;
 
   Future<void> submitIndent() async {
-    if (selectedSite == null) {
-      ShowMessage.showSnackBar('Validation', 'Please select a site');
+    if (selectedGodown == null) {
+      ShowMessage.showSnackBar('Validation', 'Please select a godown');
       return;
     }
     if (itemLines.isEmpty) {
@@ -409,6 +409,7 @@ class IndentController extends AppBaseController {
                 'seqNo': 0,
                 'itemid': int.tryParse(i.itemId) ?? 0,
                 'unitid': int.tryParse(i.unitId) ?? 0,
+                'unitname': i.unit,
                 'quantity': i.indentQty, // ← was 'indentqty'
                 'stockquantity': i.stockAtSite, // ← was 'stockatsite'
                 'rate': i.rate,
@@ -433,9 +434,10 @@ class IndentController extends AppBaseController {
         'indentdate': _parseDate(indentDateCtrl.text).toIso8601String(),
         'requireddate': _parseDate(requiredDateCtrl.text)
             .toIso8601String(), // ← was 'duedate'
-        'receivedby': requestByCtrl.text.trim(), // ← was 'requestby'
-        'orderid': int.tryParse(selectedWorkOrder?.id ?? '0') ??
-            0, // ← was 'workorderid'
+        // Request By is the approver dropdown now.
+        'receivedby': selectedApprover?.label ?? requestByCtrl.text.trim(),
+        // Order No == BOQ/Order: id + label come from the same "Order No" dropdown.
+        'orderid': int.tryParse(selectedCustomerOrder?.id ?? '0') ?? 0,
         'departmentid': int.tryParse(selectedDepartment?.id ?? '0') ?? 0,
         'jobtypeid': int.tryParse(selectedJobType?.id ?? '0') ?? 0,
         'siteid': int.tryParse(selectedSite?.id ?? '0') ?? 0,
@@ -533,6 +535,21 @@ class IndentController extends AppBaseController {
     siteInchargeCtrl.text = d.siteIncharge;
     remarksCtrl.text = d.remarks;
     boqNoCtrl.text = d.workorderno;
+
+    // Request By is the approver dropdown now — match the saved name.
+    if (d.requestby.isNotEmpty) {
+      selectedApprover =
+          approverList.firstWhereOrNull((a) => a.label == d.requestby) ??
+              selectedApprover;
+    }
+
+    // Godown (Request To) — site was removed, so set it directly from the
+    // detail (godownList is already loaded before detail in edit mode).
+    if (d.godownid > 0) {
+      selectedGodown =
+          godownList.firstWhereOrNull((g) => g.id == d.godownid.toString()) ??
+              IndentDropdownOption(id: d.godownid.toString(), label: d.godownname);
+    }
 
     // Priority comes as string from detail, use it directly if non-empty
     if (d.priority.isNotEmpty) {
@@ -672,9 +689,8 @@ class IndentController extends AppBaseController {
     try {
       await Future.wait([
         fetchIndentTypes(),
-        fetchSites(),
+        fetchGodowns(), // Godown loads independently now (Site removed)
         fetchDepartments(),
-        fetchJobTypes(),
         fetchApprovers(),
         fetchItems(),
         fetchUnits(),

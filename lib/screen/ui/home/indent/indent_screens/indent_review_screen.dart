@@ -31,24 +31,18 @@ class IndentReviewScreen extends StatelessWidget {
                             const IndentSectionHead('Indent Header'),
                             _reviewRow('Indent No.', ctrl.indentNumber),
                             _reviewRow('Indent Date', ctrl.indentDateCtrl.text),
-                            _reviewRow('Request By', ctrl.requestByCtrl.text),
+                            _reviewRow('Request By',
+                                ctrl.selectedApprover?.label ?? ctrl.requestByCtrl.text),
                             if (ctrl.selectedDepartment != null)
                               _reviewRow(
                                   'Department', ctrl.selectedDepartment!.label),
-                            if (ctrl.selectedJobType != null)
-                              _reviewRow(
-                                  'Job Type', ctrl.selectedJobType!.label),
-                            if (ctrl.selectedSite != null)
-                              _reviewRow('Site', ctrl.selectedSite!.label),
                             if (ctrl.selectedGodown != null)
-                              _reviewRow('Godown', ctrl.selectedGodown!.label),
+                              _reviewRow(
+                                  'Request To (Godown)', ctrl.selectedGodown!.label),
                             _reviewRowWidget(
                               'Priority',
                               PriorityBadge(ctrl.selectedPriority),
                             ),
-                            if (ctrl.selectedWorkOrder != null)
-                              _reviewRow(
-                                  'Work Order', ctrl.selectedWorkOrder!.label),
                             if (ctrl.siteInchargeCtrl.text.isNotEmpty)
                               _reviewRow(
                                   'Site Incharge', ctrl.siteInchargeCtrl.text),
@@ -150,7 +144,7 @@ class IndentReviewScreen extends StatelessWidget {
                     color: Colors.white)),
             const SizedBox(height: 2),
             Text(
-              '${ctrl.itemLines.length} item(s) · ${ctrl.selectedSite?.label ?? "—"}',
+              '${ctrl.itemLines.length} item(s) · ${ctrl.selectedGodown?.label ?? "—"}',
               style: TextStyle(
                   fontSize: 12, color: Colors.white.withValues(alpha: 0.85)),
             ),

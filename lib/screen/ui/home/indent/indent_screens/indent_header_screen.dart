@@ -75,16 +75,17 @@ class IndentHeaderScreen extends StatelessWidget {
                     ),
                   )),
                 ]),
-                const SizedBox(height: 10),
-                IndentSearchableDropdown<IndentDropdownOption>(
-                  label: "BOQ No.",
-                  value: ctrl.selectedCustomerOrder,
-                  items: ctrl.customerOrderList,
-                  isLoading: ctrl.isLoadingCustomerOrder,
-                  itemLabel: (o) => o.label,
-                  onChanged: ctrl.setCustomerOrder,
-                  hint: "Select customer order...",
-                ),
+                // Order No. — hidden in UI (per request).
+                // const SizedBox(height: 10),
+                // IndentSearchableDropdown<IndentDropdownOption>(
+                //   label: "Order No.",
+                //   value: ctrl.selectedCustomerOrder,
+                //   items: ctrl.customerOrderList,
+                //   isLoading: ctrl.isLoadingCustomerOrder,
+                //   itemLabel: (o) => o.label,
+                //   onChanged: ctrl.setCustomerOrder,
+                //   hint: "Select order...",
+                // ),
                 const SizedBox(height: 10),
                 IndentField(
                   label: "User Name",
@@ -98,10 +99,15 @@ class IndentHeaderScreen extends StatelessWidget {
               IndentCard(
                   child: Column(children: [
                 const IndentSectionHead("Request Details"),
-                IndentField(
-                  label: "Request By ",
-                  controller: ctrl.requestByCtrl,
-                  hint: "Enter requester name",
+                // Request By is now the approver dropdown (selectedApprover).
+                IndentSearchableDropdown<IndentDropdownOption>(
+                  label: "Request By",
+                  value: ctrl.selectedApprover,
+                  items: ctrl.approverList,
+                  isLoading: ctrl.isLoadingApprover,
+                  itemLabel: (o) => o.label,
+                  onChanged: ctrl.setApprover,
+                  hint: "Select request by...",
                 ),
                 const SizedBox(height: 10),
                 IndentSearchableDropdown<IndentDropdownOption>(
@@ -113,16 +119,17 @@ class IndentHeaderScreen extends StatelessWidget {
                   onChanged: ctrl.setDepartment,
                   hint: "Select department...",
                 ),
-                const SizedBox(height: 10),
-                IndentSearchableDropdown<IndentDropdownOption>(
-                  label: "Job Type",
-                  value: ctrl.selectedJobType,
-                  items: ctrl.jobTypeList,
-                  isLoading: ctrl.isLoadingJobType,
-                  itemLabel: (o) => o.label,
-                  onChanged: ctrl.setJobType,
-                  hint: "Select job type...",
-                ),
+                // Job Type — commented out (not used in ERP Indent screen).
+                // const SizedBox(height: 10),
+                // IndentSearchableDropdown<IndentDropdownOption>(
+                //   label: "Job Type",
+                //   value: ctrl.selectedJobType,
+                //   items: ctrl.jobTypeList,
+                //   isLoading: ctrl.isLoadingJobType,
+                //   itemLabel: (o) => o.label,
+                //   onChanged: ctrl.setJobType,
+                //   hint: "Select job type...",
+                // ),
                 const SizedBox(height: 10),
                 IndentSearchableDropdown<IndentDropdownOption>(
                   label: "Priority",
@@ -135,41 +142,41 @@ class IndentHeaderScreen extends StatelessWidget {
                 ),
               ])),
 
-              // Site and Godown card
+              // Godown card (Site removed — ERP Indent uses only Godown / "Request To")
               IndentCard(
                   child: Column(children: [
-                const IndentSectionHead("Site and Godown"),
+                const IndentSectionHead("Godown"),
+                // Site Name — commented out (no site in ERP Indent; only godown).
+                // IndentSearchableDropdown<IndentDropdownOption>(
+                //   label: "Site Name",
+                //   value: ctrl.selectedSite,
+                //   items: ctrl.siteList,
+                //   isLoading: ctrl.isLoadingSite,
+                //   itemLabel: (o) => o.label,
+                //   onChanged: ctrl.setSite,
+                //   hint: "Select site...",
+                // ),
+                // const SizedBox(height: 10),
                 IndentSearchableDropdown<IndentDropdownOption>(
-                  label: "Site Name",
-                  value: ctrl.selectedSite,
-                  items: ctrl.siteList,
-                  isLoading: ctrl.isLoadingSite,
-                  itemLabel: (o) => o.label,
-                  onChanged: ctrl.setSite,
-                  hint: "Select site...",
-                ),
-                const SizedBox(height: 10),
-                IndentSearchableDropdown<IndentDropdownOption>(
-                  label: "Godown",
+                  label: "Request To (Godown)",
                   value: ctrl.selectedGodown,
                   items: ctrl.godownList,
                   isLoading: ctrl.isLoadingGodown,
                   itemLabel: (o) => o.label,
                   onChanged: ctrl.setGodown,
-                  hint: ctrl.selectedSite == null
-                      ? "Select a site first..."
-                      : "Select godown...",
+                  hint: "Select godown...",
                 ),
-                const SizedBox(height: 10),
-                IndentSearchableDropdown<IndentDropdownOption>(
-                  label: "Approver Name",
-                  value: ctrl.selectedApprover,
-                  items: ctrl.approverList,
-                  isLoading: ctrl.isLoadingApprover,
-                  itemLabel: (o) => o.label,
-                  onChanged: ctrl.setApprover,
-                  hint: "Select approver...",
-                ),
+                // Approver Name — hidden; "Request By" above is the approver dropdown.
+                // const SizedBox(height: 10),
+                // IndentSearchableDropdown<IndentDropdownOption>(
+                //   label: "Approver Name",
+                //   value: ctrl.selectedApprover,
+                //   items: ctrl.approverList,
+                //   isLoading: ctrl.isLoadingApprover,
+                //   itemLabel: (o) => o.label,
+                //   onChanged: ctrl.setApprover,
+                //   hint: "Select approver...",
+                // ),
                 const SizedBox(height: 10),
                 IndentSearchableDropdown<IndentDropdownOption>(
                   label: "Company Name",
@@ -182,13 +189,13 @@ class IndentHeaderScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 IndentSearchableDropdown<IndentDropdownOption>(
-                  label: "Request To Site",
+                  label: "Plant Type",
                   value: ctrl.selectedBranch,
                   items: ctrl.branchList,
                   isLoading: ctrl.isLoadingBranch,
                   itemLabel: (o) => o.label,
                   onChanged: ctrl.setBranch,
-                  hint: "Select branch...",
+                  hint: "Select plant...",
                 ),
                 const SizedBox(height: 10),
                 // IndentSearchableDropdown<IndentDropdownOption>(
@@ -241,8 +248,8 @@ class IndentHeaderScreen extends StatelessWidget {
           label: "Continue -> Add Items",
           icon: Icons.arrow_forward_rounded,
           onTap: () {
-            if (ctrl.selectedSite == null) {
-              Get.snackbar("Validation", "Please select a site",
+            if (ctrl.selectedGodown == null) {
+              Get.snackbar("Validation", "Please select a godown",
                   snackPosition: SnackPosition.BOTTOM,
                   backgroundColor: Colors.red.shade50,
                   colorText: Colors.red.shade800,

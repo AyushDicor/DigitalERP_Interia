@@ -406,6 +406,7 @@ class HomeViewNewController extends AppBaseController {
       // ensureMenu(2586, 'Payment Request'); // hidden for now (per request 2026-06-22)
       ensureMenu(2754, 'MRN');
       ensureMenu(2761, 'MRN QC');
+      ensureMenu(2762, 'Indent');
 
       // Hide the Dashboard quick-link tile (menuid 126) — not needed (2026-06-22).
       menuListData.removeWhere((m) => m.menuid == 126);
@@ -476,6 +477,7 @@ class HomeViewNewController extends AppBaseController {
       'GRN Entry': AppAssets.grnIcon,
       'Mrn QC': AppAssets.mrnQcIcon,
       'Material Received': AppAssets.mrnrIcon,
+      'Indent': AppAssets.mrnIcon,
     };
   }
 
@@ -499,6 +501,7 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2754) return AppRoutes.mrnScreen;
     if (menuId == 2760) return AppRoutes.grnScreen;
     if (menuId == 2761) return AppRoutes.mrnQcList;
+    if (menuId == 2762) return AppRoutes.indentList;
     if (menuId == 2755) return AppRoutes.materialReceiptScreen;
     return AppRoutes.homeNew;
   }
