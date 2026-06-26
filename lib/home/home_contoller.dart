@@ -235,6 +235,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
@@ -299,7 +300,22 @@ class HomeController extends AppBaseController {
 
     onItemTapped(0);
     update();
+    // Fire-and-forget; must never block or crash startup.
+    _initMessaging();
     super.onInit();
+  }
+
+  /// Request notification permission and fetch the FCM token. Fully guarded so a
+  /// failure (e.g. no Play Services / iOS without APNs) can never break startup.
+  Future<void> _initMessaging() async {
+    try {
+      await FirebaseMessaging.instance.requestPermission();
+      final token = await FirebaseMessaging.instance.getToken();
+      await updateToken(token);
+      FirebaseMessaging.instance.onTokenRefresh.listen(updateToken);
+    } catch (e) {
+      debugPrint('FCM init skipped: $e');
+    }
   }
 
   void menulist() {}
@@ -313,7 +329,11 @@ class HomeController extends AppBaseController {
   void sendLocations() {}
   void collectLocations() {}
   Future<void> saveLocationAPI() async {}
-  Future<void> updateToken(String? token) async {}
+  Future<void> updateToken(String? token) async {
+    if (token == null || token.isEmpty) return;
+    await SharedPre.setValue('fcmToken', token);
+    debugPrint('FCM token: $token');
+  }
   Future<void> loadUserData() async {
     final saved = SharedPre.getObjs(SharedPre.userData);
     if (saved != null && saved.isNotEmpty) {

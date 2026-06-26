@@ -36,12 +36,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:newdigitalerp/app_routes/app_pages.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
+import 'package:newdigitalerp/firebase_options.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Connect to the Firebase project (DigitalERP Ribbel). Must run before any
+  // Firebase API (e.g. FCM) is used.
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   // MUST init local storage BEFORE anything reads the saved session, otherwise
   // a fast cold start reads it before the box loads from disk → wrong/empty user.
   await GetStorage.init();

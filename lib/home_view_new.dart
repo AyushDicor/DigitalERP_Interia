@@ -1294,13 +1294,24 @@ class _HomeViewNewState extends State<HomeViewNew> with WidgetsBindingObserver {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                  color: _menuColor(data).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(13)),
-              child: Icon(_menuIcon(data),
-                  color: _menuColor(data), size: 24),
+              width: 44,
+              height: 44,
+              decoration:  BoxDecoration(
+                  color: newBlueLightColor,
+                  borderRadius: BorderRadius.circular(10)),
+              child:
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Image.asset(
+                  ctrl.imageList()[data.menuname] ?? '',
+                  errorBuilder: (_, __, ___) => const Icon(
+                      Icons.grid_view_rounded,
+                      color: newBlueColor,
+                      size: 24),
+                ),
+              ),
+              // Icon(_menuIcon(data),
+              //     color: _menuColor(data), size: 24),
             ),
             const SizedBox(height: 8),
             Padding(

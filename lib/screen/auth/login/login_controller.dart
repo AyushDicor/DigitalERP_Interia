@@ -340,9 +340,10 @@ class LoginController extends GetxController {
       });
 
       if (res.status == 200 && res.data != null) {
-        // Credentials valid → go to OTP verification (pass login id + password).
-        // The OTP screen finalizes login (saves user, navigates home).
-        Get.toNamed(AppRoutes.otp, arguments: [mobile, password]);
+        // Credentials valid → go to OTP verification (pass login id + password + the
+        // server-generated OTP so the screen can show it; there is no SMS provider).
+        Get.toNamed(AppRoutes.otp,
+            arguments: [mobile, password, res.data?.otp?.toString() ?? '']);
       } else {
         _showSnack('Login Failed',
             (res.message?.isNotEmpty ?? false) ? res.message! : 'Invalid mobile number or password');

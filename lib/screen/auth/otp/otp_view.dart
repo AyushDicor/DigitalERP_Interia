@@ -502,7 +502,9 @@ class OtpView extends StatelessWidget {
               color: Color(0xFF16A34A), size: 16),
           const SizedBox(width: 8),
           Text(
-            'Test OTP: ${controller.dummyOtpHint}',
+            controller.serverOtp.isNotEmpty
+                ? 'Your OTP: ${controller.serverOtp}'
+                : 'Enter the OTP to continue',
             style: const TextStyle(
               fontSize: 13,
               color: Color(0xFF16A34A),

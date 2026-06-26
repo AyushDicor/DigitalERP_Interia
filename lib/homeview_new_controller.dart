@@ -407,7 +407,6 @@ class HomeViewNewController extends AppBaseController {
       ensureMenu(2754, 'MRN');
       ensureMenu(2761, 'MRN QC');
       ensureMenu(2762, 'Indent');
-      ensureMenu(2760, 'GRN Entry');
 
       // Hide the Dashboard quick-link tile (menuid 126) — not needed (2026-06-22).
       menuListData.removeWhere((m) => m.menuid == 126);
@@ -456,29 +455,29 @@ class HomeViewNewController extends AppBaseController {
 
   Map<String, dynamic> imageList() {
     return {
-      'Executive': 'assets/iconsnew/Executive2.png',
-      'Order Module': AppAssets.ordernewIcon,
-      'Visit': AppAssets.visitnewIcon,
-      'Payment Request': AppAssets.expensenewIcon,
-      'Party List': AppAssets.partylistnewIcon,
-      'Image': AppAssets.imagenewIcon,
-      'Accounts': AppAssets.accountNewIcon,
-      'MIS': AppAssets.misnewIcon,
-      'Approval': AppAssets.approvalnewIcon,
-      'Task Management': AppAssets.taskManagementnewIcon,
-      'Document Management': AppAssets.documentnewIcon,
-      'Follow Up': AppAssets.orderfollowpnewIcon,
-      'Lead Management': AppAssets.leadManagementNewIcon,
-      'Category Catalouge': 'assets/iconsnew/Category Catalogue.png',
-      'Complaints': AppAssets.complaintsIcon,
-      'Reimbursement': 'assets/iconsnew/Reimbursements.png',
-      'Performance': AppAssets.performancenewIcon,
-      'Attendance': AppAssets.attendencenewIcon,
-      'MRN': AppAssets.mrnIcon,
-      'GRN Entry': AppAssets.grnIcon,
-      'Mrn QC': AppAssets.mrnQcIcon,
-      'Material Received': AppAssets.mrnrIcon,
-      'Indent': AppAssets.mrnIcon,
+      'Executive'           : 'assets/iconsnew/Executive2.png',
+      'Order'               : AppAssets.ordernewIcon,
+      'Visit'               : AppAssets.visitnewIcon,
+      'Payment Request'     : AppAssets.expensenewIcon,
+      'Party List'          : AppAssets.partylistnewIcon,
+      'Image'               : AppAssets.imagenewIcon,
+      'Accounts'            : AppAssets.accountNewIcon,
+      'MIS'                 : AppAssets.misnewIcon,
+      'Approval'            : AppAssets.approvalnewIcon,
+      'Task'                : AppAssets.taskManagementnewIcon,
+      'Document Management' : AppAssets.documentnewIcon,
+      'Follow Up'           : AppAssets.orderfollowpnewIcon,
+      'Lead Management'     : AppAssets.leadManagementNewIcon,
+      'Category Catalouge'  : 'assets/iconsnew/Category Catalogue.png',
+      'Complaints'          : AppAssets.complaintsIcon,
+      'Reimbursement'       : 'assets/iconsnew/Reimbursements.png',
+      'Performance'         : AppAssets.performancenewIcon,
+      'Attendance'          : AppAssets.attendencenewIcon,
+      'MRN'                 : AppAssets.mrnIcon,
+      'GRN Entry'           : AppAssets.grnIcon,
+      'MRN QC'              : AppAssets.mrnQcIcon,
+      'Material Received'   : AppAssets.mrnrIcon,
+      'Indent'              : AppAssets.mrnIcon,
     };
   }
 
