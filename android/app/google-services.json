@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "874379693214",
+    "project_id": "digitalerp-ribbel",
+    "storage_bucket": "digitalerp-ribbel.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:874379693214:android:5318949458903892db7f8f",
+        "android_client_info": {
+          "package_name": "com.ribbel.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrWQSniaaORf_OIYhQ2Y-W60xMwJEvTWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
