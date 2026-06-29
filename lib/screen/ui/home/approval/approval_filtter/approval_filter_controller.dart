@@ -299,7 +299,15 @@ class ApprovalFilterController extends AppBaseController {
       };
       var res = await api.getStatusData(body);
       if (res.status == 200) {
-        filterStatusListData = (res.data ?? []).cast<StatusListData>();
+        // api.getStatusData returns the approval_management StatusListData, but this
+        // controller uses the approval_filtter StatusListData (same shape). Convert
+        // element-by-element instead of .cast<>() (which throws across the two types).
+        filterStatusListData = (res.data ?? [])
+            .map((e) => StatusListData(
+                  statusid: e.statusid,
+                  statusname: e.statusname,
+                ))
+            .toList();
         if (filterStatusListData.isNotEmpty) {
           selectedstatus = filterStatusListData.firstWhere(
             (element) => element.statusname == "Pending",

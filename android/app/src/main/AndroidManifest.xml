@@ -1,5 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- file_picker injects broad media permissions, but the app only picks single
+         files/photos via the system picker (SAF / Android Photo Picker), which need
+         no media access. Strip them so Google Play doesn't require a Photo/Video
+         permissions declaration. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove"/>
     <application
         android:label="Ribbel"
         android:name="${applicationName}"

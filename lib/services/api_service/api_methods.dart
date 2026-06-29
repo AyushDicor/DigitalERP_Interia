@@ -325,6 +325,12 @@ class ApiMethods {
   String saveIndent            = 'createindent';
   String getIndentItemStock    = '';
 
+  /// Lead Management (native module)
+  String leadList         = 'lead/list';
+  String leadCreate       = 'lead/create';
+  String leadAddFollowup  = 'lead/addfollowup';
+  String leadFollowups    = 'lead/followups';
+
   ///Issue Item
   String getIssueItemDropdown = 'indentandissuedropdown';
   String getPendingIndentList     = '';

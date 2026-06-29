@@ -890,7 +890,10 @@ class _LeadCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Get.to(const LeadFollowupDetailsView()),
+      onTap: () {
+        Get.find<LeadManagementController>().setSelectedLead(item);
+        Get.to(const LeadFollowupDetailsView());
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
@@ -1010,37 +1013,20 @@ class _LeadCard extends StatelessWidget {
                     ]),
               ),
               // Action icon buttons
-              _iconBtn(Icons.person_add_alt_1_outlined, _kGreen,
-                  _kGreenLight, () => Get.to(const LeadFollowupDetailsView())),
+              _iconBtn(Icons.person_add_alt_1_outlined, _kGreen, _kGreenLight,
+                  () {
+                Get.find<LeadManagementController>().setSelectedLead(item);
+                Get.to(const LeadFollowupDetailsView());
+              }),
               const SizedBox(width: 6),
-              _iconBtn(Icons.history_rounded, _kOrange, _kOrangeLight,
-                      () => Get.to(const LeadFolloupHistory())),
+              _iconBtn(Icons.history_rounded, _kOrange, _kOrangeLight, () {
+                Get.find<LeadManagementController>().setSelectedLead(item);
+                Get.find<LeadManagementController>().getFollowups();
+                Get.to(const LeadFolloupHistory());
+              }),
               const SizedBox(width: 6),
-              GestureDetector(
-                onTap: () {},
-                child: Image.asset('assets/images/pdf.png',
-                    width: 28, height: 28),
-              ),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: () => Get.to(SelectBrandView()),
-                child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                      color: _kAccentLight,
-                      borderRadius: BorderRadius.circular(8)),
-                  child: const Row(children: [
-                    Icon(Icons.add_rounded, color: _kAccent, size: 14),
-                    SizedBox(width: 4),
-                    Text('Add Item',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _kAccent)),
-                  ]),
-                ),
-              ),
+              _iconBtn(Icons.picture_as_pdf_rounded, _kAccent, _kAccentLight,
+                  () {}),
             ]),
           ),
         ]),

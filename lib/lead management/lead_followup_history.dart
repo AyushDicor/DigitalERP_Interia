@@ -288,19 +288,31 @@ class LeadFolloupHistory extends StatefulWidget {
 }
 
 class _LeadFolloupHistoryState extends State<LeadFolloupHistory> {
-  // Replace with real data from controller
-  final List<Map<String, String>> _rows = List.generate(
-    5,
-        (i) => {
-      'sno': '${i + 1}',
-      'entryDate': 'N/A',
-      'remarks': 'N/A',
-      'purpose': 'N/A',
-      'status': 'N/A',
-      'followupDate': 'N/A',
-      'followupTime': 'N/A',
-    },
-  );
+  final LeadManagementController _ctrl = Get.find<LeadManagementController>();
+
+  // Built live from the controller's followupList (loaded in initState).
+  List<Map<String, String>> get _rows =>
+      _ctrl.followupList.asMap().entries.map((e) {
+        final f = e.value;
+        String v(String? s) => (s != null && s.trim().isNotEmpty) ? s : 'N/A';
+        return {
+          'sno': '${e.key + 1}',
+          'entryDate': v(f.entrydate),
+          'remarks': v(f.remarks),
+          'purpose': v(f.purpose),
+          'status': v(f.status),
+          'followupDate': v(f.followupdate),
+          'followupTime': v(f.followuptime),
+        };
+      }).toList();
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.getFollowups().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

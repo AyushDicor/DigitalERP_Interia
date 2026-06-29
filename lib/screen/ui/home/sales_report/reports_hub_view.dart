@@ -26,6 +26,10 @@ class ReportsHubView extends StatelessWidget {
     _Report('Attendance Report', 'Employee working/present/absent by month',
         Icons.people_alt_outlined, Color(0xFF8B5CF6), 'attendance',
         route: AppRoutes.misAttendanceReport),
+    // Stock Report opens its own dedicated screen (godown-wise stock enquiry).
+    _Report('Stock Report', 'Godown-wise stock with category & item filter',
+        Icons.warehouse_outlined, Color(0xFFCC9900), 'stock',
+        route: AppRoutes.misStockReport),
   ];
 
   @override

@@ -44,7 +44,10 @@ class StockReportController extends AppBaseController {
 
   void setSelectDropdownValue(StockCategoryList? selectedCategoryValue) {
     this.selectedCategoryValue = selectedCategoryValue;
-    getSubGroupList();
+    selectedSubGroup = null;
+    // Sub Group dropdown is hidden (not an API filter), so load items straight
+    // after a category is picked instead of waiting for a sub-group selection.
+    getItemList();
     update();
   }
 

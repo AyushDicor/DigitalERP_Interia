@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:newdigitalerp/Menu_new_list_responce.dart';
 import 'package:newdigitalerp/catalouge/catalogue_list_response.dart';
+import 'package:newdigitalerp/lead%20management/lead_list_response.dart';
 import 'package:newdigitalerp/change_company/Company_list_responce.dart';
 import 'package:newdigitalerp/change_company/branch_list_response.dart';
 import 'package:newdigitalerp/change_company/financial_year_response.dart';
@@ -4780,6 +4781,79 @@ class Api {
     } else {
       return GetStockReportResp(status: 500, message: 'No internet');
     }
+  }
+
+  // ── Lead Management ──
+  Future<LeadListResponse> getLeadList(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res =
+          await _apiClient.postMethod(method: _apiMethods.leadList, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadListResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadListResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadListResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadListResponse(status: 500, message: 'No internet');
+  }
+
+  Future<LeadFollowupResponse> getLeadFollowups(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.leadFollowups, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadFollowupResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadFollowupResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadFollowupResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadFollowupResponse(status: 500, message: 'No internet');
+  }
+
+  Future<CommonResponse> createLead(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        String res = await _apiClient.postMethod(
+            method: _apiMethods.leadCreate, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  Future<CommonResponse> addLeadFollowup(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        String res = await _apiClient.postMethod(
+            method: _apiMethods.leadAddFollowup, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
   }
 
   Future<ExecutiveListDataResponse> executiveReportPersonListForeImageStamping(

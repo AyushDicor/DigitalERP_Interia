@@ -292,9 +292,9 @@
 //   }
 // }
 
-import 'dart:convert';
 import 'package:newdigitalerp/screen/base/base_controller.dart';
 import '../../home/home_contoller.dart';
+import '../lead_list_response.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/show_message.dart';
 import 'package:flutter/cupertino.dart';
@@ -304,31 +304,59 @@ class LeadManagementController extends AppBaseController {
   HomeController homeController = Get.find<HomeController>();
 
   //  Lead list
-  // Replace `dynamic` with your actual LeadData model once the API returns data
-  List<dynamic> leadList = [];
+  List<LeadData> leadList = [];
+
+  //  The lead currently being followed-up / viewed (set when a card is tapped).
+  LeadData? selectedLead;
+  List<LeadFollowupData> followupList = [];
+
+  void setSelectedLead(LeadData lead) {
+    selectedLead = lead;
+    update();
+  }
 
   @override
   void onInit() {
     super.onInit();
-    getLeadList(); // ✅ FIX: fetch leads on init so the list is never null/empty
+    getLeadList(); // fetch leads on init so the list is never null/empty
   }
 
+  String get _compId => homeController.currentUserData?.compId?.toString() ?? '';
+  String get _branchId =>
+      homeController.currentUserData?.branchId?.toString() ?? '0';
+  String get _userId => homeController.currentUserData?.userid?.toString() ?? '0';
+
   /// Fetch the lead list from the API.
-  /// Replace the body/endpoint below with your actual implementation.
   void getLeadList() async {
     setBusy(true);
     try {
-      //  TODO: swap this with your real API call
-      // Example:
-      //   final res = await api.getLeadList(homeController.currentUserData?.companyId ?? '');
-      //   if (res.status == 200) {
-      //     leadList = res.data ?? [];
-      //   } else {
-      //     ShowMessage.showSnackBar('Error', res.message.toString());
-      //   }
-      //
-      // Placeholder: keeps list empty until API is wired up
-      leadList = [];
+      final res = await api.getLeadList({
+        'compid': _compId,
+        'branchid': _branchId,
+        'userid': _userId,
+      });
+      if (res.status == 200) {
+        leadList = res.data ?? [];
+      } else {
+        leadList = [];
+        ShowMessage.showSnackBar('Lead list', res.message.toString());
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('Error', '$e');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /// Fetch followup history for the selected lead.
+  Future<void> getFollowups() async {
+    if (selectedLead?.mainid == null) return;
+    setBusy(true);
+    try {
+      final res = await api.getLeadFollowups({
+        'leadid': selectedLead!.mainid.toString(),
+      });
+      followupList = (res.status == 200) ? (res.data ?? []) : [];
     } catch (e) {
       ShowMessage.showSnackBar('Error', '$e');
     } finally {
@@ -577,13 +605,28 @@ class LeadManagementController extends AppBaseController {
     setBusy(true);
     if (_isLeadValidate()) {
       try {
-        // TODO: populate body with actual field values
-        final Map<String, String> body = {};
-        final res = await api.addCompanyJson(json.encode(body));
+        final Map<String, String> body = {
+          'compid': _compId,
+          'branchid': _branchId,
+          'userid': _userId,
+          'leadno': leadNumberController.text.trim(),
+          'requirement': requirementController.text.trim(),
+          'companyname': companyNameController.text.trim(),
+          'ownername': ownerNameController.text.trim(),
+          'contactperson': contactPersonController.text.trim(),
+          'mobileno': mobileNumberController.text.trim(),
+          'alternatemobileno': alternateNumberController.text.trim(),
+          'email': emailController.text.trim(),
+          'website': websiteController.text.trim(),
+          'companyaddress': companyAddressController.text.trim(),
+          'phoneno': phoneNumberController.text.trim(),
+          'businessnature': businessNatureController.text.trim(),
+          'leaddate': selectDate == 'Lead Date' ? '' : selectDate,
+        };
+        final res = await api.createLead(body);
         if (res.status == 200) {
           backTap();
-          // ✅ Refresh the list after a successful add
-          getLeadList();
+          getLeadList(); // refresh list after add
           ShowMessage.showSnackBar('Success', res.message.toString());
         } else {
           ShowMessage.showSnackBar('Error', res.message.toString());
@@ -600,14 +643,32 @@ class LeadManagementController extends AppBaseController {
 
   void followupDetailsApi() async {
     unfocus();
+    if (selectedLead?.mainid == null) {
+      ShowMessage.showSnackBar('Error', 'No lead selected for follow-up');
+      return;
+    }
     setBusy(true);
     if (_isFollowupValidate()) {
       try {
-        // TODO: populate body with actual field values
-        final Map<String, String> body = {};
-        final res = await api.addCompanyJson(json.encode(body));
+        final Map<String, String> body = {
+          'leadid': selectedLead!.mainid.toString(),
+          'compid': _compId,
+          'branchid': _branchId,
+          'userid': _userId,
+          'entrydate': selectDatef == 'Entry Date' ? '' : selectDatef,
+          'purpose': specificationController.text.trim(),
+          'remarks': remarksController.text.trim(),
+          'followup_time': followupTimeController.text.trim(),
+          'followup_remark': remarkFollowController.text.trim(),
+          'address': addressController.text.trim(),
+          'companyname': selectedLead?.companyname ?? '',
+          'contactperson': selectedLead?.contactperson ?? '',
+          'mobileno': selectedLead?.mobilenumber ?? '',
+        };
+        final res = await api.addLeadFollowup(body);
         if (res.status == 200) {
           backTap();
+          getFollowups(); // refresh history
           ShowMessage.showSnackBar('Success', res.message.toString());
         } else {
           ShowMessage.showSnackBar('Error', res.message.toString());

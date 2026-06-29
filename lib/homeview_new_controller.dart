@@ -407,6 +407,9 @@ class HomeViewNewController extends AppBaseController {
       ensureMenu(2754, 'MRN');
       ensureMenu(2761, 'MRN QC');
       ensureMenu(2762, 'Indent');
+      ensureMenu(2419, 'Lead Management'); // native Lead module (LeadController)
+      // MIS (menuid 127) already comes from the backend menu and opens the
+      // Reports Hub (see _getDirectRoute) — Stock Report is listed there.
 
       // Hide the Dashboard quick-link tile (menuid 126) — not needed (2026-06-22).
       menuListData.removeWhere((m) => m.menuid == 126);

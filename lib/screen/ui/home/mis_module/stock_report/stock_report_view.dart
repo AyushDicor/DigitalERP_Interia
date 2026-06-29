@@ -333,9 +333,11 @@ class StockReportView extends StatelessWidget {
                 _label('Main Group'),
                 _dropdown(_dropdownMainGroup(controller)),
                 const SizedBox(height: 14),
-                _label('Sub Group'),
-                _dropdown(_dropdownSubGroup(controller)),
-                const SizedBox(height: 14),
+                // Sub Group dropdown hidden — not wired to the stock-report API
+                // filter (items load directly after a Main Group is picked).
+                // _label('Sub Group'),
+                // _dropdown(_dropdownSubGroup(controller)),
+                // const SizedBox(height: 14),
                 _label('Item Name'),
                 _dropdown(_dropdownItemName(controller)),
               ]),
