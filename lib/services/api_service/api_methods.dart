@@ -17,6 +17,7 @@ class ApiMethods {
   //String dashboardDetails = 'Dashboard/dashboardDetails';
   String dashboardDetails     = 'dashboardnew/dashboardDetailsnew';
   String dashboardPendency    = 'dashboardnew/dashboardpendency';
+  String dashboardGraphs      = 'dashboardnew/dashboardgraphs';
   // String attendanceSummary = 'AttendanceSummery/attendanceDetails';
   String attendanceSummary    = 'AttendanceSummerynew/attendanceDetailsnew';
   String attendanceList       = 'AttendanceList/attendanceList';
@@ -325,7 +326,14 @@ class ApiMethods {
   String saveIndent            = 'createindent';
   String getIndentItemStock    = '';
 
-  /// Lead Management (native module)
+  /// Lead Management (ERP-native module)
+  String leadDashboard    = 'lead/dashboard';
+  String leadItems        = 'lead/items';
+  String leadFormDropdowns = 'lead/formdropdowns';
+  String leadCompanies    = 'lead/companies';
+  String leadItemMaster   = 'lead/itemmaster';
+  String leadPartyDetail  = 'lead/partydetail';
+  String leadSave         = 'lead/save';
   String leadList         = 'lead/list';
   String leadCreate       = 'lead/create';
   String leadAddFollowup  = 'lead/addfollowup';

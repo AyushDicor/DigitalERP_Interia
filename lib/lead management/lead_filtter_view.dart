@@ -721,13 +721,15 @@ class LeadFilterScreen extends StatelessWidget {
               ),
             ),
 
-            //  Bottom action bar 
-            Container(
+            //  Bottom action bar (SafeArea so it clears the system nav bar)
+            SafeArea(
+              top: false,
+              child: Container(
               decoration: const BoxDecoration(
                 color: _kSurface,
                 border: Border(top: BorderSide(color: _kBorder)),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Row(
                 children: [
                   // Reset button
@@ -781,6 +783,7 @@ class LeadFilterScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
             ),
           ],
         ),

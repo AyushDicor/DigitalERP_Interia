@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:newdigitalerp/Menu_new_list_responce.dart';
 import 'package:newdigitalerp/catalouge/catalogue_list_response.dart';
 import 'package:newdigitalerp/lead%20management/lead_list_response.dart';
+import 'package:newdigitalerp/lead%20management/lead_form_models.dart';
 import 'package:newdigitalerp/change_company/Company_list_responce.dart';
 import 'package:newdigitalerp/change_company/branch_list_response.dart';
 import 'package:newdigitalerp/change_company/financial_year_response.dart';
@@ -44,6 +45,7 @@ import 'package:newdigitalerp/response/customer_detail_response.dart';
 import 'package:newdigitalerp/response/customer_location_update_response.dart';
 import 'package:newdigitalerp/response/customer_remarks_update_response.dart';
 import 'package:newdigitalerp/response/dashboard_details_response.dart';
+import 'package:newdigitalerp/response/dashboard_graphs_response.dart';
 import 'package:newdigitalerp/response/delete_visit_data_response.dart';
 import 'package:newdigitalerp/response/distance_details_response.dart';
 import 'package:newdigitalerp/response/download_salary_sleep_res.dart';
@@ -1314,6 +1316,27 @@ class Api {
     } else {
       return PendencyResponse(status: 500, message: 'No Internet');
     }
+  }
+
+  /// Chart data for the home dashboard (order trend / doc mix / by-party / recent).
+  Future<DashboardGraphsResponse> getDashboardGraphs(
+      Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.dashboardGraphs, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return dashboardGraphsResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return DashboardGraphsResponse(status: 500, message: e.toString());
+        }
+      }
+      return DashboardGraphsResponse(status: 500, message: 'Something went wrong');
+    }
+    return DashboardGraphsResponse(status: 500, message: 'No internet');
   }
 
   // ─────────────────────────── Task module ───────────────────────────
@@ -4784,6 +4807,146 @@ class Api {
   }
 
   // ── Lead Management ──
+  /// Full dashboard bundle (leads + follow-ups + tasks + notes + estimates +
+  /// quotations) from the ERP proc leaddetailsdetestnew in a single round-trip.
+  Future<LeadBundleResponse> getLeadDashboard(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.leadDashboard, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadBundleResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadBundleResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadBundleResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadBundleResponse(status: 500, message: 'No internet');
+  }
+
+  /// Lead Entry form dropdowns (status, source, category, priority, designation,
+  /// segment, industry, assign-to, company-type, units).
+  Future<LeadFormResponse> getLeadFormDropdowns(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.leadFormDropdowns, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadFormResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadFormResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadFormResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadFormResponse(status: 500, message: 'No internet');
+  }
+
+  /// Existing companies (parties) for the "Existing" company type.
+  Future<LeadOptionsResponse> getLeadCompanies(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.leadCompanies, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadOptionsResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadOptionsResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadOptionsResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadOptionsResponse(status: 500, message: 'No internet');
+  }
+
+  /// Item master for the item grid.
+  Future<LeadOptionsResponse> getLeadItemMaster(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.leadItemMaster, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadOptionsResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadOptionsResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadOptionsResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadOptionsResponse(status: 500, message: 'No internet');
+  }
+
+  /// Party auto-fill when an Existing company is selected.
+  Future<LeadPartyResponse> getLeadPartyDetail(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.leadPartyDetail, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadPartyResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadPartyResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadPartyResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadPartyResponse(status: 500, message: 'No internet');
+  }
+
+  /// Create/update a lead (ERP proc create_LeadEntrywithsizecolor).
+  Future<CommonResponse> saveLead(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        String res =
+            await _apiClient.postMethod(method: _apiMethods.leadSave, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  /// Lead header + item lines (ERP proc EditLeadEntry) for the detail screen.
+  Future<LeadItemsResponse> getLeadItems(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res =
+          await _apiClient.postMethod(method: _apiMethods.leadItems, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadItemsResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadItemsResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadItemsResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadItemsResponse(status: 500, message: 'No internet');
+  }
+
   Future<LeadListResponse> getLeadList(Map<String, String> body) async {
     final c = await connectivity.checkConnectivity();
     if (c.contains(ConnectivityResult.wifi) ||

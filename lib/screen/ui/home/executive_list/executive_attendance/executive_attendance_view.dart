@@ -523,10 +523,16 @@ class ExecutiveAttendanceView extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            //  1. Profile card
+                            //  1. Profile card (kept — identifies the executive)
                             _profileCard(controller),
                             const SizedBox(height: 20),
 
+                            // ── Non-attendance sections hidden per request ──
+                            // Only the Attendance report is shown below. The
+                            // stat chips / Revenue / Users Visits / Recent Orders
+                            // / Performance sections are commented out (kept in
+                            // code so they can be restored later).
+                            /*
                             //  2. Stat chips
                             _statsRow(controller),
                             const SizedBox(height: 24),
@@ -554,6 +560,7 @@ class ExecutiveAttendanceView extends StatelessWidget {
                             const SizedBox(height: 12),
                             PerformanceTrackerWidget(controller: controller),
                             const SizedBox(height: 24),
+                            */
 
                             // 7. Attendance section header
                             Row(

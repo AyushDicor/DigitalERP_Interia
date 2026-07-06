@@ -118,7 +118,7 @@ import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/response/executive_list_with_lat_long_response.dart';
-import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/attendance_model.dart';
+import 'package:newdigitalerp/response/attendance_summary_response.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_attendance/performance_tracker_widget.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
@@ -293,32 +293,36 @@ class ExecutiveAttendanceController extends AppBaseController {
       body[RequestKeys.filter] = 'yes';
       var res = await api.getAttendanceSummary(body);
       if (res.status == 200) {
-        attendanceSummaryData = (res.data ?? []).cast<AttendanceSummaryData>();
+        // res.data is already List<AttendanceSummaryData> (response type) — no cast.
+        attendanceSummaryData = res.data ?? [];
 
-        enableBtn = (attendanceSummaryData?[0].details?.last.date.toString() ==
-                    formatDate(DateTime.now().toString(),
-                        AppString.dateTimeFormat, AppString.ddMMyyyy) &&
-                attendanceSummaryData?[0].details?.last.outTime != null)
-            ? false
-            : true;
+        // Guard: an executive may have no summary row, or a row with empty details.
+        final list = attendanceSummaryData;
+        final details =
+            (list != null && list.isNotEmpty) ? list[0].details : null;
+        final today = formatDate(DateTime.now().toString(),
+            AppString.dateTimeFormat, AppString.ddMMyyyy);
 
-        isAttendanceMarked =
-            (attendanceSummaryData?[0].details?.last.date.toString() ==
-                        formatDate(DateTime.now().toString(),
-                            AppString.dateTimeFormat, AppString.ddMMyyyy) &&
-                    attendanceSummaryData?[0].details?.last.outTime == null)
-                ? true
-                : false;
+        if (details != null && details.isNotEmpty) {
+          final last = details.last;
+          final lastIsToday = last.date.toString() == today;
+          enableBtn = (lastIsToday && last.outTime != null) ? false : true;
+          isAttendanceMarked =
+              (lastIsToday && last.outTime == null) ? true : false;
 
-        attendanceSummaryData?[0].details?.sort((a, b) {
-          if (DateTime.parse(formatDate(
-                  a.date.toString(), AppString.ddMMyyyy, AppString.yyyyMMdd))
-              .isBefore(DateTime.parse(formatDate(b.date.toString(),
-                  AppString.ddMMyyyy, AppString.yyyyMMdd)))) {
-            return 1;
-          }
-          return 0;
-        });
+          details.sort((a, b) {
+            if (DateTime.parse(formatDate(
+                    a.date.toString(), AppString.ddMMyyyy, AppString.yyyyMMdd))
+                .isBefore(DateTime.parse(formatDate(b.date.toString(),
+                    AppString.ddMMyyyy, AppString.yyyyMMdd)))) {
+              return 1;
+            }
+            return 0;
+          });
+        } else {
+          enableBtn = true;
+          isAttendanceMarked = false;
+        }
 
         update();
       } else {
