@@ -5019,6 +5019,57 @@ class Api {
     return CommonResponse(status: 500, message: 'No internet');
   }
 
+  Future<CommonResponse> addLeadTask(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        String res = await _apiClient.postMethod(
+            method: _apiMethods.leadAddTask, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  Future<CommonResponse> saveLeadEstimate(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        String res = await _apiClient.postMethod(
+            method: _apiMethods.leadSaveEstimate, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  Future<CommonResponse> addLeadNote(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        String res = await _apiClient.postMethod(
+            method: _apiMethods.leadAddNote, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
   Future<ExecutiveListDataResponse> executiveReportPersonListForeImageStamping(
       Map<String, String> body) async {
     List<ConnectivityResult> connectivityResults =

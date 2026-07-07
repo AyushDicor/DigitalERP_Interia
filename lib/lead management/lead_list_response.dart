@@ -261,22 +261,26 @@ class LeadDocData {
 // ═══════════════════════════════ Lead item line ═════════════════════════════
 class LeadItemData {
   int? transDetailId;
+  int? itemId; // itemnamecode
   String? itemName; // itemnamecodetext
   double mrp;
   double amount; // itemamt
   double salePrice;
   double quantity;
+  int? billingUnitId; // billingunitid
   String? unit; // billingunit
   String? size; // itemsizename
   String? weight; // itemweightname
 
   LeadItemData({
     this.transDetailId,
+    this.itemId,
     this.itemName,
     this.mrp = 0,
     this.amount = 0,
     this.salePrice = 0,
     this.quantity = 0,
+    this.billingUnitId,
     this.unit,
     this.size,
     this.weight,
@@ -284,11 +288,13 @@ class LeadItemData {
 
   factory LeadItemData.fromJson(Map<String, dynamic> j) => LeadItemData(
         transDetailId: _i(j, ['transdetailsid']),
+        itemId: _i(j, ['itemnamecode', 'itemid']),
         itemName: _s(j, ['itemnamecodetext', 'itemname']),
         mrp: _d(j, ['Mrp']),
         amount: _d(j, ['itemamt', 'Amount']),
         salePrice: _d(j, ['saleprice']),
         quantity: _d(j, ['Quantity']),
+        billingUnitId: _i(j, ['billingunitid']),
         unit: _s(j, ['billingunit']),
         size: _s(j, ['itemsizename']),
         weight: _s(j, ['itemweightname']),
@@ -350,6 +356,7 @@ LeadBundleResponse leadBundleResponseFromJson(String str) =>
 class LeadItemsResponse {
   bool? success;
   LeadData? header;
+  Map<String, dynamic>? headerMap; // raw EditLeadEntry header (all fields, for edit prefill)
   List<LeadItemData> items;
   String? message;
   int? status;
@@ -357,6 +364,7 @@ class LeadItemsResponse {
   LeadItemsResponse({
     this.success,
     this.header,
+    this.headerMap,
     this.items = const [],
     this.message,
     this.status,
@@ -364,11 +372,13 @@ class LeadItemsResponse {
 
   factory LeadItemsResponse.fromJson(Map<String, dynamic> j) {
     final data = j['data'] as Map<String, dynamic>?;
+    final rawHeader = (data != null && data['header'] is Map)
+        ? Map<String, dynamic>.from(data['header'])
+        : null;
     return LeadItemsResponse(
       success: j['success'],
-      header: (data != null && data['header'] != null)
-          ? LeadData.fromJson(data['header'])
-          : null,
+      header: rawHeader != null ? LeadData.fromJson(rawHeader) : null,
+      headerMap: rawHeader,
       items: (data != null && data['items'] != null)
           ? List<LeadItemData>.from(
               (data['items'] as List).map((e) => LeadItemData.fromJson(e)))

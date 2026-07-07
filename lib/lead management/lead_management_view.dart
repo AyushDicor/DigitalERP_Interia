@@ -86,7 +86,10 @@ class LeadManagementView extends StatelessWidget {
               ]),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () => Get.to(const LeadEntryView()),
+          onPressed: () {
+            c.startNewLead();
+            Get.to(const LeadEntryView());
+          },
           backgroundColor: _kPrimary,
           elevation: 3,
           shape: const CircleBorder(

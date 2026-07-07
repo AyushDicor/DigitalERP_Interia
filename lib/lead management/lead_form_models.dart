@@ -212,6 +212,7 @@ class LeadItemLine {
   String billingunit;
   String sizename;
   String weightname;
+  double gstPercent; // used by Estimation/Quotation; ignored by lead save
 
   LeadItemLine({
     this.itemid = 0,
@@ -223,9 +224,11 @@ class LeadItemLine {
     this.billingunit = '',
     this.sizename = '',
     this.weightname = '',
+    this.gstPercent = 0,
   });
 
   double get amount => quantity * saleprice;
+  double get gstAmount => amount * gstPercent / 100;
 
   Map<String, dynamic> toJson() => {
         'itemid': itemid,
@@ -238,5 +241,10 @@ class LeadItemLine {
         'billingunit': billingunit,
         'sizename': sizename,
         'weightname': weightname,
+        // estimate/quotation extras (harmless for the lead save)
+        'rate': saleprice,
+        'estimaterate': saleprice,
+        'gstpercent': gstPercent,
+        'gstamount': gstAmount,
       };
 }

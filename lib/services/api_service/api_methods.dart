@@ -337,6 +337,9 @@ class ApiMethods {
   String leadList         = 'lead/list';
   String leadCreate       = 'lead/create';
   String leadAddFollowup  = 'lead/addfollowup';
+  String leadAddTask      = 'lead/addtask';
+  String leadAddNote      = 'lead/addnote';
+  String leadSaveEstimate = 'lead/saveestimate';
   String leadFollowups    = 'lead/followups';
 
   ///Issue Item

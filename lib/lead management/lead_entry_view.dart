@@ -30,7 +30,9 @@ class _LeadEntryViewState extends State<LeadEntryView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Get.find<LeadManagementController>().loadFormData();
+      final c = Get.find<LeadManagementController>();
+      // Edit mode preloads dropdowns; only load here when not already loaded.
+      if (c.itemMaster.isEmpty) c.loadFormData();
     });
   }
 
@@ -53,14 +55,15 @@ class _LeadEntryViewState extends State<LeadEntryView> {
           ),
           title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text('Lead Entry',
-                    style: TextStyle(
+              children: [
+                Text(c.isEditing ? 'Edit Lead' : 'Lead Entry',
+                    style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: _kTextPrimary)),
-                Text('Create a new lead',
-                    style: TextStyle(fontSize: 11, color: _kTextSecondary)),
+                Text(c.isEditing ? 'Update lead details' : 'Create a new lead',
+                    style: const TextStyle(
+                        fontSize: 11, color: _kTextSecondary)),
               ]),
         ),
         body: c.formLoading
@@ -260,7 +263,10 @@ class _LeadEntryViewState extends State<LeadEntryView> {
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.check_circle_outline, size: 18),
-        label: Text(c.saving ? 'Saving…' : 'Create Lead',
+        label: Text(
+            c.saving
+                ? 'Saving…'
+                : (c.isEditing ? 'Update Lead' : 'Create Lead'),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
         style: ElevatedButton.styleFrom(
             backgroundColor: _kPrimary,

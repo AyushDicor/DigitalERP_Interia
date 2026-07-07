@@ -544,10 +544,153 @@ class LeadManagementController extends AppBaseController {
     update();
   }
 
-  // ══════════════════════════ LEAD ENTRY (create) form ══════════════════════
+  // ══════════════════════ Detail write actions (Follow-up/Task/Note) ═════════
+  String get _yearId =>
+      homeController.currentUserData?.yearId?.toString() ?? '';
+
+  // Reload the bundle, re-sync the open lead, and toast the result.
+  Future<bool> _afterDetailWrite(dynamic res, String okMsg) async {
+    if (res.status == 200) {
+      await loadDashboard();
+      final m = allLeads.where((l) => l.mainid == selectedLead?.mainid);
+      if (m.isNotEmpty) setSelectedLead(m.first);
+      ShowMessage.showSnackBar(
+          'Success', (res.message?.toString().isNotEmpty ?? false)
+              ? res.message.toString()
+              : okMsg);
+      return true;
+    }
+    ShowMessage.showSnackBar('Error', res.message?.toString() ?? 'Failed');
+    return false;
+  }
+
+  Future<bool> submitFollowup({
+    required String remarks,
+    String status = '',
+    int statusId = 0,
+    String followupDate = '',
+    String followupTime = '',
+    String purpose = '',
+  }) async {
+    if (selectedLead?.mainid == null) return false;
+    final res = await api.addLeadFollowup({
+      'leadid': selectedLead!.mainid.toString(),
+      'compid': _compId,
+      'branchid': _branchId,
+      'userid': _userId,
+      'yearid': _yearId,
+      'status': status,
+      'statusid': statusId.toString(),
+      'remarks': remarks,
+      'followup_date': followupDate,
+      'followup_time': followupTime,
+      'purpose': purpose,
+    });
+    return _afterDetailWrite(res, 'Follow-up added');
+  }
+
+  Future<bool> submitTask({
+    required String title,
+    String description = '',
+    String dueDate = '',
+    String priority = '',
+    String tags = '',
+  }) async {
+    if (selectedLead?.mainid == null) return false;
+    final res = await api.addLeadTask({
+      'leadid': selectedLead!.mainid.toString(),
+      'compid': _compId,
+      'branchid': _branchId,
+      'userid': _userId,
+      'yearid': _yearId,
+      'tasktitle': title,
+      'description': description,
+      'duedate': dueDate,
+      'priority': priority,
+      'tags': tags,
+      'assigneename': homeController.currentUserData?.name?.toString() ?? '',
+      'clientreference': selectedLead?.companyname ?? '',
+    });
+    return _afterDetailWrite(res, 'Task created');
+  }
+
+  Future<bool> submitNote({
+    String title = '',
+    required String content,
+  }) async {
+    if (selectedLead?.mainid == null) return false;
+    final res = await api.addLeadNote({
+      'leadid': selectedLead!.mainid.toString(),
+      'compid': _compId,
+      'branchid': _branchId,
+      'userid': _userId,
+      'yearid': _yearId,
+      'title': title,
+      'content': content,
+    });
+    return _afterDetailWrite(res, 'Note added');
+  }
+
+  // ══════════════════════════ Estimation (from a lead) ══════════════════════
+  List<LeadItemLine> estimateItems = [];
+
+  void startEstimate() {
+    estimateItems = [];
+    if (itemMaster.isEmpty) loadFormData();
+    update();
+  }
+
+  void addEstimateItem(LeadItemLine line) {
+    estimateItems.add(line);
+    update();
+  }
+
+  void removeEstimateItem(int index) {
+    if (index >= 0 && index < estimateItems.length) {
+      estimateItems.removeAt(index);
+      update();
+    }
+  }
+
+  double get estTotalQty => estimateItems.fold(0.0, (a, b) => a + b.quantity);
+  double get estTotalAmount => estimateItems.fold(0.0, (a, b) => a + b.amount);
+  double get estTotalGst => estimateItems.fold(0.0, (a, b) => a + b.gstAmount);
+  double get estGrand => estTotalAmount + estTotalGst;
+
+  Future<bool> submitEstimate({
+    String customerOrderNo = '',
+    String remarks = '',
+    String date = '',
+  }) async {
+    if (selectedLead?.mainid == null) return false;
+    if (estimateItems.isEmpty) {
+      ShowMessage.showSnackBar('Required', 'Add at least one item');
+      return false;
+    }
+    final res = await api.saveLeadEstimate({
+      'leadid': selectedLead!.mainid.toString(),
+      'compid': _compId,
+      'branchid': _branchId,
+      'userid': _userId,
+      'yearid': _yearId,
+      'partyid': '0',
+      'partyname': selectedLead?.companyname ?? '',
+      'customerorderno': customerOrderNo,
+      'remarks': remarks,
+      'estimatedate': date,
+      'items': jsonEncode(estimateItems.map((e) => e.toJson()).toList()),
+    });
+    return _afterDetailWrite(res, 'Estimation created');
+  }
+
+  // ══════════════════════════ LEAD ENTRY (create/edit) form ═════════════════
   LeadFormData formData = LeadFormData();
   bool formLoading = false;
   bool saving = false;
+
+  // 0 = creating a new lead; >0 = editing that lead's mainid.
+  int editingLeadId = 0;
+  bool get isEditing => editingLeadId > 0;
 
   // Company type: 1 = Direct (free text), 2 = Existing (dropdown + auto-fill).
   int companyTypeId = 1;
@@ -644,6 +787,105 @@ class LeadManagementController extends AppBaseController {
     } catch (_) {}
   }
 
+  /// Prepare the entry form for a brand-new lead (clears any prior edit state).
+  void startNewLead() {
+    _resetEntry();
+    update();
+  }
+
+  /// Open the entry form in EDIT mode for [lead]: fetch its full detail
+  /// (EditLeadEntry header + items) and prefill every field.
+  Future<void> openEditLead(LeadData lead) async {
+    _resetEntry();
+    editingLeadId = lead.mainid ?? 0;
+    formLoading = true;
+    update();
+    try {
+      if (itemMaster.isEmpty) await loadFormData(); // ensure dropdown options
+      final res = await api.getLeadItems(
+          {'leadid': (lead.mainid ?? 0).toString(), 'compid': _compId});
+      final h = res.headerMap ?? {};
+      String hs(String k) => (h[k] ?? '').toString();
+      int hi(String k) => int.tryParse(hs(k)) ?? 0;
+
+      companyNameController.text = hs('companyname');
+      ownerNameController.text = hs('ownername');
+      contactPersonController.text = hs('contactperson');
+      mobileNumberController.text = hs('mobileno');
+      alternateNumberController.text = hs('alternativemobileno');
+      emailController.text = hs('emailid');
+      websiteController.text = hs('website');
+      companyAddressController.text = hs('companyaddress');
+      phoneNumberController.text = hs('phoneno');
+      businessNatureController.text = hs('businessnature');
+      requirementController.text = hs('requirement');
+      projectNameController.text = hs('projectname');
+      refNoController.text = hs('refno');
+      refferByController.text = hs('refferby');
+      budgetController.text = _numText(h['budget']);
+      approxAmtController.text = _numText(h['approxamt']);
+      otherRemarksController.text = hs('otherremarks');
+      pincodeController.text = hs('pincode');
+      areaController.text = hs('area');
+      whatsappController.text = hs('whatsappno');
+      gstController.text = hs('gstno');
+
+      final ld = _leadDateForForm(hs('leaddate'));
+      if (ld.isNotEmpty) setSelectedDate(ld);
+
+      companyTypeId = hi('companytypeid') == 2 ? 2 : 1;
+      selectedCompanyId = hi('companynameid');
+      if (companyTypeId == 2 && existingCompanies.isEmpty) _loadCompanies();
+
+      setOption('leadSource', hi('leadsourceid'), hs('leadsource'));
+      setOption('leadCategory', hi('leadcategoryid'), hs('leadcategory'));
+      setOption('leadPriority', hi('leadpriorityid'), hs('leadpriority'));
+      setOption('leadStatus', hi('leadstatusid'), hs('leadstatus'));
+      setOption('designation', hi('designationid'), hs('designation'));
+      setOption('marketSegment', hi('marketsegmentid'), hs('marketsegment'));
+      setOption('industryType', hi('industrytypeid'), hs('industrytype'));
+      setOption('assignTo', hi('assigntoid'), hs('assignto'));
+
+      itemLines = res.items
+          .map((it) => LeadItemLine(
+                itemid: it.itemId ?? 0,
+                itemname: it.itemName ?? '',
+                quantity: it.quantity,
+                saleprice: it.salePrice,
+                mrp: it.mrp,
+                billingunitid: it.billingUnitId ?? 0,
+                billingunit: it.unit ?? '',
+                sizename: it.size ?? '',
+                weightname: it.weight ?? '',
+              ))
+          .toList();
+    } catch (e) {
+      ShowMessage.showSnackBar('Edit lead', '$e');
+    } finally {
+      formLoading = false;
+      update();
+    }
+  }
+
+  // Number → clean text ('' when zero/blank, no trailing .0).
+  String _numText(dynamic v) {
+    final d = double.tryParse((v ?? '').toString()) ?? 0;
+    if (d == 0) return '';
+    return d == d.roundToDouble() ? d.toInt().toString() : d.toString();
+  }
+
+  // Normalise a stored lead date to an unambiguous yyyy-MM-dd for the form.
+  String _leadDateForForm(String raw) {
+    if (raw.isEmpty) return '';
+    if (raw.contains('T')) return raw.split('T').first; // ISO datetime
+    final parts = raw.split(RegExp(r'[-/]'));
+    if (parts.length == 3 && parts[0].length <= 2) {
+      // dd-MM-yyyy → yyyy-MM-dd
+      return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+    }
+    return raw;
+  }
+
   // ── item grid ──
   void addItemLine(LeadItemLine line) {
     itemLines.add(line);
@@ -678,6 +920,7 @@ class LeadManagementController extends AppBaseController {
         'userid': _userId,
         'yearid': homeController.currentUserData?.yearId?.toString() ?? '',
         'isdraft': isDraft ? '1' : '0',
+        'leadid': editingLeadId.toString(), // 0 = create, >0 = update
         // header
         'companytypeid': companyTypeId.toString(),
         'companytype': companyTypeName,
@@ -758,6 +1001,7 @@ class LeadManagementController extends AppBaseController {
     itemLines.clear();
     companyTypeId = 1;
     selectedCompanyId = 0;
+    editingLeadId = 0;
     clearSelectedDate();
   }
 

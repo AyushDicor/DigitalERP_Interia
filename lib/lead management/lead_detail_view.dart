@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:newdigitalerp/lead%20management/lead%20management%20controller/lead_management_controller.dart';
+import 'package:newdigitalerp/lead%20management/lead_entry_view.dart';
+import 'package:newdigitalerp/lead%20management/lead_estimate_view.dart';
 import 'lead_list_response.dart';
 
 const Color _kPrimary = Color(0xFF4361EE);
@@ -89,6 +91,39 @@ class _LeadDetailViewState extends State<LeadDetailView> {
                     color: _kTextPrimary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis),
+            actions: [
+              if (lead != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: GestureDetector(
+                    onTap: () async {
+                      await c.openEditLead(lead);
+                      await Get.to(() => const LeadEntryView());
+                      // Back from edit — refresh this lead's header + items.
+                      final m =
+                          c.allLeads.where((l) => l.mainid == lead.mainid);
+                      if (m.isNotEmpty) c.setSelectedLead(m.first);
+                      c.loadSelectedItems();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                          color: _kPrimary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: const [
+                        Icon(Icons.edit_outlined, size: 15, color: _kPrimary),
+                        SizedBox(width: 5),
+                        Text('Edit',
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: _kPrimary)),
+                      ]),
+                    ),
+                  ),
+                ),
+            ],
           ),
           body: lead == null
               ? const Center(child: Text('No lead selected'))
@@ -97,7 +132,7 @@ class _LeadDetailViewState extends State<LeadDetailView> {
                   children: [
                     _header(lead),
                     const SizedBox(height: 14),
-                    _actionBar(),
+                    _actionBar(context, c),
                     const SizedBox(height: 14),
                     _infoCard(lead),
                     const SizedBox(height: 14),
@@ -177,10 +212,11 @@ class _LeadDetailViewState extends State<LeadDetailView> {
       );
 
   // ── Action bar ──
-  Widget _actionBar() {
-    Widget btn(String label, IconData icon, Color color) => Expanded(
+  Widget _actionBar(BuildContext context, LeadManagementController c) {
+    Widget btn(String label, IconData icon, Color color, VoidCallback onTap) =>
+        Expanded(
           child: GestureDetector(
-            onTap: () => _comingSoon(label),
+            onTap: onTap,
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 3),
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -201,13 +237,261 @@ class _LeadDetailViewState extends State<LeadDetailView> {
           ),
         );
     return Row(children: [
-      btn('Follow-up', Icons.add_call, const Color(0xFF3B82F6)),
-      btn('Task', Icons.checklist_rounded, const Color(0xFF10B981)),
-      btn('Estimation', Icons.calculate_outlined, const Color(0xFFF59E0B)),
-      btn('Quotation', Icons.description_outlined, _kPrimary),
-      btn('Notes', Icons.sticky_note_2_outlined, const Color(0xFF8B5CF6)),
+      btn('Follow-up', Icons.add_call, const Color(0xFF3B82F6),
+          () => _showFollowupSheet(context, c)),
+      btn('Task', Icons.checklist_rounded, const Color(0xFF10B981),
+          () => _showTaskSheet(context, c)),
+      btn('Estimation', Icons.calculate_outlined, const Color(0xFFF59E0B),
+          () async {
+        c.startEstimate();
+        await Get.to(() => const LeadEstimateView());
+        final m = c.allLeads.where((l) => l.mainid == c.selectedLead?.mainid);
+        if (m.isNotEmpty) c.setSelectedLead(m.first);
+      }),
+      btn('Quotation', Icons.description_outlined, _kPrimary,
+          () => _comingSoon('Quotation')),
+      btn('Notes', Icons.sticky_note_2_outlined, const Color(0xFF8B5CF6),
+          () => _showNoteSheet(context, c)),
     ]);
   }
+
+  // ══════════════════════ Create modals (Follow-up / Task / Note) ═══════════
+  Future<void> _showFollowupSheet(
+      BuildContext context, LeadManagementController c) async {
+    final remarks = TextEditingController();
+    final purpose = TextEditingController();
+    String date = '';
+    String time = '';
+    await _sheet(
+      context,
+      title: 'Add Follow-up',
+      icon: Icons.add_call,
+      color: const Color(0xFF3B82F6),
+      controllers: [remarks, purpose],
+      builder: (setSt) => [
+        _field('Remarks *', remarks, maxLines: 2),
+        _pickerRow(context, 'Next Follow-up Date', date, Icons.event, () async {
+          final d = await _pickDate(context);
+          if (d != null) setSt(() => date = d);
+        }),
+        _pickerRow(context, 'Time', time, Icons.schedule, () async {
+          final t = await _pickTime(context);
+          if (t != null) setSt(() => time = t);
+        }),
+        _field('Purpose', purpose),
+      ],
+      onSave: () async {
+        if (remarks.text.trim().isEmpty) {
+          _warn('Remarks are required');
+          return false;
+        }
+        return c.submitFollowup(
+          remarks: remarks.text.trim(),
+          followupDate: date,
+          followupTime: time,
+          purpose: purpose.text.trim(),
+        );
+      },
+    );
+  }
+
+  Future<void> _showTaskSheet(
+      BuildContext context, LeadManagementController c) async {
+    final title = TextEditingController();
+    final desc = TextEditingController();
+    final tags = TextEditingController();
+    String due = '';
+    String priority = 'Medium';
+    await _sheet(
+      context,
+      title: 'Create Task',
+      icon: Icons.checklist_rounded,
+      color: const Color(0xFF10B981),
+      controllers: [title, desc, tags],
+      builder: (setSt) => [
+        _field('Task Title *', title),
+        _field('Description', desc, maxLines: 2),
+        _pickerRow(context, 'Due Date', due, Icons.event, () async {
+          final d = await _pickDate(context);
+          if (d != null) setSt(() => due = d);
+        }),
+        _priorityRow(priority, (v) => setSt(() => priority = v)),
+        _field('Tags', tags),
+      ],
+      onSave: () async {
+        if (title.text.trim().isEmpty) {
+          _warn('Task title is required');
+          return false;
+        }
+        return c.submitTask(
+          title: title.text.trim(),
+          description: desc.text.trim(),
+          dueDate: due,
+          priority: priority,
+          tags: tags.text.trim(),
+        );
+      },
+    );
+  }
+
+  Future<void> _showNoteSheet(
+      BuildContext context, LeadManagementController c) async {
+    final title = TextEditingController();
+    final content = TextEditingController();
+    await _sheet(
+      context,
+      title: 'Add Note',
+      icon: Icons.sticky_note_2_outlined,
+      color: const Color(0xFF8B5CF6),
+      controllers: [title, content],
+      builder: (setSt) => [
+        _field('Title', title),
+        _field('Note *', content, maxLines: 4),
+      ],
+      onSave: () async {
+        if (content.text.trim().isEmpty) {
+          _warn('Note content is required');
+          return false;
+        }
+        return c.submitNote(
+            title: title.text.trim(), content: content.text.trim());
+      },
+    );
+  }
+
+  // Generic bottom-sheet scaffold. A _SheetContainer StatefulWidget owns the
+  // field controllers and disposes them safely (after the close animation).
+  Future<void> _sheet(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required List<TextEditingController> controllers,
+    required List<Widget> Function(void Function(void Function()) setState)
+        builder,
+    required Future<bool> Function() onSave,
+  }) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _SheetContainer(
+        title: title,
+        icon: icon,
+        color: color,
+        controllers: controllers,
+        builder: builder,
+        onSave: onSave,
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl, {int maxLines = 1}) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextField(
+          controller: ctrl,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14, color: _kTextPrimary),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(fontSize: 13, color: _kTextSecondary),
+            filled: true,
+            fillColor: _kBg,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: _kBorder)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: _kBorder)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
+          ),
+        ),
+      );
+
+  Widget _pickerRow(BuildContext context, String label, String value,
+          IconData icon, VoidCallback onTap) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+            decoration: BoxDecoration(
+                color: _kBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _kBorder)),
+            child: Row(children: [
+              Icon(icon, size: 16, color: _kTextSecondary),
+              const SizedBox(width: 10),
+              Text(value.isEmpty ? label : value,
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: value.isEmpty ? _kTextSecondary : _kTextPrimary)),
+            ]),
+          ),
+        ),
+      );
+
+  Widget _priorityRow(String selected, ValueChanged<String> onPick) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+            children: ['High', 'Medium', 'Low'].map((pr) {
+          final sel = pr == selected;
+          final col = pr == 'High'
+              ? const Color(0xFFEF4444)
+              : (pr == 'Medium'
+                  ? const Color(0xFFF59E0B)
+                  : const Color(0xFF10B981));
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onPick(pr),
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                    color: sel ? col.withValues(alpha: 0.14) : _kBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: sel ? col : _kBorder)),
+                child: Text(pr,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? col : _kTextSecondary)),
+              ),
+            ),
+          );
+        }).toList()),
+      );
+
+  Future<String?> _pickDate(BuildContext context) async {
+    final now = DateTime.now();
+    final d = await showDatePicker(
+        context: context,
+        initialDate: now,
+        firstDate: DateTime(2018),
+        lastDate: DateTime(now.year + 3));
+    if (d == null) return null;
+    return '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  }
+
+  Future<String?> _pickTime(BuildContext context) async {
+    final t = await showTimePicker(
+        context: context, initialTime: TimeOfDay.now());
+    if (t == null) return null;
+    return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _warn(String msg) => Get.snackbar('Required', msg,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(12),
+      backgroundColor: Colors.black87,
+      colorText: Colors.white);
 
   void _comingSoon(String label) {
     Get.snackbar(label, 'This action is part of the next (write) phase.',
@@ -530,4 +814,119 @@ class _Th extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: 0.3,
           color: _kTextSecondary));
+}
+
+// Bottom-sheet body that owns its field controllers and disposes them safely
+// when the sheet is fully removed (after the close animation) — avoids the
+// "TextEditingController used after being disposed" crash.
+class _SheetContainer extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<TextEditingController> controllers;
+  final List<Widget> Function(void Function(void Function()) setState) builder;
+  final Future<bool> Function() onSave;
+
+  const _SheetContainer({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.controllers,
+    required this.builder,
+    required this.onSave,
+  });
+
+  @override
+  State<_SheetContainer> createState() => _SheetContainerState();
+}
+
+class _SheetContainerState extends State<_SheetContainer> {
+  bool busy = false;
+
+  @override
+  void dispose() {
+    for (final c in widget.controllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: _kSurface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: _kBorder,
+                      borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                      color: widget.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(9)),
+                  child: Icon(widget.icon, color: widget.color, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Text(widget.title,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: _kTextPrimary)),
+              ]),
+              const SizedBox(height: 14),
+              ...widget.builder(setState),
+              const SizedBox(height: 18),
+              SizedBox(
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          setState(() => busy = true);
+                          final ok = await widget.onSave();
+                          if (ok && context.mounted) Navigator.pop(context);
+                          if (mounted) setState(() => busy = false);
+                        },
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: widget.color,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12))),
+                  child: busy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Text('Save',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
