@@ -340,7 +340,16 @@ class ApiMethods {
   String leadAddTask      = 'lead/addtask';
   String leadAddNote      = 'lead/addnote';
   String leadSaveEstimate = 'lead/saveestimate';
+  String leadSaveQuotation = 'lead/savequotation';
   String leadFollowups    = 'lead/followups';
+  String saleorderList    = 'saleorder/list';
+  String saleorderDetail  = 'saleorder/detail';
+  String saleorderFormDropdowns = 'saleorder/formdropdowns';
+  String saleorderPartyNames    = 'saleorder/partynames';
+  String saleorderStoreContacts = 'saleorder/storecontacts';
+  String saleorderItemMaster    = 'saleorder/itemmaster';
+  String saleorderPartyDetail   = 'saleorder/partydetail';
+  String saleorderSave          = 'saleorder/save';
 
   ///Issue Item
   String getIssueItemDropdown = 'indentandissuedropdown';

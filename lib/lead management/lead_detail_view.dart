@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import 'package:newdigitalerp/lead%20management/lead%20management%20controller/lead_management_controller.dart';
 import 'package:newdigitalerp/lead%20management/lead_entry_view.dart';
 import 'package:newdigitalerp/lead%20management/lead_estimate_view.dart';
+import 'package:newdigitalerp/lead%20management/lead_quotation_view.dart';
 import 'lead_list_response.dart';
 
 const Color _kPrimary = Color(0xFF4361EE);
@@ -248,8 +249,12 @@ class _LeadDetailViewState extends State<LeadDetailView> {
         final m = c.allLeads.where((l) => l.mainid == c.selectedLead?.mainid);
         if (m.isNotEmpty) c.setSelectedLead(m.first);
       }),
-      btn('Quotation', Icons.description_outlined, _kPrimary,
-          () => _comingSoon('Quotation')),
+      btn('Quotation', Icons.description_outlined, _kPrimary, () async {
+        c.startQuotation();
+        await Get.to(() => const LeadQuotationView());
+        final m = c.allLeads.where((l) => l.mainid == c.selectedLead?.mainid);
+        if (m.isNotEmpty) c.setSelectedLead(m.first);
+      }),
       btn('Notes', Icons.sticky_note_2_outlined, const Color(0xFF8B5CF6),
           () => _showNoteSheet(context, c)),
     ]);
@@ -492,14 +497,6 @@ class _LeadDetailViewState extends State<LeadDetailView> {
       margin: const EdgeInsets.all(12),
       backgroundColor: Colors.black87,
       colorText: Colors.white);
-
-  void _comingSoon(String label) {
-    Get.snackbar(label, 'This action is part of the next (write) phase.',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(12),
-        backgroundColor: Colors.black87,
-        colorText: Colors.white);
-  }
 
   // ── Lead Information card ──
   Widget _infoCard(LeadData lead) {

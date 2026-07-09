@@ -1,14 +1,13 @@
-// Dynamic Lead filter — searchable dropdowns whose options are auto-derived
-// from the leads currently loaded (status / lead source / handler / business
-// nature). Selecting a value filters the dashboard list live (client-side via
-// LeadManagementController); Reset clears all, Apply just closes the sheet.
+// Performa Invoice filter — searchable dropdowns whose options auto-populate
+// from the loaded records (party / created by / currency / series). Selecting
+// a value filters the list live; Reset clears all.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:newdigitalerp/lead%20management/lead%20management%20controller/lead_management_controller.dart';
+import 'sale_order_controller.dart';
 
-const Color _kPrimary = Color(0xFF4361EE);
+const Color _kPrimary = Color(0xFF7C3AED);
 const Color _kBg = Color(0xFFF6F7FB);
 const Color _kSurface = Colors.white;
 const Color _kBorder = Color(0xFFE4E7F0);
@@ -16,12 +15,12 @@ const Color _kTextPrimary = Color(0xFF111827);
 const Color _kTextSecondary = Color(0xFF6B7280);
 const Color _kTextHint = Color(0xFF9CA3AF);
 
-class LeadFilterScreen extends StatelessWidget {
-  const LeadFilterScreen({Key? key}) : super(key: key);
+class PerformaInvoiceFilterView extends StatelessWidget {
+  const PerformaInvoiceFilterView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<LeadManagementController>(
+    return GetBuilder<SaleOrderController>(
       builder: (c) => Scaffold(
         backgroundColor: _kBg,
         appBar: AppBar(
@@ -39,15 +38,15 @@ class LeadFilterScreen extends StatelessWidget {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Filter Leads',
+              const Text('Advanced Filters',
                   style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: _kTextPrimary)),
               Text(
                   c.activeFilterCount == 0
-                      ? '${c.leadList.length} of ${c.totalLeads} leads'
-                      : '${c.activeFilterCount} filter(s) · ${c.leadList.length} of ${c.totalLeads}',
+                      ? '${c.filteredCount} of ${c.totalRecords} records'
+                      : '${c.activeFilterCount} filter(s) · ${c.filteredCount} of ${c.totalRecords}',
                   style: const TextStyle(fontSize: 11, color: _kTextSecondary)),
             ],
           ),
@@ -57,58 +56,35 @@ class LeadFilterScreen extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _card('Filter Options', Icons.tune_rounded, [
-                      _filterTile(
-                        context,
-                        label: 'Company',
-                        icon: Icons.business_outlined,
-                        value: c.filterCompany,
-                        options: c.companyOptions,
-                        onPicked: c.setFilterCompany,
-                      ),
-                      const SizedBox(height: 14),
-                      _filterTile(
-                        context,
-                        label: 'Status',
-                        icon: Icons.flag_outlined,
-                        value: c.filterStatus,
-                        options: c.statusOptions,
-                        onPicked: c.setFilterStatus,
-                      ),
-                      const SizedBox(height: 14),
-                      _filterTile(
-                        context,
-                        label: 'Lead Source',
-                        icon: Icons.travel_explore_rounded,
-                        value: c.filterSource,
-                        options: c.sourceOptions,
-                        onPicked: c.setFilterSource,
-                      ),
-                      const SizedBox(height: 14),
-                      _filterTile(
-                        context,
-                        label: 'Handler',
-                        icon: Icons.person_outline_rounded,
-                        value: c.filterHandler,
-                        options: c.handlerOptions,
-                        onPicked: c.setFilterHandler,
-                      ),
-                      const SizedBox(height: 14),
-                      _filterTile(
-                        context,
-                        label: 'Business Nature',
-                        icon: Icons.category_outlined,
-                        value: c.filterBusinessNature,
-                        options: c.businessNatureOptions,
-                        onPicked: c.setFilterBusinessNature,
-                      ),
-                    ]),
-                    const SizedBox(height: 16),
-                  ],
-                ),
+                child: _card('Filter Options', Icons.tune_rounded, [
+                  _filterTile(context,
+                      label: 'Party Name',
+                      icon: Icons.business_outlined,
+                      value: c.filterParty,
+                      options: c.partyOptions,
+                      onPicked: c.setFilterParty),
+                  const SizedBox(height: 14),
+                  _filterTile(context,
+                      label: 'Created By',
+                      icon: Icons.person_outline_rounded,
+                      value: c.filterCreatedBy,
+                      options: c.createdByOptions,
+                      onPicked: c.setFilterCreatedBy),
+                  const SizedBox(height: 14),
+                  _filterTile(context,
+                      label: 'Series',
+                      icon: Icons.tag_rounded,
+                      value: c.filterSeries,
+                      options: c.seriesOptions,
+                      onPicked: c.setFilterSeries),
+                  const SizedBox(height: 14),
+                  _filterTile(context,
+                      label: 'Currency',
+                      icon: Icons.currency_rupee_rounded,
+                      value: c.filterCurrency,
+                      options: c.currencyOptions,
+                      onPicked: c.setFilterCurrency),
+                ]),
               ),
             ),
             SafeArea(
@@ -119,54 +95,52 @@ class LeadFilterScreen extends StatelessWidget {
                   border: Border(top: BorderSide(color: _kBorder)),
                 ),
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                child: Row(
-                  children: [
-                    SizedBox(
+                child: Row(children: [
+                  SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed:
+                          c.activeFilterCount == 0 ? null : c.resetFilters,
+                      icon: const Icon(Icons.restart_alt_rounded, size: 16),
+                      label: const Text('Reset',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _kTextSecondary,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        side: const BorderSide(color: _kBorder),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
                       height: 48,
-                      child: OutlinedButton.icon(
-                        onPressed:
-                            c.activeFilterCount == 0 ? null : c.resetLeadFilters,
-                        icon: const Icon(Icons.restart_alt_rounded, size: 16),
-                        label: const Text('Reset',
-                            style: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w600)),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _kTextSecondary,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          side: const BorderSide(color: _kBorder),
+                      child: ElevatedButton.icon(
+                        onPressed: () => Get.back(),
+                        icon: const Icon(Icons.check_rounded,
+                            color: Colors.white, size: 18),
+                        label: Text(
+                          c.activeFilterCount == 0
+                              ? 'Show All'
+                              : 'Show ${c.filteredCount} Result(s)',
+                          style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _kPrimary,
+                          elevation: 0,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          onPressed: () => Get.back(),
-                          icon: const Icon(Icons.check_rounded,
-                              color: Colors.white, size: 18),
-                          label: Text(
-                            c.activeFilterCount == 0
-                                ? 'Show All'
-                                : 'Show ${c.leadList.length} Result(s)',
-                            style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _kPrimary,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ]),
               ),
             ),
           ],
@@ -175,7 +149,6 @@ class LeadFilterScreen extends StatelessWidget {
     );
   }
 
-  // A tile that shows the current selection and opens a searchable option sheet.
   Widget _filterTile(
     BuildContext context, {
     required String label,
@@ -213,7 +186,7 @@ class LeadFilterScreen extends StatelessWidget {
                     builder: (_) => _OptionPickerSheet(
                         title: label, options: options, selected: value),
                   );
-                  if (picked != null) onPicked(picked); // '' = None/clear
+                  if (picked != null) onPicked(picked);
                 },
           child: Container(
             height: 48,
@@ -241,8 +214,8 @@ class LeadFilterScreen extends StatelessWidget {
               if (hasValue)
                 GestureDetector(
                   onTap: () => onPicked(''),
-                  child: const Icon(Icons.close_rounded,
-                      size: 18, color: _kPrimary),
+                  child:
+                      const Icon(Icons.close_rounded, size: 18, color: _kPrimary),
                 )
               else
                 const Icon(Icons.keyboard_arrow_down_rounded,
@@ -271,7 +244,7 @@ class LeadFilterScreen extends StatelessWidget {
                   color: _kPrimary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.tune_rounded, color: _kPrimary, size: 17),
+                child: Icon(icon, color: _kPrimary, size: 17),
               ),
               const SizedBox(width: 10),
               Text(title,
@@ -290,16 +263,12 @@ class LeadFilterScreen extends StatelessWidget {
       );
 }
 
-// ── Searchable single-select option sheet (options come from the caller) ──
 class _OptionPickerSheet extends StatefulWidget {
   final String title;
   final List<String> options;
   final String selected;
-  const _OptionPickerSheet({
-    required this.title,
-    required this.options,
-    required this.selected,
-  });
+  const _OptionPickerSheet(
+      {required this.title, required this.options, required this.selected});
 
   @override
   State<_OptionPickerSheet> createState() => _OptionPickerSheetState();
@@ -345,7 +314,7 @@ class _OptionPickerSheetState extends State<_OptionPickerSheet> {
                     color: _kTextPrimary)),
             const Spacer(),
             GestureDetector(
-              onTap: () => Navigator.pop(context, ''), // None/clear
+              onTap: () => Navigator.pop(context, ''),
               child: const Text('Clear',
                   style: TextStyle(
                       fontSize: 13,
@@ -361,7 +330,8 @@ class _OptionPickerSheetState extends State<_OptionPickerSheet> {
             decoration: InputDecoration(
               hintText: 'Search ${widget.title.toLowerCase()}…',
               hintStyle: const TextStyle(fontSize: 14, color: _kTextHint),
-              prefixIcon: const Icon(Icons.search, size: 20, color: _kTextSecondary),
+              prefixIcon:
+                  const Icon(Icons.search, size: 20, color: _kTextSecondary),
               isDense: true,
               filled: true,
               fillColor: _kBg,
@@ -380,7 +350,8 @@ class _OptionPickerSheetState extends State<_OptionPickerSheet> {
           ),
           const SizedBox(height: 10),
           ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
+            constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.45),
             child: list.isEmpty
                 ? const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),

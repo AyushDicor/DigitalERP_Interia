@@ -5,6 +5,8 @@ import 'package:newdigitalerp/Menu_new_list_responce.dart';
 import 'package:newdigitalerp/catalouge/catalogue_list_response.dart';
 import 'package:newdigitalerp/lead%20management/lead_list_response.dart';
 import 'package:newdigitalerp/lead%20management/lead_form_models.dart';
+import 'package:newdigitalerp/performa_invoice/sale_order_models.dart';
+import 'package:newdigitalerp/performa_invoice/sale_order_form_models.dart';
 import 'package:newdigitalerp/change_company/Company_list_responce.dart';
 import 'package:newdigitalerp/change_company/branch_list_response.dart';
 import 'package:newdigitalerp/change_company/financial_year_response.dart';
@@ -5043,6 +5045,150 @@ class Api {
       try {
         String res = await _apiClient.postMethod(
             method: _apiMethods.leadSaveEstimate, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  // ── Performa Invoice (Sale Order) — read-only ──
+  Future<SaleOrderListResponse> getSaleOrderList(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.saleorderList, body: body);
+        if (res.isNotEmpty) {
+          return SaleOrderListResponse.fromJson(jsonDecode(res));
+        }
+        return SaleOrderListResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return SaleOrderListResponse(status: 500, message: e.toString());
+      }
+    }
+    return SaleOrderListResponse(status: 500, message: 'No internet');
+  }
+
+  Future<SaleOrderDetailResponse> getSaleOrderDetail(
+      Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.saleorderDetail, body: body);
+        if (res.isNotEmpty) {
+          return SaleOrderDetailResponse.fromJson(jsonDecode(res));
+        }
+        return SaleOrderDetailResponse(
+            status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return SaleOrderDetailResponse(status: 500, message: e.toString());
+      }
+    }
+    return SaleOrderDetailResponse(status: 500, message: 'No internet');
+  }
+
+  // ── Performa Invoice CREATE form ──
+  Future<SaleOrderFormResponse> getSaleOrderFormDropdowns(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.saleorderFormDropdowns, body: body);
+      if (res.isNotEmpty) return SaleOrderFormResponse.fromJson(jsonDecode(res));
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return SaleOrderFormResponse(status: 500, message: 'Something went wrong');
+  }
+
+  Future<SaleOrderOptionListResponse> getSaleOrderPartyNames(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.saleorderPartyNames, body: body);
+      if (res.isNotEmpty) {
+        return SaleOrderOptionListResponse.fromJson(jsonDecode(res));
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return SaleOrderOptionListResponse(status: 500);
+  }
+
+  Future<SaleOrderOptionListResponse> getSaleOrderStoreContacts(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.saleorderStoreContacts, body: body);
+      if (res.isNotEmpty) {
+        return SaleOrderOptionListResponse.fromJson(jsonDecode(res));
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return SaleOrderOptionListResponse(status: 500);
+  }
+
+  Future<SaleOrderOptionListResponse> getSaleOrderItemMaster(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.saleorderItemMaster, body: body);
+      if (res.isNotEmpty) {
+        return SaleOrderOptionListResponse.fromJson(jsonDecode(res));
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return SaleOrderOptionListResponse(status: 500);
+  }
+
+  Future<SaleOrderPartyDetailResponse> getSaleOrderPartyDetail(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.saleorderPartyDetail, body: body);
+      if (res.isNotEmpty) {
+        return SaleOrderPartyDetailResponse.fromJson(jsonDecode(res));
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return SaleOrderPartyDetailResponse(status: 500);
+  }
+
+  Future<CommonResponse> saveSaleOrder(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.saleorderSave, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  Future<CommonResponse> saveLeadQuotation(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        String res = await _apiClient.postMethod(
+            method: _apiMethods.leadSaveQuotation, body: body);
         if (res.isNotEmpty) return commonResponseFromJson(res);
         return CommonResponse(status: 500, message: 'Something went wrong');
       } catch (e) {

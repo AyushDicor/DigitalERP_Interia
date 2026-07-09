@@ -408,6 +408,10 @@ class HomeViewNewController extends AppBaseController {
       ensureMenu(2761, 'MRN QC');
       ensureMenu(2762, 'Indent');
       ensureMenu(2419, 'Lead Management'); // native Lead module (LeadController)
+      // Performa Invoice (CreateSaleOrder) — read-only list+detail (SaleOrderController).
+      // 9401 is a mobile-injected id; swap for the real ERP menu id once known so it
+      // shows via the user's menu grant instead of force-injection.
+      ensureMenu(9401, 'Performa Invoice');
       // MIS (menuid 127) already comes from the backend menu and opens the
       // Reports Hub (see _getDirectRoute) — Stock Report is listed there.
 
@@ -471,6 +475,7 @@ class HomeViewNewController extends AppBaseController {
       'Document Management' : AppAssets.documentnewIcon,
       'Follow Up'           : AppAssets.orderfollowpnewIcon,
       'Lead Management'     : AppAssets.leadManagementNewIcon,
+      'Performa Invoice'    : AppAssets.ordernewIcon,
       'Category Catalouge'  : 'assets/iconsnew/Category Catalogue.png',
       'Complaints'          : AppAssets.complaintsIcon,
       'Reimbursement'       : 'assets/iconsnew/Reimbursements.png',
@@ -497,6 +502,7 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2386) return AppRoutes.documentDownload;
     if (menuId == 2387) return AppRoutes.orderFollowup;
     if (menuId == 2419) return AppRoutes.leadManagement;
+    if (menuId == 9401) return AppRoutes.performaInvoice;
     if (menuId == 2423) return AppRoutes.performance;
     if (menuId == 2429) return AppRoutes.catalougeListView;
     if (menuId == 2586) return AppRoutes.paymentRequestListScreen;

@@ -317,6 +317,14 @@ class LeadManagementController extends AppBaseController {
   String fromDate = '';
   String toDate = '';
 
+  //  Dynamic dropdown filters (client-side). '' = not applied. The option lists
+  //  are auto-derived from the leads currently loaded (see *Options getters).
+  String filterStatus = '';
+  String filterSource = '';
+  String filterHandler = '';
+  String filterBusinessNature = '';
+  String filterCompany = '';
+
   //  The lead currently being viewed (set when a card is tapped).
   LeadData? selectedLead;
   List<LeadFollowupData> followupList = [];
@@ -325,18 +333,96 @@ class LeadManagementController extends AppBaseController {
   List<LeadItemData> selectedItems = [];
   bool itemsBusy = false;
 
-  // ── Search-filtered leads shown in the list ──
+  // ── Leads shown in the list: dynamic dropdown filters + free-text search ──
   List<LeadData> get leadList {
-    if (searchText.trim().isEmpty) return allLeads;
-    final q = searchText.toLowerCase();
-    return allLeads.where((l) {
-      return (l.companyname ?? '').toLowerCase().contains(q) ||
-          (l.contactperson ?? '').toLowerCase().contains(q) ||
-          (l.mobilenumber ?? '').toLowerCase().contains(q) ||
-          (l.leadnumber ?? '').toLowerCase().contains(q) ||
-          (l.leadsource ?? '').toLowerCase().contains(q) ||
-          (l.status ?? '').toLowerCase().contains(q);
-    }).toList();
+    Iterable<LeadData> list = allLeads;
+    if (filterStatus.isNotEmpty) {
+      list = list.where((l) => (l.status ?? '').trim() == filterStatus);
+    }
+    if (filterSource.isNotEmpty) {
+      list = list.where((l) => (l.leadsource ?? '').trim() == filterSource);
+    }
+    if (filterHandler.isNotEmpty) {
+      list = list.where((l) => (l.handler ?? '').trim() == filterHandler);
+    }
+    if (filterBusinessNature.isNotEmpty) {
+      list = list
+          .where((l) => (l.businessnature ?? '').trim() == filterBusinessNature);
+    }
+    if (filterCompany.isNotEmpty) {
+      list = list.where((l) => (l.companyname ?? '').trim() == filterCompany);
+    }
+    final q = searchText.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      list = list.where((l) {
+        return (l.companyname ?? '').toLowerCase().contains(q) ||
+            (l.contactperson ?? '').toLowerCase().contains(q) ||
+            (l.mobilenumber ?? '').toLowerCase().contains(q) ||
+            (l.leadnumber ?? '').toLowerCase().contains(q) ||
+            (l.leadsource ?? '').toLowerCase().contains(q) ||
+            (l.status ?? '').toLowerCase().contains(q);
+      });
+    }
+    return list.toList();
+  }
+
+  // ── Dropdown filter options, auto-derived from the loaded leads ──
+  List<String> _distinct(String? Function(LeadData) sel) {
+    final s = allLeads
+        .map(sel)
+        .map((v) => (v ?? '').trim())
+        .where((v) => v.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    return s;
+  }
+
+  List<String> get statusOptions => _distinct((l) => l.status);
+  List<String> get sourceOptions => _distinct((l) => l.leadsource);
+  List<String> get handlerOptions => _distinct((l) => l.handler);
+  List<String> get businessNatureOptions => _distinct((l) => l.businessnature);
+  List<String> get companyOptions => _distinct((l) => l.companyname);
+
+  int get activeFilterCount =>
+      (filterStatus.isNotEmpty ? 1 : 0) +
+      (filterSource.isNotEmpty ? 1 : 0) +
+      (filterHandler.isNotEmpty ? 1 : 0) +
+      (filterBusinessNature.isNotEmpty ? 1 : 0) +
+      (filterCompany.isNotEmpty ? 1 : 0);
+
+  void setFilterStatus(String v) {
+    filterStatus = v;
+    update();
+  }
+
+  void setFilterSource(String v) {
+    filterSource = v;
+    update();
+  }
+
+  void setFilterHandler(String v) {
+    filterHandler = v;
+    update();
+  }
+
+  void setFilterBusinessNature(String v) {
+    filterBusinessNature = v;
+    update();
+  }
+
+  void setFilterCompany(String v) {
+    filterCompany = v;
+    update();
+  }
+
+  void resetLeadFilters() {
+    filterStatus = '';
+    filterSource = '';
+    filterHandler = '';
+    filterBusinessNature = '';
+    filterCompany = '';
+    update();
   }
 
   // ── KPI cards ──
@@ -681,6 +767,58 @@ class LeadManagementController extends AppBaseController {
       'items': jsonEncode(estimateItems.map((e) => e.toJson()).toList()),
     });
     return _afterDetailWrite(res, 'Estimation created');
+  }
+
+  // ══════════════════════════ Quotation (from a lead) ═══════════════════════
+  List<LeadItemLine> quotationItems = [];
+
+  void startQuotation() {
+    quotationItems = [];
+    if (itemMaster.isEmpty) loadFormData();
+    update();
+  }
+
+  void addQuotationItem(LeadItemLine line) {
+    quotationItems.add(line);
+    update();
+  }
+
+  void removeQuotationItem(int index) {
+    if (index >= 0 && index < quotationItems.length) {
+      quotationItems.removeAt(index);
+      update();
+    }
+  }
+
+  double get quoTotalQty => quotationItems.fold(0.0, (a, b) => a + b.quantity);
+  double get quoTotalAmount => quotationItems.fold(0.0, (a, b) => a + b.amount);
+  double get quoTotalGst => quotationItems.fold(0.0, (a, b) => a + b.gstAmount);
+  double get quoGrand => quoTotalAmount + quoTotalGst;
+
+  Future<bool> submitQuotation({
+    String customerOrderNo = '',
+    String remarks = '',
+    String date = '',
+  }) async {
+    if (selectedLead?.mainid == null) return false;
+    if (quotationItems.isEmpty) {
+      ShowMessage.showSnackBar('Required', 'Add at least one item');
+      return false;
+    }
+    final res = await api.saveLeadQuotation({
+      'leadid': selectedLead!.mainid.toString(),
+      'compid': _compId,
+      'branchid': _branchId,
+      'userid': _userId,
+      'yearid': _yearId,
+      'partyid': '0',
+      'partyname': selectedLead?.companyname ?? '',
+      'customerorderno': customerOrderNo,
+      'remarks': remarks,
+      'quotationdate': date,
+      'items': jsonEncode(quotationItems.map((e) => e.toJson()).toList()),
+    });
+    return _afterDetailWrite(res, 'Quotation created');
   }
 
   // ══════════════════════════ LEAD ENTRY (create/edit) form ═════════════════

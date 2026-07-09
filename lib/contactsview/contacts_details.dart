@@ -260,17 +260,18 @@
 // }
 
 
-import 'package:digitalerp/contactsview/contacts_view_responce.dart';
-import 'package:digitalerp/contactsview/add_contacts.dart';
-import 'package:digitalerp/screen/ui/home/customer_list/customer_list_controller.dart';
-import 'package:digitalerp/utils/app_constant_new.dart';
-import 'package:digitalerp/utils/show_message.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class A extends StatefulWidget {
+import '../screen/ui/home/customer_list/customer_list_controller.dart';
+import '../utils/app_constant_new.dart';
+import '../utils/show_message.dart';
+import 'add_contacts.dart';
+import 'contacts_view_responce.dart';
+
+class ViewContactsDetails extends StatefulWidget {
   const ViewContactsDetails({Key? key, required this.partyId}) : super(key: key);
   final String partyId;
 

@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:newdigitalerp/lead%20management/lead%20management%20controller/lead_management_controller.dart';
 import 'package:newdigitalerp/lead%20management/lead_detail_view.dart';
 import 'package:newdigitalerp/lead%20management/lead_entry_view.dart';
+import 'package:newdigitalerp/lead%20management/lead_filtter_view.dart';
 import 'lead_list_response.dart';
 
 //  Design tokens
@@ -84,6 +85,36 @@ class LeadManagementView extends StatelessWidget {
                         fontWeight: FontWeight.w400,
                         color: _kTextSecondary)),
               ]),
+          actions: [
+            GestureDetector(
+              onTap: () => Get.to(() => const LeadFilterScreen()),
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(0, 10, 14, 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                    color: c.activeFilterCount > 0
+                        ? _kPrimary.withValues(alpha: 0.12)
+                        : _kBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: c.activeFilterCount > 0 ? _kPrimary : _kBorder)),
+                child: Row(children: [
+                  Icon(Icons.tune_rounded,
+                      size: 16,
+                      color:
+                          c.activeFilterCount > 0 ? _kPrimary : _kTextPrimary),
+                  if (c.activeFilterCount > 0) ...[
+                    const SizedBox(width: 5),
+                    Text('${c.activeFilterCount}',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _kPrimary)),
+                  ],
+                ]),
+              ),
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
