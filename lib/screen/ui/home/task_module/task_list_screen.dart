@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
 
+import '../../../../utils/app_constant_new.dart';
 import 'task_controller.dart';
 import 'task_models.dart';
 
@@ -25,32 +27,59 @@ class TaskListScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0.5,
         foregroundColor: _text,
+        leading: GestureDetector(
+          onTap: () => Get.back(),
+          child: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: newTextPrimary, size: 20),
+        ),
         title: const Text('Task Management',
             style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+
           GetBuilder<TaskModuleController>(
             builder: (ctrl) => Stack(
               alignment: Alignment.center,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.filter_list_rounded),
-                  onPressed: () => _openFilter(context, ctrl),
-                ),
-                if (ctrl.hasFilter)
-                  const Positioned(
-                    right: 10,
-                    top: 12,
-                    child: CircleAvatar(radius: 4, backgroundColor: _primary),
+                GestureDetector(
+                  onTap: () => _openFilter(context, ctrl),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 16),
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: purpleLightest,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        const Center(
+                          child: Icon(Icons.filter_list_rounded, color: purpleColor, size: 20),
+                        ),
+                        if (ctrl.hasFilter)
+                          Container(
+                            width: 10,
+                            height: 10,
+                            margin: const EdgeInsets.only(top: 6, right: 6),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
+                ),
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         backgroundColor: _primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Task', style: TextStyle(color: Colors.white)),
+        shape: const CircleBorder(
+            side: BorderSide(color: Colors.white, width: 2)),
+        child: const Icon(Icons.add, color: Colors.white, size: 32),
         onPressed: () async {
           c.resetCreateForm();
           await Get.toNamed(AppRoutes.createTask);

@@ -83,7 +83,7 @@ class MyAppBar extends StatelessWidget {
               _IconBtn(
                 onTap: onFilterTap,
                 hasBg: true,
-                child: const Icon(Icons.filter_list_sharp, size: 20, color: purpleColor),
+                child: const Icon(Icons.filter_list_rounded, color: purpleColor, size: 20),
               ),
               const SizedBox(width: 4),
             ],
@@ -141,14 +141,13 @@ class _IconBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        margin: const EdgeInsets.only(right: 16),
         width: 40,
         height: 40,
-        decoration: hasBg
-            ? BoxDecoration(
+        decoration: BoxDecoration(
           color: purpleLightest,
           borderRadius: BorderRadius.circular(18),
-        )
-            : null,
+        ),
         alignment: Alignment.center,
         child: child,
       ),

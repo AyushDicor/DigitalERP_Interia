@@ -7,6 +7,8 @@ import 'package:newdigitalerp/lead%20management/lead_list_response.dart';
 import 'package:newdigitalerp/lead%20management/lead_form_models.dart';
 import 'package:newdigitalerp/performa_invoice/sale_order_models.dart';
 import 'package:newdigitalerp/performa_invoice/sale_order_form_models.dart';
+import 'package:newdigitalerp/purchase_order/purchase_order_models.dart';
+import 'package:newdigitalerp/purchase_order/purchase_order_form_models.dart';
 import 'package:newdigitalerp/change_company/Company_list_responce.dart';
 import 'package:newdigitalerp/change_company/branch_list_response.dart';
 import 'package:newdigitalerp/change_company/financial_year_response.dart';
@@ -5172,6 +5174,135 @@ class Api {
       try {
         final res = await _apiClient.postMethod(
             method: _apiMethods.saleorderSave, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  // ── Purchase Order — read-only ──
+  Future<PurchaseOrderListResponse> getPurchaseOrderList(
+      Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.purchaseorderList, body: body);
+        if (res.isNotEmpty) {
+          return PurchaseOrderListResponse.fromJson(jsonDecode(res));
+        }
+        return PurchaseOrderListResponse(
+            status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return PurchaseOrderListResponse(status: 500, message: e.toString());
+      }
+    }
+    return PurchaseOrderListResponse(status: 500, message: 'No internet');
+  }
+
+  Future<PurchaseOrderDetailResponse> getPurchaseOrderDetail(
+      Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.purchaseorderDetail, body: body);
+        if (res.isNotEmpty) {
+          return PurchaseOrderDetailResponse.fromJson(jsonDecode(res));
+        }
+        return PurchaseOrderDetailResponse(
+            status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return PurchaseOrderDetailResponse(status: 500, message: e.toString());
+      }
+    }
+    return PurchaseOrderDetailResponse(status: 500, message: 'No internet');
+  }
+
+  // ── Purchase Order CREATE form ──
+  Future<PoFormResponse> getPurchaseOrderFormDropdowns(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.purchaseorderFormDropdowns, body: body);
+      if (res.isNotEmpty) return PoFormResponse.fromJson(jsonDecode(res));
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return PoFormResponse(status: 500, message: 'Something went wrong');
+  }
+
+  Future<PoOptionListResponse> getPurchaseOrderPartyNames(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.purchaseorderPartyNames, body: body);
+      if (res.isNotEmpty) {
+        return PoOptionListResponse.fromJson(jsonDecode(res));
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return PoOptionListResponse(status: 500);
+  }
+
+  Future<PoOptionListResponse> getPurchaseOrderStoreContacts(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.purchaseorderStoreContacts, body: body);
+      if (res.isNotEmpty) {
+        return PoOptionListResponse.fromJson(jsonDecode(res));
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return PoOptionListResponse(status: 500);
+  }
+
+  Future<PoOptionListResponse> getPurchaseOrderItemMaster(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.purchaseorderItemMaster, body: body);
+      if (res.isNotEmpty) {
+        return PoOptionListResponse.fromJson(jsonDecode(res));
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return PoOptionListResponse(status: 500);
+  }
+
+  Future<PoPartyDetailResponse> getPurchaseOrderPartyDetail(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.purchaseorderPartyDetail, body: body);
+      if (res.isNotEmpty) {
+        return PoPartyDetailResponse.fromJson(jsonDecode(res));
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return PoPartyDetailResponse(status: 500);
+  }
+
+  Future<CommonResponse> savePurchaseOrder(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.purchaseorderSave, body: body);
         if (res.isNotEmpty) return commonResponseFromJson(res);
         return CommonResponse(status: 500, message: 'Something went wrong');
       } catch (e) {

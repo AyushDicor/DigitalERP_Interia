@@ -351,6 +351,16 @@ class ApiMethods {
   String saleorderPartyDetail   = 'saleorder/partydetail';
   String saleorderSave          = 'saleorder/save';
 
+  ///Purchase Order
+  String purchaseorderList          = 'purchaseorder/list';
+  String purchaseorderDetail        = 'purchaseorder/detail';
+  String purchaseorderFormDropdowns = 'purchaseorder/formdropdowns';
+  String purchaseorderPartyNames    = 'purchaseorder/partynames';
+  String purchaseorderStoreContacts = 'purchaseorder/storecontacts';
+  String purchaseorderItemMaster    = 'purchaseorder/itemmaster';
+  String purchaseorderPartyDetail   = 'purchaseorder/partydetail';
+  String purchaseorderSave          = 'purchaseorder/save';
+
   ///Issue Item
   String getIssueItemDropdown = 'indentandissuedropdown';
   String getPendingIndentList     = '';

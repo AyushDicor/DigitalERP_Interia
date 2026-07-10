@@ -1,14 +1,13 @@
-// Performa Invoice filter — searchable dropdowns whose options auto-populate
-// from the loaded records (party / created by / currency / series). Selecting
-// a value filters the list live; Reset clears all.
+// Purchase Order filter — searchable dropdowns whose options auto-populate
+// from the loaded records (party / created by / currency / series / entry
+// type). Selecting a value filters the list live; Reset clears all.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:newdigitalerp/utils/app_constant_new.dart';
 
-import 'sale_order_controller.dart';
+import 'package:newdigitalerp/purchase_order/purchase_order_controller.dart';
 
-const Color _kPrimary = purpleColor;
+const Color _kPrimary = Color(0xFF2563EB);
 const Color _kBg = Color(0xFFF6F7FB);
 const Color _kSurface = Colors.white;
 const Color _kBorder = Color(0xFFE4E7F0);
@@ -16,12 +15,12 @@ const Color _kTextPrimary = Color(0xFF111827);
 const Color _kTextSecondary = Color(0xFF6B7280);
 const Color _kTextHint = Color(0xFF9CA3AF);
 
-class PerformaInvoiceFilterView extends StatelessWidget {
-  const PerformaInvoiceFilterView({Key? key}) : super(key: key);
+class PurchaseOrderFilterView extends StatelessWidget {
+  const PurchaseOrderFilterView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<SaleOrderController>(
+    return GetBuilder<PurchaseOrderController>(
       builder: (c) => Scaffold(
         backgroundColor: _kBg,
         appBar: AppBar(
@@ -57,7 +56,7 @@ class PerformaInvoiceFilterView extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: _card('Filter Options', Icons.filter_list_rounded, [
+                child: _card('Filter Options', Icons.tune_rounded, [
                   _filterTile(context,
                       label: 'Party Name',
                       icon: Icons.business_outlined,
@@ -73,6 +72,13 @@ class PerformaInvoiceFilterView extends StatelessWidget {
                       onPicked: c.setFilterCreatedBy),
                   const SizedBox(height: 14),
                   _filterTile(context,
+                      label: 'Currency',
+                      icon: Icons.currency_rupee_rounded,
+                      value: c.filterCurrency,
+                      options: c.currencyOptions,
+                      onPicked: c.setFilterCurrency),
+                  const SizedBox(height: 14),
+                  _filterTile(context,
                       label: 'Series',
                       icon: Icons.tag_rounded,
                       value: c.filterSeries,
@@ -80,11 +86,11 @@ class PerformaInvoiceFilterView extends StatelessWidget {
                       onPicked: c.setFilterSeries),
                   const SizedBox(height: 14),
                   _filterTile(context,
-                      label: 'Currency',
-                      icon: Icons.currency_rupee_rounded,
-                      value: c.filterCurrency,
-                      options: c.currencyOptions,
-                      onPicked: c.setFilterCurrency),
+                      label: 'Entry Type',
+                      icon: Icons.category_outlined,
+                      value: c.filterEntryType,
+                      options: c.entryTypeOptions,
+                      onPicked: c.setFilterEntryType),
                 ]),
               ),
             ),
@@ -242,11 +248,10 @@ class PerformaInvoiceFilterView extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: purpleLight,
-                  shape: BoxShape.circle,
+                  color: _kPrimary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: _kPrimary, size: 17),
-
               ),
               const SizedBox(width: 10),
               Text(title,
@@ -363,7 +368,7 @@ class _OptionPickerSheetState extends State<_OptionPickerSheet> {
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: list.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(height: 1, color: _kBorder),
                     itemBuilder: (_, i) {
                       final o = list[i];

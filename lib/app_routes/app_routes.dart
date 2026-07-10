@@ -69,6 +69,7 @@ class AppRoutes {
   static const menuDefaultView = '/menu-default_screen';
   static const leadManagement = '/lead-management-view';
   static const performaInvoice = '/performa-invoice-view';
+  static const purchaseOrder = '/purchase-order-view';
   static const stockReconcillation = '/stock-reconcillation';
 
   static const paymentRequestDetailScreen = '/payment-request-detail';

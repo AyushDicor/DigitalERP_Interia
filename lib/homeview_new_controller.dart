@@ -412,6 +412,9 @@ class HomeViewNewController extends AppBaseController {
       // 9401 is a mobile-injected id; swap for the real ERP menu id once known so it
       // shows via the user's menu grant instead of force-injection.
       ensureMenu(9401, 'Performa Invoice');
+      // Purchase Order (flag 'Purchaseorder') — list+detail+create (PurchaseOrderController).
+      // 9402 is likewise a mobile-injected placeholder id.
+      ensureMenu(9402, 'Purchase Order');
       // MIS (menuid 127) already comes from the backend menu and opens the
       // Reports Hub (see _getDirectRoute) — Stock Report is listed there.
 
@@ -476,6 +479,7 @@ class HomeViewNewController extends AppBaseController {
       'Follow Up'           : AppAssets.orderfollowpnewIcon,
       'Lead Management'     : AppAssets.leadManagementNewIcon,
       'Performa Invoice'    : AppAssets.ordernewIcon,
+      'Purchase Order'      : AppAssets.ordernewIcon,
       'Category Catalouge'  : 'assets/iconsnew/Category Catalogue.png',
       'Complaints'          : AppAssets.complaintsIcon,
       'Reimbursement'       : 'assets/iconsnew/Reimbursements.png',
@@ -503,6 +507,7 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2387) return AppRoutes.orderFollowup;
     if (menuId == 2419) return AppRoutes.leadManagement;
     if (menuId == 9401) return AppRoutes.performaInvoice;
+    if (menuId == 9402) return AppRoutes.purchaseOrder;
     if (menuId == 2423) return AppRoutes.performance;
     if (menuId == 2429) return AppRoutes.catalougeListView;
     if (menuId == 2586) return AppRoutes.paymentRequestListScreen;

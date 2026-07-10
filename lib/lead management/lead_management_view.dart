@@ -11,6 +11,7 @@ import 'package:newdigitalerp/lead%20management/lead%20management%20controller/l
 import 'package:newdigitalerp/lead%20management/lead_detail_view.dart';
 import 'package:newdigitalerp/lead%20management/lead_entry_view.dart';
 import 'package:newdigitalerp/lead%20management/lead_filtter_view.dart';
+import '../utils/app_constant_new.dart';
 import 'lead_list_response.dart';
 
 //  Design tokens
@@ -63,12 +64,12 @@ class LeadManagementView extends StatelessWidget {
             onTap: () => Get.back(),
             child: Container(
               margin: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                  color: _kBg,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _kBorder)),
+              // decoration: BoxDecoration(
+              //     color: _kBg,
+              //     borderRadius: BorderRadius.circular(10),
+              //     border: Border.all(color: _kBorder)),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: _kTextPrimary, size: 16),
+                  color: _kTextPrimary, size: 20),
             ),
           ),
           title: Column(
@@ -89,29 +90,38 @@ class LeadManagementView extends StatelessWidget {
             GestureDetector(
               onTap: () => Get.to(() => const LeadFilterScreen()),
               child: Container(
-                margin: const EdgeInsets.fromLTRB(0, 10, 14, 10),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                margin: const EdgeInsets.only(right: 18),
+                width: 40,
+                height: 40,
+                // padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                    color: c.activeFilterCount > 0
-                        ? _kPrimary.withValues(alpha: 0.12)
-                        : _kBg,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: c.activeFilterCount > 0 ? _kPrimary : _kBorder)),
-                child: Row(children: [
-                  Icon(Icons.tune_rounded,
-                      size: 16,
-                      color:
-                          c.activeFilterCount > 0 ? _kPrimary : _kTextPrimary),
-                  if (c.activeFilterCount > 0) ...[
-                    const SizedBox(width: 5),
-                    Text('${c.activeFilterCount}',
-                        style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: _kPrimary)),
-                  ],
-                ]),
+                  color: purpleLightest,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Stack(
+                    alignment: Alignment.topRight,
+                    children: [
+                      Center(
+                        child: Icon(Icons.filter_list_sharp,
+                            size: 20,
+                            color: purpleColor),
+                      ),
+                      if (c.activeFilterCount > 0) ...[
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        Text('${c.activeFilterCount}',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _kPrimary)),
+                      ],
+                    ]),
               ),
             ),
           ],
@@ -121,7 +131,7 @@ class LeadManagementView extends StatelessWidget {
             c.startNewLead();
             Get.to(const LeadEntryView());
           },
-          backgroundColor: _kPrimary,
+          backgroundColor: purpleColor,
           elevation: 3,
           shape: const CircleBorder(
               side: BorderSide(color: Colors.white, width: 2.5)),

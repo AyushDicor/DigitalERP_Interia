@@ -37,6 +37,7 @@ import '../download_document_management/download_documents_view.dart';
 import '../home/home_view.dart';
 import '../lead management/lead_management_view.dart';
 import '../performa_invoice/performa_invoice_list_view.dart';
+import '../purchase_order/purchase_order_list_view.dart';
 import '../orderfollowup/order_followup_view.dart';
 import '../performace_management/performace_view.dart';
 import '../screen/ui/home/Image/image_detail/image_detail_view.dart';
@@ -418,6 +419,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.performaInvoice,
       page: () => const PerformaInvoiceListView(),
+    ),
+    GetPage(
+      name: AppRoutes.purchaseOrder,
+      page: () => const PurchaseOrderListView(),
     ),
     GetPage(
       name: AppRoutes.stockReconcillation,

@@ -1,16 +1,15 @@
-// Performa Invoice (Sale Order) — full-parity CREATE form. Sections mirror the
-// ERP: Main Details, Other Details, Party Details, Item Details, Other Expense,
-// Totals, Terms & Condition. Saves via /api/saleorder/save.
+// Purchase Order — full-parity CREATE form. Sections mirror the ERP: Main
+// Details, Other Details, Party Details, Item Details, Other Expense, Totals,
+// Terms & Condition. Saves via /api/purchaseorder/save.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:newdigitalerp/utils/app_constant_new.dart';
 
-import 'sale_order_create_controller.dart';
-import 'sale_order_form_models.dart';
+import 'package:newdigitalerp/purchase_order/purchase_order_create_controller.dart';
+import 'package:newdigitalerp/purchase_order/purchase_order_form_models.dart';
 
-const Color _kPrimary = purpleColor;
+const Color _kPrimary = Color(0xFF2563EB);
 const Color _kBg = Color(0xFFF6F7FB);
 const Color _kSurface = Colors.white;
 const Color _kBorder = Color(0xFFE4E7F0);
@@ -21,15 +20,15 @@ const Color _kTextHint = Color(0xFF9CA3AF);
 String _n(double v) =>
     v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
 
-class PerformaInvoiceCreateView extends StatelessWidget {
-  /// > 0 opens an existing performa invoice for editing (its order number is kept).
+class PurchaseOrderCreateView extends StatelessWidget {
+  /// > 0 opens an existing purchase order for editing (its order number is kept).
   final int editId;
-  const PerformaInvoiceCreateView({Key? key, this.editId = 0}) : super(key: key);
+  const PurchaseOrderCreateView({super.key, this.editId = 0});
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<SaleOrderCreateController>(
-      init: SaleOrderCreateController()..loadForm(editId: editId),
+    return GetBuilder<PurchaseOrderCreateController>(
+      init: PurchaseOrderCreateController()..loadForm(editId: editId),
       builder: (c) => Scaffold(
         backgroundColor: _kBg,
         appBar: AppBar(
@@ -47,9 +46,9 @@ class PerformaInvoiceCreateView extends StatelessWidget {
           title: Text(
               c.isEdit
                   ? (c.editingOrderNo.isEmpty
-                      ? 'Edit Performa Invoice'
+                      ? 'Edit Purchase Order'
                       : 'Edit ${c.editingOrderNo}')
-                  : 'New Performa Invoice',
+                  : 'New Purchase Order',
               style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -89,50 +88,52 @@ class PerformaInvoiceCreateView extends StatelessWidget {
   }
 
   // ── Main Details ──
-  Widget _mainCard(BuildContext ctx, SaleOrderCreateController c) =>
+  Widget _mainCard(BuildContext ctx, PurchaseOrderCreateController c) =>
       _card('Main Details', Icons.article_outlined, [
-        _picker(ctx, c, 'Entry Type *', 'entrytype', c.form.entrytype),
+        _picker(ctx, c, 'Entry Type', 'entrytype', c.form.entrytype),
         _picker(ctx, c, 'Series Type *', 'series', c.form.series),
-        _dateTile(ctx, c, 'Order Date', true),
+        _dateTile(ctx, c, 'PO Date', true),
         _dateTile(ctx, c, 'Delivery Date', false),
+        _field('Order Remarks', c.orderRemarks),
+        _field('Item Remarks', c.itemRemarks),
         _picker(ctx, c, 'Party Category', 'partycategory', c.form.partycategory,
             onPick: (o) => c.onCategoryPicked(o)),
         _picker(ctx, c, 'Party Name *', 'party', c.partyNames,
             onPick: (o) => c.onPartyPicked(o),
             emptyHint: 'Select category first'),
-        _field('Customer Order No', c.customerOrderNo),
         _picker(ctx, c, 'Delivery Type', 'deliverytype', c.form.deliverytype),
-        _picker(ctx, c, 'Order Type', 'ordertype', c.form.ordertype),
-        _picker(ctx, c, 'Order Priority', 'priority', c.form.priority),
-        _field('Internal Remarks', c.internalRemarks),
-        _field('Remark', c.remark, maxLines: 2, last: true),
+        _picker(ctx, c, 'Transport Name *', 'transportname',
+            c.form.transportname, last: true),
       ]);
 
   // ── Other Details ──
-  Widget _otherCard(BuildContext ctx, SaleOrderCreateController c) =>
+  Widget _otherCard(BuildContext ctx, PurchaseOrderCreateController c) =>
       _card('Other Details', Icons.local_shipping_outlined, [
-        _picker(ctx, c, 'Delivery Place', 'deliverystore', c.form.deliverystore,
+        _picker(ctx, c, 'Delivery Store', 'deliverystore', c.form.deliverystore,
             onPick: (o) => c.onStorePicked(o)),
         _picker(ctx, c, 'Store Contact Person', 'storecontact', c.storeContacts,
-            emptyHint: 'Select delivery place first'),
-        _picker(ctx, c, 'Dispatch Through', 'transportname',
-            c.form.transportname),
-        _field('DL No', c.dlNo),
+            emptyHint: 'Select delivery store first'),
+        _picker(ctx, c, 'Freight Mode', 'freightmode', c.form.freightmode),
+        _picker(ctx, c, 'Payment Mode', 'paymentmode', c.form.paymentmode),
+        _picker(ctx, c, 'Transaction Type', 'transactiontype',
+            c.form.transactiontype),
+        _picker(ctx, c, 'Transport Mode *', 'transportmode',
+            c.form.transportmode),
         _picker(ctx, c, 'Currency *', 'currency', c.form.currency),
-        _field('Destination', c.destination, last: true),
+        _field('Stamp', c.stamp, last: true),
       ]);
 
   // ── Party Details (auto-filled on party select, still editable) ──
-  Widget _partyCard(SaleOrderCreateController c) =>
+  Widget _partyCard(PurchaseOrderCreateController c) =>
       _card('Party Details', Icons.contact_page_outlined, [
+        _field('Supplier Address', c.supplierAddress, maxLines: 2),
         _field('Bill To Address', c.billToAddress, maxLines: 2),
-        _field('Ship To Address', c.shipToAddress, maxLines: 2),
         _field('GST No', c.gstNo),
         _field('Mobile No', c.mobileNo, number: true, last: true),
       ]);
 
   // ── Item Details ──
-  Widget _itemsCard(BuildContext ctx, SaleOrderCreateController c) =>
+  Widget _itemsCard(BuildContext ctx, PurchaseOrderCreateController c) =>
       _card('Item Details', Icons.inventory_2_outlined, [
         if (c.items.isEmpty)
           const Padding(
@@ -147,15 +148,17 @@ class PerformaInvoiceCreateView extends StatelessWidget {
             return _lineCard(
               title: it.itemname,
               subtitle:
-                  'Qty ${_n(it.quantity)} ${it.billingunit} × ₹${_n(it.salerate)} · GST ${_n(it.gstpercent)}%'
+                  'Qty ${_n(it.quantity)} ${it.billingunit} × ₹${_n(it.rate)}'
+                  '${it.discountpercent > 0 ? ' · Disc ${_n(it.discountpercent)}%' : ''}'
+                  ' · GST ${_n(it.gstpercent)}%'
                   '${it.sizename.isNotEmpty ? ' · ${it.sizename}' : ''}',
-              amount: it.amount + it.gstAmount,
+              amount: it.amount,
               onRemove: () => c.removeItem(i),
             );
           }),
         const SizedBox(height: 6),
         _addButton('Add Item', () async {
-          final line = await showModalBottomSheet<SaleOrderItemLine>(
+          final line = await showModalBottomSheet<PoItemLine>(
             context: ctx,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
@@ -169,7 +172,7 @@ class PerformaInvoiceCreateView extends StatelessWidget {
       ]);
 
   // ── Other Expense ──
-  Widget _otherExpenseCard(BuildContext ctx, SaleOrderCreateController c) =>
+  Widget _otherExpenseCard(BuildContext ctx, PurchaseOrderCreateController c) =>
       _card('Other Expense', Icons.receipt_long_outlined, [
         if (c.otherExpenses.isEmpty)
           const Padding(
@@ -191,7 +194,7 @@ class PerformaInvoiceCreateView extends StatelessWidget {
           }),
         const SizedBox(height: 6),
         _addButton('Add Expense', () async {
-          final o = await showModalBottomSheet<SaleOrderOtherExpense>(
+          final o = await showModalBottomSheet<PoOtherExpense>(
             context: ctx,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
@@ -202,7 +205,7 @@ class PerformaInvoiceCreateView extends StatelessWidget {
       ]);
 
   // ── Totals ──
-  Widget _totalsCard(SaleOrderCreateController c) {
+  Widget _totalsCard(PurchaseOrderCreateController c) {
     Widget r(String l, String v, {bool bold = false}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
           child: Row(
@@ -222,8 +225,8 @@ class PerformaInvoiceCreateView extends StatelessWidget {
         );
     return _card('Totals', Icons.summarize_outlined, [
       r('Total Qty', _n(c.totalQty)),
-      r('Total Amount', '₹${_n(c.totalAmount)}'),
-      r('Total GST', '₹${_n(c.totalGst)}'),
+      r('Total Amt', '₹${_n(c.totalAmount)}'),
+      r('Total Gst', '₹${_n(c.totalGst)}'),
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(children: [
@@ -259,12 +262,12 @@ class PerformaInvoiceCreateView extends StatelessWidget {
     ]);
   }
 
-  Widget _termsCard(SaleOrderCreateController c) =>
-      _card('Terms & Condition', Icons.description_outlined, [
+  Widget _termsCard(PurchaseOrderCreateController c) =>
+      _card('Terms and Condition', Icons.description_outlined, [
         _field('Description', c.terms, maxLines: 4, last: true),
       ]);
 
-  Widget _saveButton(SaleOrderCreateController c) => SizedBox(
+  Widget _saveButton(PurchaseOrderCreateController c) => SizedBox(
         width: double.infinity,
         height: 50,
         child: ElevatedButton.icon(
@@ -284,7 +287,9 @@ class PerformaInvoiceCreateView extends StatelessWidget {
           label: Text(
               c.submitting
                   ? (c.isEdit ? 'Updating…' : 'Creating…')
-                  : (c.isEdit ? 'Update' : 'Create'),
+                  : (c.isEdit
+                      ? 'Update Purchase Order'
+                      : 'Create Purchase Order'),
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
           style: ElevatedButton.styleFrom(
               backgroundColor: _kPrimary,
@@ -317,20 +322,21 @@ class PerformaInvoiceCreateView extends StatelessWidget {
         ]),
       );
 
-  Widget _picker(BuildContext ctx, SaleOrderCreateController c, String label,
-      String key, List<SaleOrderOption> options,
-      {Future<void> Function(SaleOrderOption)? onPick,
-      String emptyHint = 'No options'}) {
+  Widget _picker(BuildContext ctx, PurchaseOrderCreateController c, String label,
+      String key, List<PoOption> options,
+      {Future<void> Function(PoOption)? onPick,
+      String emptyHint = 'No options',
+      bool last = false}) {
     final val = c.selName[key] ?? '';
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: last ? 0 : 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label,
             style: const TextStyle(fontSize: 11.5, color: _kTextSecondary)),
         const SizedBox(height: 5),
         GestureDetector(
           onTap: () async {
-            final picked = await showModalBottomSheet<SaleOrderOption>(
+            final picked = await showModalBottomSheet<PoOption>(
               context: ctx,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
@@ -373,8 +379,8 @@ class PerformaInvoiceCreateView extends StatelessWidget {
     );
   }
 
-  Widget _dateTile(BuildContext ctx, SaleOrderCreateController c, String label,
-          bool isOrder) =>
+  Widget _dateTile(BuildContext ctx, PurchaseOrderCreateController c,
+          String label, bool isOrder) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -514,7 +520,7 @@ class PerformaInvoiceCreateView extends StatelessWidget {
 // ── Generic searchable option sheet ──
 class _OptionSheet extends StatefulWidget {
   final String title;
-  final List<SaleOrderOption> options;
+  final List<PoOption> options;
   final String emptyHint;
   const _OptionSheet(
       {required this.title, required this.options, required this.emptyHint});
@@ -599,7 +605,7 @@ class _OptionSheetState extends State<_OptionSheet> {
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: list.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(height: 1, color: _kBorder),
                     itemBuilder: (_, i) => ListTile(
                       dense: true,
@@ -617,9 +623,9 @@ class _OptionSheetState extends State<_OptionSheet> {
 
 // ── Add-item sheet ──
 class _AddItemSheet extends StatefulWidget {
-  final List<SaleOrderOption> itemMaster;
-  final List<SaleOrderOption> sizes;
-  final List<SaleOrderOption> units;
+  final List<PoOption> itemMaster;
+  final List<PoOption> sizes;
+  final List<PoOption> units;
   const _AddItemSheet(
       {required this.itemMaster, required this.sizes, required this.units});
   @override
@@ -629,18 +635,24 @@ class _AddItemSheet extends StatefulWidget {
 class _AddItemSheetState extends State<_AddItemSheet> {
   final _search = TextEditingController();
   final _qty = TextEditingController();
+  final _fixed = TextEditingController();
   final _rate = TextEditingController();
+  final _disc = TextEditingController();
   final _gst = TextEditingController(text: '18');
-  SaleOrderOption? _item;
-  SaleOrderOption? _size;
-  SaleOrderOption? _unit;
+  final _desc = TextEditingController();
+  PoOption? _item;
+  PoOption? _size;
+  PoOption? _unit;
 
   @override
   void dispose() {
     _search.dispose();
     _qty.dispose();
+    _fixed.dispose();
     _rate.dispose();
+    _disc.dispose();
     _gst.dispose();
+    _desc.dispose();
     super.dispose();
   }
 
@@ -687,7 +699,7 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                           style: TextStyle(color: _kTextSecondary)))
                   : ListView.separated(
                       itemCount: list.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const Divider(height: 1, color: _kBorder),
                       itemBuilder: (_, i) => ListTile(
                         dense: true,
@@ -719,9 +731,15 @@ class _AddItemSheetState extends State<_AddItemSheet> {
             Row(children: [
               Expanded(child: _sheetField(_qty, 'Qty', number: true)),
               const SizedBox(width: 8),
-              Expanded(child: _sheetField(_rate, 'Sales Rate', number: true)),
+              Expanded(child: _sheetField(_rate, 'Rate', number: true)),
               const SizedBox(width: 8),
               Expanded(child: _sheetField(_gst, 'GST %', number: true)),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: _sheetField(_fixed, 'Fixed Rate', number: true)),
+              const SizedBox(width: 8),
+              Expanded(child: _sheetField(_disc, 'Discount %', number: true)),
             ]),
             const SizedBox(height: 8),
             Row(children: [
@@ -733,6 +751,8 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                   child: _miniPicker('Unit', _unit?.name, widget.units,
                       (o) => setState(() => _unit = o))),
             ]),
+            const SizedBox(height: 8),
+            _sheetField(_desc, 'Item Description'),
           ],
           const SizedBox(height: 14),
           Row(children: [
@@ -752,19 +772,24 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                         final qty = double.tryParse(_qty.text.trim()) ?? 0;
                         final rate = double.tryParse(_rate.text.trim()) ?? 0;
                         final gst = double.tryParse(_gst.text.trim()) ?? 0;
+                        final fixed = double.tryParse(_fixed.text.trim()) ?? 0;
+                        final disc = double.tryParse(_disc.text.trim()) ?? 0;
                         if (qty <= 0 || rate <= 0) return;
                         Navigator.pop(
                           context,
-                          SaleOrderItemLine(
+                          PoItemLine(
                             itemid: _item!.id,
                             itemname: _item!.name,
                             quantity: qty,
-                            salerate: rate,
+                            rate: rate,
+                            fixedrate: fixed,
+                            discountpercent: disc,
                             gstpercent: gst,
                             sizeid: _size?.id ?? 0,
                             sizename: _size?.name ?? '',
                             billingunitid: _unit?.id ?? 0,
                             billingunit: _unit?.name ?? '',
+                            itemdescription: _desc.text.trim(),
                           ),
                         );
                       },
@@ -777,11 +802,11 @@ class _AddItemSheetState extends State<_AddItemSheet> {
     );
   }
 
-  Widget _miniPicker(String label, String? value, List<SaleOrderOption> options,
-          ValueChanged<SaleOrderOption> onPick) =>
+  Widget _miniPicker(String label, String? value, List<PoOption> options,
+          ValueChanged<PoOption> onPick) =>
       GestureDetector(
         onTap: () async {
-          final picked = await showModalBottomSheet<SaleOrderOption>(
+          final picked = await showModalBottomSheet<PoOption>(
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
@@ -816,7 +841,7 @@ class _AddItemSheetState extends State<_AddItemSheet> {
 
 // ── Add other-expense sheet ──
 class _AddExpenseSheet extends StatefulWidget {
-  final List<SaleOrderOption> othertypes;
+  final List<PoOption> othertypes;
   const _AddExpenseSheet({required this.othertypes});
   @override
   State<_AddExpenseSheet> createState() => _AddExpenseSheetState();
@@ -826,7 +851,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
   final _nature = TextEditingController();
   final _tax = TextEditingController();
   final _amount = TextEditingController();
-  SaleOrderOption? _type;
+  PoOption? _type;
 
   @override
   void dispose() {
@@ -864,7 +889,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
           const SizedBox(height: 8),
           GestureDetector(
             onTap: () async {
-              final picked = await showModalBottomSheet<SaleOrderOption>(
+              final picked = await showModalBottomSheet<PoOption>(
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
@@ -896,7 +921,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
           ),
           const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: _sheetField(_tax, 'Tax %', number: true)),
+            Expanded(child: _sheetField(_tax, 'Tax Per', number: true)),
             const SizedBox(width: 8),
             Expanded(child: _sheetField(_amount, 'Amount', number: true)),
           ]),
@@ -919,7 +944,7 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                   }
                   Navigator.pop(
                     context,
-                    SaleOrderOtherExpense(
+                    PoOtherExpense(
                       nature: _nature.text.trim(),
                       accounttypeid: _type?.id ?? 0,
                       accounttype: _type?.name ?? '',
