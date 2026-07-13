@@ -3,13 +3,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:newdigitalerp/purchase_order/purchase_order_controller.dart';
 import 'package:newdigitalerp/purchase_order/purchase_order_models.dart';
 import 'package:newdigitalerp/purchase_order/purchase_order_create_view.dart';
 
-const Color _kPrimary = Color(0xFF2563EB);
+const Color _kPrimary = purpleColor;
 const Color _kBg = Color(0xFFF6F7FB);
 const Color _kSurface = Colors.white;
 const Color _kBorder = Color(0xFFE4E7F0);

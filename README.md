@@ -23,6 +23,10 @@ flutter clean
 flutter pub get
 flutter build apk --debug
 
+flutter clean
+flutter pub get
+flutter build appbundle
+
 
 how to push to GitHub ?
 git commit -m "Initial commit"

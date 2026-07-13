@@ -25,6 +25,207 @@ class PendingIndentPoView extends StatelessWidget {
   static String _qty(double v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
 
+  // ── Filter (Series / Request By / Request To / Plant) ──
+  Widget _filterButton(BuildContext context, PendingIndentPoController c) {
+    return GestureDetector(
+      onTap: () => _showFilterSheet(context, c),
+      child: Container(
+        margin: const EdgeInsets.only(right: 14),
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+            color: _kPrimary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(20)),
+        child: Stack(alignment: Alignment.topRight, children: [
+          const Center(
+              child: Icon(Icons.filter_list_rounded,
+                  size: 20, color: _kPrimary)),
+          if (c.activeFilterCount > 0)
+            Positioned(
+              right: 9,
+              top: 9,
+              child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                      color: Colors.red, shape: BoxShape.circle)),
+            ),
+        ]),
+      ),
+    );
+  }
+
+  void _showFilterSheet(BuildContext context, PendingIndentPoController c) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => GetBuilder<PendingIndentPoController>(
+        builder: (ct) => Container(
+          decoration: const BoxDecoration(
+              color: _kSurface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          padding: EdgeInsets.only(
+              left: 18,
+              right: 18,
+              top: 16,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Filters',
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: _kTextPrimary)),
+                      TextButton(
+                          onPressed: ct.resetFilters,
+                          child: const Text('Reset',
+                              style: TextStyle(
+                                  color: _kPrimary,
+                                  fontWeight: FontWeight.w700))),
+                    ]),
+                const SizedBox(height: 10),
+                const Text('Date Range',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _kTextSecondary)),
+                const SizedBox(height: 6),
+                Row(children: [
+                  _dateField(context, 'From', ct.fromDate, ct.setFromDate),
+                  const SizedBox(width: 10),
+                  _dateField(context, 'To', ct.toDate, ct.setToDate),
+                ]),
+                const SizedBox(height: 12),
+                _filterDropdown('Series Type', ct.seriesOptions,
+                    ct.filterSeries, ct.setFilterSeries),
+                _filterDropdown('Request By', ct.reqByOptions, ct.filterReqBy,
+                    ct.setFilterReqBy),
+                _filterDropdown('Request To', ct.requestToOptions,
+                    ct.filterRequestTo, ct.setFilterRequestTo),
+                _filterDropdown('Plant', ct.plantOptions, ct.filterPlant,
+                    ct.setFilterPlant),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Get.back(),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: _kPrimary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14))),
+                    child: Text('Apply (${ct.filteredCount})',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _dateField(BuildContext context, String label, DateTime? value,
+      void Function(DateTime?) onPick) {
+    String fmt(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-${d.year}';
+    return Expanded(
+      child: GestureDetector(
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: value ?? DateTime.now(),
+            firstDate: DateTime(2018),
+            lastDate: DateTime(2100),
+          );
+          if (picked != null) onPick(picked);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+              color: _kBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _kBorder)),
+          child: Row(children: [
+            const Icon(Icons.event_outlined, size: 16, color: _kTextSecondary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(value == null ? label : fmt(value),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      fontSize: 13.5,
+                      color: value == null ? _kTextHint : _kTextPrimary,
+                      fontWeight: FontWeight.w500)),
+            ),
+            if (value != null)
+              GestureDetector(
+                onTap: () => onPick(null),
+                child: const Icon(Icons.close_rounded,
+                    size: 15, color: _kTextSecondary),
+              ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _filterDropdown(String label, List<String> options, String value,
+      void Function(String) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _kTextSecondary)),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+              color: _kBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _kBorder)),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: value.isEmpty ? null : value,
+              hint: const Text('All',
+                  style: TextStyle(fontSize: 14, color: _kTextHint)),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                  color: _kTextSecondary),
+              items: [
+                const DropdownMenuItem(
+                    value: '',
+                    child: Text('All',
+                        style:
+                            TextStyle(fontSize: 14, color: _kTextPrimary))),
+                ...options.map((o) => DropdownMenuItem(
+                    value: o,
+                    child: Text(o,
+                        style: const TextStyle(
+                            fontSize: 14, color: _kTextPrimary),
+                        overflow: TextOverflow.ellipsis))),
+              ],
+              onChanged: (v) => onChanged(v ?? ''),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<PendingIndentPoController>(
@@ -60,6 +261,7 @@ class PendingIndentPoView extends StatelessWidget {
                         fontWeight: FontWeight.w400,
                         color: _kTextSecondary)),
               ]),
+          actions: [_filterButton(context, c)],
         ),
         body: RefreshIndicator(
           color: _kPrimary,
