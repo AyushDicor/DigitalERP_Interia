@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../indent_controller/indent_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/indent/indent_response/indent_model.dart';
 import '../indent_widgets.dart';
@@ -105,6 +106,9 @@ class IndentReviewScreen extends StatelessWidget {
                         ),
                       ]),
                     ),
+
+                    // ── Attachments (nested builder so update() refreshes it) ──
+                    _attachmentsCard(),
                   ]),
                 ),
               ),
@@ -114,6 +118,95 @@ class IndentReviewScreen extends StatelessWidget {
             ]),
           );
         });
+  }
+
+  // ── Attachments (S3): add on create, view on edit ──
+  Widget _attachmentsCard() {
+    return GetBuilder<IndentController>(builder: (ctrl) {
+      return IndentCard(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const IndentSectionHead('Attachments'),
+          const SizedBox(height: 10),
+          ...List.generate(ctrl.attachmentNames.length, (i) {
+            final hasPreview = i < ctrl.attachmentPreviews.length &&
+                ctrl.attachmentPreviews[i].isNotEmpty;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: indSurfaceColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: indBorderColor),
+              ),
+              child: Row(children: [
+                const Icon(Icons.insert_drive_file_outlined,
+                    size: 18, color: indBlueColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(ctrl.attachmentNames[i],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: indTextPrimary)),
+                ),
+                if (hasPreview)
+                  InkWell(
+                    onTap: () => _openUrl(ctrl.attachmentPreviews[i]),
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 6),
+                      child: Icon(Icons.open_in_new,
+                          size: 16, color: indTextSecondary),
+                    ),
+                  ),
+                InkWell(
+                  onTap: () => ctrl.removeAttachmentAt(i),
+                  child:
+                      const Icon(Icons.close, size: 18, color: Colors.redAccent),
+                ),
+              ]),
+            );
+          }),
+          if (ctrl.uploadingAttachment)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Row(children: [
+                SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: indBlueColor)),
+                SizedBox(width: 10),
+                Text('Uploading…',
+                    style: TextStyle(fontSize: 12, color: indTextSecondary)),
+              ]),
+            ),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: ctrl.uploadingAttachment
+                  ? null
+                  : () => ctrl.pickAndUploadAttachment(),
+              icon: const Icon(Icons.attach_file, size: 18, color: indBlueColor),
+              label: const Text('Add Attachment',
+                  style: TextStyle(
+                      color: indBlueColor, fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: indBlueColor),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
+            ),
+          ),
+        ]),
+      );
+    });
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
   }
 
   Widget _summaryBanner(IndentController ctrl) {

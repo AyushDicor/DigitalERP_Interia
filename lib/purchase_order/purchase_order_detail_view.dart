@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:newdigitalerp/purchase_order/purchase_order_controller.dart';
 import 'package:newdigitalerp/purchase_order/purchase_order_models.dart';
@@ -101,6 +102,10 @@ class PurchaseOrderDetailView extends StatelessWidget {
                         _totalsCard(h),
                         const SizedBox(height: 14),
                         _termsCard(h),
+                        if (h.attachments.trim().isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          _attachmentsCard(h),
+                        ],
                         const SizedBox(height: 20),
                       ]),
                     ),
@@ -317,6 +322,52 @@ class PurchaseOrderDetailView extends StatelessWidget {
   }
 
   // ── helpers ──
+  // ── Attachments (tap to open the presigned URL) ──
+  Widget _attachmentsCard(PurchaseOrderHeader h) {
+    final urls =
+        h.attachments.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    final keys =
+        h.attachmentkeys.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    return _card('Attachments', Icons.attach_file, [
+      ...List.generate(urls.length, (i) {
+        final name = (i < keys.length && keys[i].contains('/'))
+            ? keys[i].substring(keys[i].lastIndexOf('/') + 1)
+            : 'Attachment ${i + 1}';
+        return InkWell(
+          onTap: () => _openUrl(urls[i]),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: _kBg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _kBorder),
+            ),
+            child: Row(children: [
+              const Icon(Icons.insert_drive_file_outlined, size: 18, color: _kPrimary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: _kTextPrimary)),
+              ),
+              const Icon(Icons.open_in_new, size: 16, color: _kTextSecondary),
+            ]),
+          ),
+        );
+      }),
+    ]);
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
   Widget _card(String title, IconData icon, List<Widget> children) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

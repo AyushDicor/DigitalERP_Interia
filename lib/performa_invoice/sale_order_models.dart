@@ -159,6 +159,10 @@ class SaleOrderHeader {
   final int currencyid;
   final int ordertypeid;
   final int orderpriorityid;
+  // Attachments: `attachments` = presigned URLs (display), `attachmentkeys` = raw S3
+  // keys (the edit form re-sends these so the stored value stays a key, not a URL).
+  final String attachments;
+  final String attachmentkeys;
 
   SaleOrderHeader({
     this.mainid = 0,
@@ -203,6 +207,8 @@ class SaleOrderHeader {
     this.currencyid = 0,
     this.ordertypeid = 0,
     this.orderpriorityid = 0,
+    this.attachments = '',
+    this.attachmentkeys = '',
   });
 
   factory SaleOrderHeader.fromJson(Map<String, dynamic> j) => SaleOrderHeader(
@@ -248,6 +254,8 @@ class SaleOrderHeader {
         currencyid: _i(j['currencyid']),
         ordertypeid: _i(j['ordertypeid']),
         orderpriorityid: _i(j['orderpriorityid']),
+        attachments: _s(j['attachments']),
+        attachmentkeys: _s(j['attachmentkeys']),
       );
 }
 

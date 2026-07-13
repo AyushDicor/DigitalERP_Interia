@@ -415,6 +415,10 @@ class HomeViewNewController extends AppBaseController {
       // Purchase Order (flag 'Purchaseorder') — list+detail+create (PurchaseOrderController).
       // 9402 is likewise a mobile-injected placeholder id.
       ensureMenu(9402, 'Purchase Order');
+      // Pending Indent for PO — approved indents awaiting a PO; tap to generate a PO
+      // seeded from the indent (PurchaseOrderController.PendingIndents/IndentForPo).
+      // 97 is the real ERP menu id for this screen.
+      ensureMenu(97, 'Pending Indent for PO');
       // MIS (menuid 127) already comes from the backend menu and opens the
       // Reports Hub (see _getDirectRoute) — Stock Report is listed there.
 
@@ -478,8 +482,9 @@ class HomeViewNewController extends AppBaseController {
       'Document Management' : AppAssets.documentnewIcon,
       'Follow Up'           : AppAssets.orderfollowpnewIcon,
       'Lead Management'     : AppAssets.leadManagementNewIcon,
-      'Performa Invoice'    : AppAssets.ordernewIcon,
-      'Purchase Order'      : AppAssets.ordernewIcon,
+      'Performa Invoice'    : AppAssets.invoiceIcon,
+      'Purchase Order'      : AppAssets.poIcon,
+      'Pending Indent for PO' : AppAssets.poIcon,
       'Category Catalouge'  : 'assets/iconsnew/Category Catalogue.png',
       'Complaints'          : AppAssets.complaintsIcon,
       'Reimbursement'       : 'assets/iconsnew/Reimbursements.png',
@@ -489,7 +494,7 @@ class HomeViewNewController extends AppBaseController {
       'GRN Entry'           : AppAssets.grnIcon,
       'MRN QC'              : AppAssets.mrnQcIcon,
       'Material Received'   : AppAssets.mrnrIcon,
-      'Indent'              : AppAssets.mrnIcon,
+      'Indent'              : AppAssets.indentIcon,
     };
   }
 
@@ -508,6 +513,7 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2419) return AppRoutes.leadManagement;
     if (menuId == 9401) return AppRoutes.performaInvoice;
     if (menuId == 9402) return AppRoutes.purchaseOrder;
+    if (menuId == 97) return AppRoutes.pendingIndentForPo;
     if (menuId == 2423) return AppRoutes.performance;
     if (menuId == 2429) return AppRoutes.catalougeListView;
     if (menuId == 2586) return AppRoutes.paymentRequestListScreen;

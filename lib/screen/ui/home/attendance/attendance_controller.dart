@@ -191,6 +191,8 @@
 
 
 
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/repo/reimbursement_repo.dart';
@@ -216,8 +218,33 @@ class AttendanceController extends AppBaseController {
 
   @override
   void onInit() {
+    // Ask for location up-front when the screen opens, so the OS permission
+    // dialog appears immediately instead of only during a punch (and only if
+    // location services happened to be on). Non-blocking.
+    _ensureLocationPermission();
     loadAttendanceSummary();
     super.onInit();
+  }
+
+  /// Prompt for location permission (and nudge the user to turn on location
+  /// services) as soon as the Attendance screen is shown.
+  Future<void> _ensureLocationPermission() async {
+    try {
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.deniedForever) {
+        // User previously blocked it — send them to settings to re-enable.
+        await Geolocator.openAppSettings();
+        return;
+      }
+      // Permission granted but the device's location toggle may still be off.
+      final serviceOn = await Geolocator.isLocationServiceEnabled();
+      if (!serviceOn) {
+        await Geolocator.openLocationSettings();
+      }
+    } catch (_) {/* best-effort — punching still works, just without GPS */}
   }
 
   Future<void> loadAttendanceSummary() async {
@@ -232,12 +259,42 @@ class AttendanceController extends AppBaseController {
       final res = await api.getAttendanceSummary(body);
       attendanceSummaryData =
           (res.status == 200) ? (res.data ?? <AttendanceSummaryData>[]) : <AttendanceSummaryData>[];
+      _applyPunchState();
     } catch (e) {
       attendanceSummaryData = <AttendanceSummaryData>[];
     } finally {
       isBusy = false;
       update();
     }
+  }
+
+  /// Decide the button state from TODAY's record:
+  ///   • no record            → Check In      (isAttendanceMarked = false)
+  ///   • in-time, no out-time  → Check Out      (isAttendanceMarked = true)
+  ///   • in-time AND out-time  → done for today  (button disabled)
+  /// Without this the flag stayed false forever, so the button always said
+  /// "Check In" even after punching in (and could never punch out).
+  void _applyPunchState() {
+    final now = DateTime.now();
+    final today = '${now.day.toString().padLeft(2, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-${now.year}';
+
+    final details = (attendanceSummaryData?.isNotEmpty ?? false)
+        ? (attendanceSummaryData![0].details ?? const <DayDetails>[])
+        : const <DayDetails>[];
+
+    DayDetails? todayRec;
+    for (final d in details) {
+      if (d.date == today) {
+        todayRec = d;
+        break;
+      }
+    }
+
+    final hasIn = (todayRec?.inTime ?? '').isNotEmpty;
+    final hasOut = (todayRec?.outTime ?? '').isNotEmpty;
+    isAttendanceMarked = hasIn && !hasOut; // checked in, awaiting check-out
+    enableBtn = !(hasIn && hasOut); // both done → nothing more to punch today
   }
 
   void _loadDummyData() {
@@ -317,11 +374,30 @@ class AttendanceController extends AppBaseController {
         final pos = await getUserCurrentPosition();
         lat = pos.latitude.toString();
         lng = pos.longitude.toString();
+        // Default the readable location to the coordinates so it is NEVER lost when
+        // reverse-geocoding is unavailable on the device (the old code kept
+        // 'Mobile App' even with valid coords).
+        loc = '$lat, $lng';
         try {
-          final addr = await getUserCurrentAddress();
-          if (addr.trim().isNotEmpty) loc = addr.trim();
-        } catch (_) {/* geocoding failed — keep coords, generic label */}
+          final marks =
+              await placemarkFromCoordinates(pos.latitude, pos.longitude);
+          if (marks.isNotEmpty) {
+            final m = marks.first;
+            final parts = <String?>[
+              m.name, m.street, m.subLocality, m.locality,
+              m.administrativeArea, m.postalCode, m.country,
+            ].where((s) => (s ?? '').trim().isNotEmpty).map((s) => s!.trim());
+            if (parts.isNotEmpty) loc = parts.join(', ');
+          }
+        } catch (_) {/* geocoding unavailable — keep the lat,lng string */}
       } catch (_) {/* location off/denied — proceed with defaults */}
+
+      // Real device battery level (was previously hard-coded to 100).
+      String battery = '100';
+      try {
+        final b = (await getBatteryPercent()).trim();
+        if (b.isNotEmpty) battery = b;
+      } catch (_) {/* battery read failed — keep default */}
 
       final body = <String, String>{
         'compid': u?.compId?.toString() ?? '',
@@ -332,7 +408,7 @@ class AttendanceController extends AppBaseController {
         'longitude': lng,
         'location': loc,
         'attendancetype': isAttendanceMarked ? 'close' : 'mark',
-        'batterylevel': '100',
+        'batterylevel': battery,
         'photo': photoName,
       };
       final res = await api.markAttendance(body);

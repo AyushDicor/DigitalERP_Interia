@@ -142,6 +142,10 @@ class IndentDetailData {
   final String requireddate;
   final int priortyid;
   final String boqNo;
+  // ERP S3 attachments: `attachments` = presigned URLs (display), `attachmentkeys` =
+  // raw keys (re-sent on edit so the stored value stays a key, not an expiring URL).
+  final String attachments;
+  final String attachmentkeys;
 
   const IndentDetailData({
     required this.indentid,
@@ -167,6 +171,8 @@ class IndentDetailData {
     required this.requireddate,
     required this.priortyid,
     required this.boqNo,
+    this.attachments = '',
+    this.attachmentkeys = '',
   });
 
   factory IndentDetailData.fromJson(Map<String, dynamic> j) {
@@ -200,6 +206,8 @@ class IndentDetailData {
       requireddate: (j['requireddate'] ?? '').toString(),
       priortyid: int.tryParse(j['priortyid']?.toString() ?? '0') ?? 0,
       boqNo: (j['BOQNo'] ?? '').toString(),
+      attachments: (j['attachments'] ?? '').toString(),
+      attachmentkeys: (j['attachmentkeys'] ?? '').toString(),
     );
   }
 }

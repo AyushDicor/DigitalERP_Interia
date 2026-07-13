@@ -1754,6 +1754,12 @@ class ApprovalHubController extends AppBaseController {
   List<ApprovalChainStep> get approvalChain => currentDetail?.approvalChain ?? [];
   List<RelatedDoc> get relatedDocs => currentDetail?.relatedDocs ?? [];
   List<ApprovalItemData> get itemsList => currentDetail?.itemsList ?? [];
+  // View-only: presigned URLs of the file(s) attached to the underlying document.
+  List<String> get documentAttachments => (currentDetail?.attachments ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
 
   // Action state
   ApprovalAction? pickedAction;

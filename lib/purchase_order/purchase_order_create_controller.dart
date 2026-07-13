@@ -5,9 +5,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:newdigitalerp/screen/base/base_controller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
+import 'package:newdigitalerp/repo/reimbursement_repo.dart';
 import 'package:newdigitalerp/utils/show_message.dart';
 import 'purchase_order_form_models.dart';
 
@@ -22,6 +24,13 @@ class PurchaseOrderCreateController extends AppBaseController {
   int entryid = 0;
   bool get isEdit => entryid > 0;
   String editingOrderNo = '';
+
+  // > 0 => this PO is being generated FROM a pending indent (Pending Indent for PO).
+  // Sent as `refid` on save so the ERP links the PO to the indent and bumps the
+  // indent's completeqty (closing it once fully converted).
+  int refid = 0;
+  String seededFromIndentNo = '';
+  bool get isFromIndent => refid > 0;
 
   // Selected dropdown values (id + name).
   final Map<String, int> selId = {};
@@ -50,6 +59,61 @@ class PurchaseOrderCreateController extends AppBaseController {
   List<PoItemLine> items = [];
   List<PoOtherExpense> otherExpenses = [];
 
+  // Attachments (ERP S3). `attachmentKeys` persisted on save; `attachmentPreviews`
+  // are presigned URLs for display; names for the chips.
+  final List<String> attachmentKeys = [];
+  final List<String> attachmentNames = [];
+  final List<String> attachmentPreviews = [];
+  bool uploadingAttachment = false;
+
+  Future<void> pickAndUploadAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+      allowMultiple: true,
+    );
+    if (result == null) return;
+    uploadingAttachment = true;
+    update();
+    try {
+      for (final pf in result.files) {
+        if (pf.path == null) continue;
+        final res = await ReimbursementRepo.uploadReimbursementFile(
+          pf.path!,
+          storage: 's3',
+          compid: _compId,
+          userid: _userId,
+        );
+        if (res.status == true && res.statusCode == 200) {
+          final data =
+              (res.data as Map<String, dynamic>?)?['data'] as Map<String, dynamic>?;
+          final key = data?['key']?.toString() ?? '';
+          final url = data?['url']?.toString() ?? '';
+          if (key.isNotEmpty) {
+            attachmentKeys.add(key);
+            attachmentNames.add(pf.name);
+            attachmentPreviews.add(url);
+          }
+        } else {
+          ShowMessage.showSnackBar('Attachment', res.message ?? 'Upload failed');
+        }
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('Attachment', '$e');
+    } finally {
+      uploadingAttachment = false;
+      update();
+    }
+  }
+
+  void removeAttachmentAt(int i) {
+    if (i < 0 || i >= attachmentKeys.length) return;
+    attachmentKeys.removeAt(i);
+    if (i < attachmentNames.length) attachmentNames.removeAt(i);
+    if (i < attachmentPreviews.length) attachmentPreviews.removeAt(i);
+    update();
+  }
+
   String get _compId =>
       homeController.currentUserData?.compId?.toString() ?? '';
   String get _branchId =>
@@ -75,6 +139,8 @@ class PurchaseOrderCreateController extends AppBaseController {
   void resetForm({bool preloadParties = true}) {
     entryid = 0;
     editingOrderNo = '';
+    refid = 0;
+    seededFromIndentNo = '';
     selId.clear();
     selName.clear();
     partyNames = [];
@@ -123,7 +189,9 @@ class PurchaseOrderCreateController extends AppBaseController {
   }
 
   // `editId` > 0 loads that purchase order into the form for editing.
-  Future<void> loadForm({int editId = 0}) async {
+  // `seedIndentId` > 0 pre-fills a NEW PO from a pending indent (entry type Indent,
+  // items/qty/rate + item remarks from the indent) and carries the indent id as refid.
+  Future<void> loadForm({int editId = 0, int seedIndentId = 0}) async {
     loadingForm = true;
     update();
     try {
@@ -135,6 +203,7 @@ class PurchaseOrderCreateController extends AppBaseController {
         if (itm.status == 200) itemMaster = itm.data;
         resetForm(preloadParties: editId == 0);
         if (editId > 0) await _prefillFromRecord(editId);
+        if (seedIndentId > 0) await _seedFromIndent(seedIndentId);
       } else {
         ShowMessage.showSnackBar('Purchase Order', res.message);
       }
@@ -144,6 +213,45 @@ class PurchaseOrderCreateController extends AppBaseController {
       loadingForm = false;
       update();
     }
+  }
+
+  // Pull a pending indent and pre-fill the form as the ERP's
+  // /Home/CreateSaleOrder?id=<indent>&type=NEW does: entry type Indent, item lines
+  // from the indent, item remarks from its Narration. Party is left for the user.
+  Future<void> _seedFromIndent(int indentId) async {
+    final res =
+        await api.getIndentForPo({'compid': _compId, 'indentid': '$indentId'});
+    final h = res.header;
+    if (res.status != 200 || h == null) {
+      ShowMessage.showSnackBar('Pending Indent', 'Could not load indent to convert');
+      return;
+    }
+    refid = h.indentid;
+    seededFromIndentNo = h.indentno;
+
+    // Entry Type = Indent (overrides the "Direct" default).
+    final indentEntry = form.entrytype
+        .firstWhereOrNull((e) => e.name.toLowerCase() == 'indent');
+    if (indentEntry != null) _setDefault('entrytype', indentEntry);
+
+    if (h.deliverydate.isNotEmpty) deliveryDate = h.deliverydate;
+    if (h.itemremarks.isNotEmpty) itemRemarks.text = h.itemremarks;
+
+    items = res.items
+        .map((i) => PoItemLine(
+              itemid: i.itemid,
+              itemname: i.itemname,
+              quantity: i.quantity,
+              fixedrate: i.fixedrate,
+              rate: i.rate,
+              discountpercent: i.discountpercent,
+              gstpercent: i.gstpercent,
+              billingunitid: i.billingunitid,
+              billingunit: i.billingunit,
+              itemdescription: i.itemdescription,
+            ))
+        .toList();
+    update();
   }
 
   // Pull an existing PO and populate every dropdown/text/grid field.
@@ -157,6 +265,18 @@ class PurchaseOrderCreateController extends AppBaseController {
     }
     entryid = h.mainid;
     editingOrderNo = h.orderno;
+
+    // Load existing attachments: keep raw keys for re-save, presigned URLs for display.
+    attachmentKeys
+      ..clear()
+      ..addAll(h.attachmentkeys.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    attachmentPreviews
+      ..clear()
+      ..addAll(h.attachments.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    attachmentNames
+      ..clear()
+      ..addAll(attachmentKeys
+          .map((k) => k.contains('/') ? k.substring(k.lastIndexOf('/') + 1) : k));
 
     void set(String key, int id, String name) {
       if (id > 0 || name.isNotEmpty) {
@@ -343,6 +463,8 @@ class PurchaseOrderCreateController extends AppBaseController {
     try {
       final res = await api.savePurchaseOrder({
         'entryid': '$entryid',
+        // > 0 links this PO to the source indent and closes it (completeqty bump).
+        'refid': '$refid',
         'compid': _compId,
         'branchid': _branchId,
         'userid': _userId,
@@ -384,6 +506,8 @@ class PurchaseOrderCreateController extends AppBaseController {
         'terms': terms.text.trim(),
         'items': encodePoItems(items),
         'otherexpenses': encodePoOthers(otherExpenses),
+        // CSV of S3 keys → stored in TransMaster.Files (round-trips to the ERP).
+        'attachments': attachmentKeys.join(','),
       });
       if (res.status == 200) {
         ShowMessage.showSnackBar('Purchase Order',

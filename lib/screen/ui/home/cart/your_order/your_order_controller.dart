@@ -54,11 +54,22 @@ class YourOrderController extends AppBaseController {
     getPartyDropdownList();
     isCustomer = homeController.currentUserData?.usertype.toString() == 'Customer';
     companyName = homeController.currentUserData?.name.toString();
-
-    print("==>");
-
-
+    // No discounts in this deployment: grand total = cart amount.
+    _syncTotalsFromCart();
     super.onInit();
+  }
+
+  // Pull the cart amount as-is (subtotal == grand total; no discounts applied).
+  void _syncTotalsFromCart() {
+    final list = cartController.cartList;
+    final amt =
+        list.isEmpty ? 0.0 : (double.tryParse('${list.first.subtotal ?? 0}') ?? 0);
+    final ship = list.isEmpty
+        ? 0.0
+        : (double.tryParse('${list.first.shippingamount ?? 0}') ?? 0);
+    subTotal = amt;
+    grandTotal = amt + ship;
+    update();
   }
 
 
@@ -104,81 +115,59 @@ class YourOrderController extends AppBaseController {
   }
 
   Future<void> tapOnPlaceOrder() async {
-    print( "selectCompany${selectCompany}");
+    if (cartController.cartList.isEmpty) {
+      ShowMessage.showSnackBar('Order', 'Your cart is empty');
+      return;
+    }
+    _syncTotalsFromCart();
 
-    if (discountController.text.isEmpty) {
-      ShowMessage.showSnackBar('Server Res', 'please fill discount value');
-      discountFocus.requestFocus();
-    } else if (cashDiscountController.text.isEmpty) {
-      ShowMessage.showSnackBar('Server Res', 'please fill cash discount value');
-      cashDiscountFocus.requestFocus();
-    } else if (homeController.currentUserData?.usertype.toString() == 'Customer') {
-      {
-        setBusy(true);
-        try {
-          Map<String, String> body = {};
-          body[RequestKeys.userId] = homeController.currentUserData!.userid.toString();
-          body[RequestKeys.compId] = homeController.currentUserData!.compId.toString();
-          body[RequestKeys.yearId] = homeController.currentUserData!.yearId.toString();
-          body[RequestKeys.branchId] = homeController.currentUserData!.branchId.toString();
-          body[RequestKeys.executiveId] = selectedDropdownValue?.executiveId.toString() ??
-              homeController.currentUserData?.accountCode.toString() ?? "";
-          body[RequestKeys.partyId] = selectCompany?.partyid.toString() ?? '0';
-          body[RequestKeys.totalAmount] = cartController.cartList.first.subtotal.toString();
-          body[RequestKeys.shippingAmount] = cartController.cartList[0].shippingamount.toString();
-          body[RequestKeys.discountPercent] = discountedValue;
-          body[RequestKeys.discountAmount] = subTotal.toString();
-          body[RequestKeys.cashDiscountPercent] = cashDiscountedValue;
-          body[RequestKeys.cashDiscountAmount] = grandTotal.toString();
-          body[RequestKeys.grandTotal] = grandTotal.toString();
+    final u = homeController.currentUserData;
+    final isCustomerUser = u?.usertype.toString() == 'Customer';
 
-
-          var res = await api.orderPlace(body);
-          if (res.status == 200) {
-            Get.offAllNamed(AppRoutes.orderPlaced);
-            homeController.itemInCart.value = 0;
-          } else {
-            ShowMessage.showSnackBar('Server Res', res.message.toString());
-          }
-        } catch (e) {
-          ShowMessage.showSnackBar('Server Res', '$e');
-        } finally {
-          setBusy(false);
-        }
-      }
-    } else if (selectCompany == null) {
+    // Non-customers must choose which party the order is for.
+    if (!isCustomerUser && selectCompany == null) {
       ShowMessage.showSnackBar('Server Res', AppString.pleaseSelectCompanyTxt);
-    } else {
-      setBusy(true);
-      try {
-        Map<String, String> body = {};
-        body[RequestKeys.userId] = homeController.currentUserData!.userid.toString();
-        body[RequestKeys.compId] = homeController.currentUserData!.compId.toString();
-        body[RequestKeys.yearId] = homeController.currentUserData!.yearId.toString();
-        body[RequestKeys.branchId] = homeController.currentUserData!.branchId.toString();
-        body[RequestKeys.executiveId] = selectedDropdownValue?.executiveId.toString() ??
-            homeController.currentUserData?.accountCode.toString() ??
-            "";
-        body[RequestKeys.partyId] = selectCompany?.partyid.toString() ?? '';
-        body[RequestKeys.totalAmount] = cartController.cartList.first.subtotal.toString();
-        body[RequestKeys.shippingAmount] = cartController.cartList[0].shippingamount.toString();
-        body[RequestKeys.discountPercent] = discountedValue;
-        body[RequestKeys.discountAmount] = subTotal.toString();
-        body[RequestKeys.cashDiscountPercent] = cashDiscountedValue;
-        body[RequestKeys.cashDiscountAmount] = grandTotal.toString();
-        body[RequestKeys.grandTotal] = grandTotal.toString();
-        var res = await api.orderPlace(body);
-        if (res.status == 200) {
-          Get.offAllNamed(AppRoutes.orderPlaced);
-          homeController.itemInCart.value = 0;
-        } else {
-          ShowMessage.showSnackBar('Server Res', res.message.toString());
-        }
-      } catch (e) {
-        ShowMessage.showSnackBar('Server Res', '$e');
-      } finally {
-        setBusy(false);
+      return;
+    }
+
+    final partyId = isCustomerUser
+        ? (selectCompany?.partyid?.toString() ?? u?.accountCode?.toString() ?? '0')
+        : (selectCompany?.partyid?.toString() ?? '0');
+    final shipping = cartController.cartList.isEmpty
+        ? '0'
+        : '${cartController.cartList.first.shippingamount ?? 0}';
+
+    setBusy(true);
+    try {
+      Map<String, String> body = {};
+      body[RequestKeys.userId] = u!.userid.toString();
+      body[RequestKeys.compId] = u.compId.toString();
+      body[RequestKeys.yearId] = u.yearId.toString();
+      body[RequestKeys.branchId] = u.branchId.toString();
+      body[RequestKeys.executiveId] = selectedDropdownValue?.executiveId.toString() ??
+          u.accountCode?.toString() ??
+          "";
+      body[RequestKeys.partyId] = partyId;
+      body[RequestKeys.totalAmount] = subTotal.toString();
+      body[RequestKeys.shippingAmount] = shipping;
+      // No discounts in this deployment — send zeros; grand total == amount.
+      body[RequestKeys.discountPercent] = '0';
+      body[RequestKeys.discountAmount] = subTotal.toString();
+      body[RequestKeys.cashDiscountPercent] = '0';
+      body[RequestKeys.cashDiscountAmount] = grandTotal.toString();
+      body[RequestKeys.grandTotal] = grandTotal.toString();
+
+      var res = await api.orderPlace(body);
+      if (res.status == 200) {
+        Get.offAllNamed(AppRoutes.orderPlaced);
+        homeController.itemInCart.value = 0;
+      } else {
+        ShowMessage.showSnackBar('Server Res', res.message.toString());
       }
+    } catch (e) {
+      ShowMessage.showSnackBar('Server Res', '$e');
+    } finally {
+      setBusy(false);
     }
   }
 

@@ -23,7 +23,9 @@ import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 
 
 import 'package:newdigitalerp/screen/ui/home/indent/indent_response/indent_model.dart';
+import 'package:newdigitalerp/repo/reimbursement_repo.dart';
 import 'package:newdigitalerp/utils/show_message.dart';
+import 'package:file_picker/file_picker.dart';
 import '../indent_screens/indent_list_screen.dart';
 import 'indent_list_controller.dart';
 
@@ -38,6 +40,60 @@ class IndentController extends AppBaseController {
   bool isEditMode = false;
   int? editIndentId;
   bool get isSubmitting => _submitting;
+
+  // ── Attachments (ERP S3, shown on the Review step) ──────────────────────────
+  final List<String> attachmentKeys = [];
+  final List<String> attachmentNames = [];
+  final List<String> attachmentPreviews = [];
+  bool uploadingAttachment = false;
+
+  Future<void> pickAndUploadAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+      allowMultiple: true,
+    );
+    if (result == null) return;
+    uploadingAttachment = true;
+    update();
+    try {
+      for (final pf in result.files) {
+        if (pf.path == null) continue;
+        final res = await ReimbursementRepo.uploadReimbursementFile(
+          pf.path!,
+          storage: 's3',
+          compid: '${_home.currentUserData?.compId ?? ''}',
+          userid: '${_home.currentUserData?.userid ?? ''}',
+        );
+        if (res.status == true && res.statusCode == 200) {
+          final data =
+              (res.data as Map<String, dynamic>?)?['data'] as Map<String, dynamic>?;
+          final key = data?['key']?.toString() ?? '';
+          final url = data?['url']?.toString() ?? '';
+          if (key.isNotEmpty) {
+            attachmentKeys.add(key);
+            attachmentNames.add(pf.name);
+            attachmentPreviews.add(url);
+          }
+        } else {
+          ShowMessage.showSnackBar('Attachment', res.message ?? 'Upload failed');
+        }
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('Attachment', '$e');
+    } finally {
+      uploadingAttachment = false;
+      update();
+    }
+  }
+
+  void removeAttachmentAt(int i) {
+    if (i < 0 || i >= attachmentKeys.length) return;
+    attachmentKeys.removeAt(i);
+    if (i < attachmentNames.length) attachmentNames.removeAt(i);
+    if (i < attachmentPreviews.length) attachmentPreviews.removeAt(i);
+    update();
+  }
 
   // =========================================================================
   // STEP 0 — HEADER
@@ -458,6 +514,8 @@ class IndentController extends AppBaseController {
         'yearid': _currentYearId(),
         'grandtotal': totalAmount,
         'indentitems': items,
+        // CSV of S3 keys → stored in TransMaster.Files (round-trips to the ERP).
+        'attachments': attachmentKeys.join(','),
         'companyid': int.tryParse(selectedCompany?.id ?? '0') ?? 0,
         'reuesttoid': int.tryParse(selectedBranch?.id ?? '0') ?? 0,
         'priortyid': int.tryParse(selectedPriorityOption?.id ?? '0') ?? 0,
@@ -535,6 +593,18 @@ class IndentController extends AppBaseController {
     siteInchargeCtrl.text = d.siteIncharge;
     remarksCtrl.text = d.remarks;
     boqNoCtrl.text = d.workorderno;
+
+    // Load existing S3 attachments: raw keys for re-save, presigned URLs for display.
+    attachmentKeys
+      ..clear()
+      ..addAll(d.attachmentkeys.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    attachmentPreviews
+      ..clear()
+      ..addAll(d.attachments.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    attachmentNames
+      ..clear()
+      ..addAll(attachmentKeys
+          .map((k) => k.contains('/') ? k.substring(k.lastIndexOf('/') + 1) : k));
 
     // Request By is the approver dropdown now — match the saved name.
     if (d.requestby.isNotEmpty) {

@@ -5,9 +5,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:newdigitalerp/screen/base/base_controller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
+import 'package:newdigitalerp/repo/reimbursement_repo.dart';
 import 'package:newdigitalerp/utils/show_message.dart';
 import 'sale_order_form_models.dart';
 
@@ -52,6 +54,63 @@ class SaleOrderCreateController extends AppBaseController {
   // Grids.
   List<SaleOrderItemLine> items = [];
   List<SaleOrderOtherExpense> otherExpenses = [];
+
+  // Attachments (ERP S3). `attachmentKeys` are the S3 object keys persisted on save;
+  // `attachmentPreviews` are presigned URLs for on-screen display; names for the chips.
+  final List<String> attachmentKeys = [];
+  final List<String> attachmentNames = [];
+  final List<String> attachmentPreviews = [];
+  bool uploadingAttachment = false;
+
+  // Pick one or more files and upload them to the ERP's S3 bucket (storage=s3), keeping
+  // the returned key to persist on the document and the presigned url to preview.
+  Future<void> pickAndUploadAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+      allowMultiple: true,
+    );
+    if (result == null) return;
+    uploadingAttachment = true;
+    update();
+    try {
+      for (final pf in result.files) {
+        if (pf.path == null) continue;
+        final res = await ReimbursementRepo.uploadReimbursementFile(
+          pf.path!,
+          storage: 's3',
+          compid: _compId,
+          userid: _userId,
+        );
+        if (res.status == true && res.statusCode == 200) {
+          final data =
+              (res.data as Map<String, dynamic>?)?['data'] as Map<String, dynamic>?;
+          final key = data?['key']?.toString() ?? '';
+          final url = data?['url']?.toString() ?? '';
+          if (key.isNotEmpty) {
+            attachmentKeys.add(key);
+            attachmentNames.add(pf.name);
+            attachmentPreviews.add(url);
+          }
+        } else {
+          ShowMessage.showSnackBar('Attachment', res.message ?? 'Upload failed');
+        }
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('Attachment', '$e');
+    } finally {
+      uploadingAttachment = false;
+      update();
+    }
+  }
+
+  void removeAttachmentAt(int i) {
+    if (i < 0 || i >= attachmentKeys.length) return;
+    attachmentKeys.removeAt(i);
+    if (i < attachmentNames.length) attachmentNames.removeAt(i);
+    if (i < attachmentPreviews.length) attachmentPreviews.removeAt(i);
+    update();
+  }
 
   String get _compId =>
       homeController.currentUserData?.compId?.toString() ?? '';
@@ -140,6 +199,18 @@ class SaleOrderCreateController extends AppBaseController {
     }
     entryid = h.mainid;
     editingOrderNo = h.orderno;
+
+    // Load existing attachments: keep the raw keys for re-save, presigned URLs for display.
+    attachmentKeys
+      ..clear()
+      ..addAll(h.attachmentkeys.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    attachmentPreviews
+      ..clear()
+      ..addAll(h.attachments.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    attachmentNames
+      ..clear()
+      ..addAll(attachmentKeys
+          .map((k) => k.contains('/') ? k.substring(k.lastIndexOf('/') + 1) : k));
 
     void set(String key, int id, String name) {
       if (id > 0 || name.isNotEmpty) {
@@ -351,6 +422,8 @@ class SaleOrderCreateController extends AppBaseController {
         'terms': terms.text.trim(),
         'items': encodeItems(items),
         'otherexpenses': encodeOthers(otherExpenses),
+        // CSV of S3 keys → stored in TransMaster.Files (round-trips to the ERP).
+        'attachments': attachmentKeys.join(','),
       });
       if (res.status == 200) {
         ShowMessage.showSnackBar('Performa Invoice',

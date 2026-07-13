@@ -23,7 +23,11 @@ class CartController extends AppBaseController {
   List<GetCartListData> cartList = [];
   List<GetCartListData> cartDeletedListItem = [];
   int? flag;
-  late final  list ;
+  // Offline cart cache. MUST be initialized (not `late final`): getOfflineList()
+  // only assigns it when the cache is non-empty, so a `late` field would throw a
+  // LateInitializationError in tapOnDelete when the cache is empty — which silently
+  // aborted the delete before the server call ever ran (item could never be removed).
+  List list = [];
 
   init() async {
     // TODO: implement onInit
@@ -42,10 +46,11 @@ class CartController extends AppBaseController {
 
   void tapOnDelete(int index) async {
     var item = cartList[index];
-    list.removeWhere((element)
-      => element.itemId == cartList[index].productid);
-    await SharedPre.setValue(
-        SharedPre.offlineCartList, json.encode(list));
+    // Best-effort offline-cache cleanup — must never block the server removal.
+    try {
+      list.removeWhere((element) => element.itemId == cartList[index].productid);
+      await SharedPre.setValue(SharedPre.offlineCartList, json.encode(list));
+    } catch (_) {/* offline cache empty/out of sync — ignore and remove server-side */}
     //cartDeletedListItem.add(item); /// using for manage product list cart color on back tap
     bool deleted = await removeFromCartAPI(itemId: item.id.toString());
     if (deleted) {

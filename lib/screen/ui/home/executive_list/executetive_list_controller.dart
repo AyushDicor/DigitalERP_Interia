@@ -1,5 +1,6 @@
 
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
@@ -85,8 +86,31 @@ class ExecutiveListController extends AppBaseController {
     } finally {}
   }
 
-  void tapOnLiveLocation(int index) {
-    Get.toNamed(AppRoutes.map, arguments: executiveList[index]);
+  // Open the executive's location in the phone's Google Maps app (or browser).
+  // Prefers exact coordinates; falls back to searching the address text.
+  Future<void> tapOnLiveLocation(int index) async {
+    final e = executiveList[index];
+    final lat = e.latitude ?? 0;
+    final lng = e.longitude ?? 0;
+
+    Uri uri;
+    if (lat != 0 || lng != 0) {
+      uri = Uri.parse(
+          'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    } else if ((e.location ?? '').trim().isNotEmpty) {
+      uri = Uri.parse('https://www.google.com/maps/search/?api=1&query='
+          '${Uri.encodeComponent(e.location!.trim())}');
+    } else {
+      ShowMessage.showSnackBar('Location', 'No location available for this executive.');
+      return;
+    }
+
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) ShowMessage.showSnackBar('Location', 'Could not open the map.');
+    } catch (e) {
+      ShowMessage.showSnackBar('Location', 'Could not open the map: $e');
+    }
   }
 
   void tapOnCalender(int index) {

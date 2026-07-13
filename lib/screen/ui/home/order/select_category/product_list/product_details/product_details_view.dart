@@ -1094,6 +1094,7 @@ import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/app_network_image.dart';
 import 'package:newdigitalerp/utils/my_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../../../../utils/my_app_bar_new.dart';
@@ -1362,21 +1363,77 @@ class ProductDetailsView extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          width: double.infinity, height: 52,
-          child: ElevatedButton.icon(
-            onPressed: () => ctrl.addItem(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: newBlueColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        child: Row(
+          children: [
+            // Quantity stepper — set how many to add (type a number for large qtys).
+            _qtyStepper(ctrl),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () => ctrl.addItem(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: newBlueColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: const Icon(Icons.shopping_cart_outlined, size: 20),
+                  label: Text('Add ${ctrl.orderQty} to Cart',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
+                ),
+              ),
             ),
-            icon: const Icon(Icons.shopping_cart_outlined, size: 20),
-            label: const Text('Add to Cart',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-          ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _qtyStepper(ProductDetailsController ctrl) {
+    Widget btn(IconData icon, VoidCallback onTap) => InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 38,
+            height: 52,
+            child: Icon(icon, size: 20, color: newBlueColor),
+          ),
+        );
+    return Container(
+      decoration: BoxDecoration(
+        color: newSurfaceColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: newBorderColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          btn(Icons.remove_rounded, ctrl.decQty),
+          SizedBox(
+            width: 44,
+            child: TextField(
+              controller: ctrl.orderQtyController,
+              onChanged: ctrl.setQtyFromText,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: newTextPrimary),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+          btn(Icons.add_rounded, ctrl.incQty),
+        ],
       ),
     );
   }

@@ -70,6 +70,7 @@ class AppRoutes {
   static const leadManagement = '/lead-management-view';
   static const performaInvoice = '/performa-invoice-view';
   static const purchaseOrder = '/purchase-order-view';
+  static const pendingIndentForPo = '/pending-indent-for-po';
   static const stockReconcillation = '/stock-reconcillation';
 
   static const paymentRequestDetailScreen = '/payment-request-detail';

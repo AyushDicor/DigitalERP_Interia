@@ -599,25 +599,14 @@ class AttendanceListView extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 6),
+                  // Check-in (enter office) location.
                   if (item.location?.isNotEmpty == true)
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_rounded,
-                            size: 10, color: _neutral),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Text(
-                            item.location ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: _neutral,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w400),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _locationLine('IN', item.location ?? ''),
+                  // Day-close (punch out) location.
+                  if (item.locationOut?.isNotEmpty == true) ...[
+                    const SizedBox(height: 3),
+                    _locationLine('OUT', item.locationOut ?? ''),
+                  ],
                 ],
               ),
             ),
@@ -632,6 +621,29 @@ class AttendanceListView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // A small IN/OUT tag + the location text where that punch was taken.
+  Widget _locationLine(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(Icons.location_on_rounded, size: 10, color: _neutral),
+        const SizedBox(width: 3),
+        Text('$label ',
+            style: const TextStyle(
+                color: _neutral, fontSize: 9, fontWeight: FontWeight.w700)),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                color: _neutral, fontSize: 9, fontWeight: FontWeight.w400),
+          ),
+        ),
+      ],
     );
   }
 

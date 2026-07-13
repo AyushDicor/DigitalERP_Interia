@@ -1242,8 +1242,8 @@ class _AttendanceViewState extends State<AttendanceView>
                           const SizedBox(width: 8),
                           Text(
                             controller.isAttendanceMarked
-                                ? 'Day Close'
-                                : 'Mark Attendance',
+                                ? 'Check Out (Day Close)'
+                                : 'Check In',
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
@@ -1446,6 +1446,16 @@ class _AttendanceViewState extends State<AttendanceView>
                             fontSize: 10,
                             fontWeight: FontWeight.w600)),
                   ],
+                  // Location where the punch was taken — check-in (enter office)
+                  // and check-out (day close) are stored & shown separately.
+                  if ((item.location ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    _locRow('IN', item.location!, _present),
+                  ],
+                  if ((item.locationOut ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    _locRow('OUT', item.locationOut!, _absent),
+                  ],
                 ],
               ),
             ),
@@ -1474,6 +1484,29 @@ class _AttendanceViewState extends State<AttendanceView>
             style: TextStyle(
                 color: color, fontSize: 10, fontWeight: FontWeight.w600)),
       ]),
+    );
+  }
+
+  // One line: a small IN/OUT tag + the location text where that punch was taken.
+  Widget _locRow(String label, String value, Color color) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.location_on_rounded, size: 12, color: color),
+        const SizedBox(width: 3),
+        Text('$label ',
+            style: TextStyle(
+                color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+        Expanded(
+          child: Text(value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500)),
+        ),
+      ],
     );
   }
 

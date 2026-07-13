@@ -45,11 +45,22 @@ class _MrnListScreenState extends State<MrnListScreen> {
               icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
               onPressed: () => Get.back(),
             ),
-            title: const Text('MRN List',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: newTextPrimary)),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('MRN List',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: newTextPrimary)),
+                Text(ctrl.listCountLabel,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: newTextSecondary)),
+              ],
+            ),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(1),
               child: Container(height: 1, color: newBorderColor),
@@ -104,6 +115,8 @@ class _MrnListScreenState extends State<MrnListScreen> {
           ),
           body: Column(children: [
             _filterBar(context, ctrl),
+            if (!ctrl.isLoadingList && ctrl.filteredItems.isNotEmpty)
+              _statsRow(ctrl),
             if (!ctrl.isLoadingList && ctrl.filteredItems.isNotEmpty)
               Expanded(
                 child: ctrl.isLoadingList
@@ -198,6 +211,57 @@ class _MrnListScreenState extends State<MrnListScreen> {
       ]),
     );
   }
+
+  // Reimbursement-style summary cards: a coloured value pill + label, one row.
+  Widget _statsRow(MrnListController ctrl) {
+    final totalQty = ctrl.filteredItems.fold(0.0, (s, i) => s + i.totalQty);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 2),
+      child: Row(children: [
+        _statCard('${ctrl.filteredItems.length}', 'Total MRN',
+            newBlueColor, newBlueLightColor),
+        const SizedBox(width: 10),
+        _statCard('${totalQty.toInt()}', 'Total Items',
+            newGreenColor, newGreenLightColor),
+      ]),
+    );
+  }
+
+  Widget _statCard(String val, String label, Color fg, Color bg) => Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2))
+            ],
+          ),
+          child: Column(children: [
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                  color: bg, borderRadius: BorderRadius.circular(8)),
+              child: Text(val,
+                  style: TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w800, color: fg)),
+            ),
+            const SizedBox(height: 6),
+            Text(label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: newTextSecondary)),
+          ]),
+        ),
+      );
 
   Widget _chip(IconData icon, String label, Color bg, Color fg) => Expanded(
         child: Container(

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../utils/app_constant_new.dart';
+import '../utils/summary_cards.dart';
 import 'sale_order_controller.dart';
 import 'sale_order_models.dart';
 import 'performa_invoice_filter_view.dart';
@@ -157,48 +158,11 @@ class PerformaInvoiceListView extends StatelessWidget {
   }
 
   Widget _statsRow(SaleOrderController c) {
-    Widget tile(String label, String value, IconData icon, Color color) =>
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: _kSurface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _kBorder),
-            ),
-            child: Row(children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(9)),
-                child: Icon(icon, size: 18, color: color),
-              ),
-              const SizedBox(width: 10),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(value,
-                    style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: _kTextPrimary)),
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: _kTextSecondary,
-                        letterSpacing: 0.3)),
-              ]),
-            ]),
-          ),
-        );
-    return Row(children: [
-      tile('TOTAL RECORDS', '${c.totalRecords}', Icons.storage_rounded,
-          _kPrimary),
-      const SizedBox(width: 10),
-      tile('FILTERED', '${c.filteredCount}', Icons.filter_alt_rounded,
-          const Color(0xFF10B981)),
-    ]);
+    return SummaryCards([
+      SummaryStat('${c.totalRecords}', 'Total', newBlueColor, newBlueLightColor),
+      SummaryStat(
+          '${c.filteredCount}', 'Filtered', newGreenColor, newGreenLightColor),
+    ], padding: EdgeInsets.zero);
   }
 
   Widget _searchField(SaleOrderController c) => Container(

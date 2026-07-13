@@ -431,6 +431,7 @@
 
 import 'package:newdigitalerp/screen/ui/home/grn/grn_response/grn_models.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/summary_cards.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -537,7 +538,21 @@ class _GrnListScreenState extends State<GrnListScreen> {
           body: Column(children: [
             _filterBar(context, ctrl),
             if (!ctrl.isLoadingList && ctrl.filteredItems.isNotEmpty)
-           //   _summaryBar(ctrl),
+              SummaryCards([
+                SummaryStat('${ctrl.filteredItems.length}', 'Total GRN',
+                    newBlueColor, newBlueLightColor),
+                SummaryStat(
+                    '${ctrl.filteredItems.fold<double>(0, (s, i) => s + i.totalQty).toInt()}',
+                    'Total Items',
+                    newGreenColor,
+                    newGreenLightColor),
+                SummaryStat(
+                    compactInr(ctrl.filteredItems
+                        .fold<double>(0, (s, i) => s + i.totalAmt)),
+                    'Total Amount',
+                    newOrangeColor,
+                    newOrangeLightColor),
+              ]),
             Expanded(
               child: ctrl.isLoadingList
                   ? _shimmer()

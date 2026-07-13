@@ -57,7 +57,10 @@ class PerformaInvoiceFilterView extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: _card('Filter Options', Icons.filter_list_rounded, [
+                child: Column(children: [
+                  _dateRangeCard(context, c),
+                  const SizedBox(height: 16),
+                  _card('Filter Options', Icons.filter_list_rounded, [
                   _filterTile(context,
                       label: 'Party Name',
                       icon: Icons.business_outlined,
@@ -85,6 +88,7 @@ class PerformaInvoiceFilterView extends StatelessWidget {
                       value: c.filterCurrency,
                       options: c.currencyOptions,
                       onPicked: c.setFilterCurrency),
+                  ]),
                 ]),
               ),
             ),
@@ -100,8 +104,15 @@ class PerformaInvoiceFilterView extends StatelessWidget {
                   SizedBox(
                     height: 48,
                     child: OutlinedButton.icon(
-                      onPressed:
-                          c.activeFilterCount == 0 ? null : c.resetFilters,
+                      onPressed: (c.activeFilterCount == 0 &&
+                              c.isDefaultDateRange)
+                          ? null
+                          : () async {
+                              c.resetFilters();
+                              if (!c.isDefaultDateRange) {
+                                await c.resetDateRange();
+                              }
+                            },
                       icon: const Icon(Icons.restart_alt_rounded, size: 16),
                       label: const Text('Reset',
                           style: TextStyle(
@@ -146,6 +157,133 @@ class PerformaInvoiceFilterView extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Server-side window. The list loads the last 30 days by default; widening the
+  // range re-queries the API, so this is how you reach older records.
+  Widget _dateRangeCard(BuildContext context, SaleOrderController c) =>
+      _card('Date Range', Icons.event_outlined, [
+        Row(children: [
+          Expanded(
+              child: _dateTile(context, c, 'From', c.fromDate, isFrom: true)),
+          const SizedBox(width: 12),
+          Expanded(
+              child: _dateTile(context, c, 'To', c.toDate, isFrom: false)),
+        ]),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _preset(c, 'Last 30 Days', 30),
+            _preset(c, 'Last 90 Days', 90),
+            _preset(c, 'Last 6 Months', 182),
+            _preset(c, 'Last 1 Year', 365),
+            _preset(c, 'Last 2 Years', 730),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(children: [
+          if (c.isBusy)
+            const SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: _kPrimary))
+          else
+            const Icon(Icons.info_outline_rounded,
+                size: 13, color: _kTextSecondary),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              c.isBusy
+                  ? 'Loading ${c.dateRangeLabel}…'
+                  : 'Showing ${c.totalRecords} record(s) for ${c.dateRangeLabel}',
+              style: const TextStyle(fontSize: 11, color: _kTextSecondary),
+            ),
+          ),
+        ]),
+      ]);
+
+  Widget _preset(SaleOrderController c, String label, int days) {
+    final now = DateTime.now();
+    final diff = c.toDate.difference(c.fromDate).inDays.abs();
+    final selected = !c.isBusy && (diff - days).abs() <= 1;
+    return GestureDetector(
+      onTap: c.isBusy
+          ? null
+          : () => c.setDateRange(now.subtract(Duration(days: days)), now),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected ? _kPrimary.withValues(alpha: 0.12) : _kBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: selected ? _kPrimary : _kBorder),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: selected ? _kPrimary : _kTextSecondary)),
+      ),
+    );
+  }
+
+  Widget _dateTile(BuildContext context, SaleOrderController c, String label,
+      DateTime value,
+      {required bool isFrom}) {
+    return GestureDetector(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: value,
+          firstDate: DateTime(2015),
+          lastDate: DateTime.now(),
+          builder: (ctx, child) => Theme(
+            data: Theme.of(ctx).copyWith(
+                colorScheme:
+                    const ColorScheme.light(primary: _kPrimary)),
+            child: child!,
+          ),
+        );
+        if (picked == null) return;
+        // Keep the range ordered no matter which end was edited.
+        if (isFrom) {
+          await c.setDateRange(picked, picked.isAfter(c.toDate) ? picked : c.toDate);
+        } else {
+          await c.setDateRange(picked.isBefore(c.fromDate) ? picked : c.fromDate, picked);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        decoration: BoxDecoration(
+          color: _kBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _kBorder),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                  color: _kTextSecondary)),
+          const SizedBox(height: 3),
+          Row(children: [
+            const Icon(Icons.calendar_today_outlined,
+                size: 13, color: _kTextSecondary),
+            const SizedBox(width: 6),
+            Text(
+                '${value.day.toString().padLeft(2, '0')}/'
+                '${value.month.toString().padLeft(2, '0')}/${value.year}',
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _kTextPrimary)),
+          ]),
+        ]),
       ),
     );
   }

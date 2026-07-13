@@ -360,6 +360,10 @@ class ApiMethods {
   String purchaseorderItemMaster    = 'purchaseorder/itemmaster';
   String purchaseorderPartyDetail   = 'purchaseorder/partydetail';
   String purchaseorderSave          = 'purchaseorder/save';
+  // Pending Indent for PO: list of approved indents not yet fully converted, and
+  // the seed payload for creating a PO from one.
+  String purchaseorderPendingIndents = 'purchaseorder/pendingindents';
+  String purchaseorderIndentForPo    = 'purchaseorder/indentforpo';
 
   ///Issue Item
   String getIssueItemDropdown = 'indentandissuedropdown';

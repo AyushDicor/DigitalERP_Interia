@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Attendance marking captures the user's current GPS location. Without these,
+         Android denies the runtime permission request and location comes back 0,0. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- file_picker injects broad media permissions, but the app only picks single
          files/photos via the system picker (SAF / Android Photo Picker), which need
          no media access. Strip them so Google Play doesn't require a Photo/Video
@@ -50,6 +54,11 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- url_launcher needs this to open Google Maps / a browser (https) on Android 11+. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
         </intent>
     </queries>
 </manifest>

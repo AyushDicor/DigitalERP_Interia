@@ -161,6 +161,61 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
   List<String> existingBillFiles = [];
   List<String> existingDcFiles = [];
 
+  // ERP S3 attachments (shown on the Review step). Keys persisted on save; previews are
+  // presigned URLs (openable); names for the chips.
+  final List<String> attachmentKeys = [];
+  final List<String> attachmentNames = [];
+  final List<String> attachmentPreviews = [];
+  bool uploadingAttachment = false;
+
+  Future<void> pickAndUploadAttachment() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+      allowMultiple: true,
+    );
+    if (result == null) return;
+    uploadingAttachment = true;
+    update();
+    try {
+      for (final pf in result.files) {
+        if (pf.path == null) continue;
+        final res = await ReimbursementRepo.uploadReimbursementFile(
+          pf.path!,
+          storage: 's3',
+          compid: '${homeController.currentUserData?.compId ?? ''}',
+          userid: '${homeController.currentUserData?.userid ?? ''}',
+        );
+        if (res.status == true && res.statusCode == 200) {
+          final data =
+              (res.data as Map<String, dynamic>?)?['data'] as Map<String, dynamic>?;
+          final key = data?['key']?.toString() ?? '';
+          final url = data?['url']?.toString() ?? '';
+          if (key.isNotEmpty) {
+            attachmentKeys.add(key);
+            attachmentNames.add(pf.name);
+            attachmentPreviews.add(url);
+          }
+        } else {
+          ShowMessage.showSnackBar('Attachment', res.message ?? 'Upload failed');
+        }
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('Attachment', '$e');
+    } finally {
+      uploadingAttachment = false;
+      update();
+    }
+  }
+
+  void removeAttachmentAt(int i) {
+    if (i < 0 || i >= attachmentKeys.length) return;
+    attachmentKeys.removeAt(i);
+    if (i < attachmentNames.length) attachmentNames.removeAt(i);
+    if (i < attachmentPreviews.length) attachmentPreviews.removeAt(i);
+    update();
+  }
+
   final TextEditingController lotNoCtrl = TextEditingController();
   final TextEditingController grnNoCtrl = TextEditingController();
   final TextEditingController grnDateCtrl = TextEditingController();
@@ -283,6 +338,9 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
     processingPo = null;
     existingBillFiles = [];
     existingDcFiles = [];
+    attachmentKeys.clear();
+    attachmentNames.clear();
+    attachmentPreviews.clear();
     if (src == MrnSourceType.purchaseOrder) {
       fetchPendingPoList();
     }
@@ -1140,6 +1198,8 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
         'toaddress': '',
         'mrnother': additionalChargesPayload,        // ← ADD: was missing
         'mrnitems': items,
+        // CSV of S3 keys → stored in TransMaster.Files (round-trips to the ERP).
+        'attachments': attachmentKeys.join(','),
       };
 
       if (kDebugMode) {
@@ -1672,6 +1732,18 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
             .where((s) => s.isNotEmpty)
             .toList()
         : [];
+
+    // Load existing S3 attachments: raw keys for re-save, presigned URLs for display.
+    attachmentKeys
+      ..clear()
+      ..addAll(d.attachmentkeys.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    attachmentPreviews
+      ..clear()
+      ..addAll(d.attachments.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    attachmentNames
+      ..clear()
+      ..addAll(attachmentKeys
+          .map((k) => k.contains('/') ? k.substring(k.lastIndexOf('/') + 1) : k));
 
     _setDateCtrl(mrnDateCtrl, d.receiptdate);
     _setDateCtrl(billDateCtrl, d.billdate);

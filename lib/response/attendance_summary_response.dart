@@ -120,6 +120,8 @@ class DayDetails {
     this.batterylevel,
     this.photo,
     this.location,
+    this.locationOut,
+    this.closeBatterylevel,
   });
 
   String? date;
@@ -127,7 +129,9 @@ class DayDetails {
   String? outTime;
   String? batterylevel;
   String? photo;
-  String? location;
+  String? location; // check-in (enter office) location
+  String? locationOut; // day-close (punch out) location
+  String? closeBatterylevel; // day-close battery
 
   factory DayDetails.fromJson(Map<String, dynamic> json) => DayDetails(
     date: json['date'],
@@ -136,6 +140,9 @@ class DayDetails {
     batterylevel: json['batterylevel'] == '' ? null : json['batterylevel'],
     photo: json['photo'],
     location: json['location'],
+    locationOut: json['location_out'] == '' ? null : json['location_out'],
+    closeBatterylevel:
+        json['close_batterylevel'] == '' ? null : json['close_batterylevel'],
   );
 
   Map<String, dynamic> toJson() => {
@@ -145,10 +152,12 @@ class DayDetails {
     'batterylevel': batterylevel,
     'photo': photo,
     'location': location,
+    'location_out': locationOut,
+    'close_batterylevel': closeBatterylevel,
   };
 
   @override
   String toString() {
-    return 'DayDetails{date: $date, inTime: $inTime, outTime: $outTime, batterylevel: $batterylevel, photo: $photo, location: $location}';
+    return 'DayDetails{date: $date, inTime: $inTime, outTime: $outTime, batterylevel: $batterylevel, photo: $photo, location: $location, locationOut: $locationOut, closeBatterylevel: $closeBatterylevel}';
   }
 }

@@ -169,6 +169,10 @@ class PurchaseOrderHeader {
   final int transactiontypeid;
   final int transportmodeid;
   final int currencyid;
+  // Attachments: `attachments` = presigned URLs (display), `attachmentkeys` = raw S3
+  // keys (the edit form re-sends these so the stored value stays a key, not a URL).
+  final String attachments;
+  final String attachmentkeys;
 
   PurchaseOrderHeader({
     this.mainid = 0,
@@ -215,6 +219,8 @@ class PurchaseOrderHeader {
     this.transactiontypeid = 0,
     this.transportmodeid = 0,
     this.currencyid = 0,
+    this.attachments = '',
+    this.attachmentkeys = '',
   });
 
   factory PurchaseOrderHeader.fromJson(Map<String, dynamic> j) =>
@@ -263,6 +269,8 @@ class PurchaseOrderHeader {
         transactiontypeid: _i(j['transactiontypeid']),
         transportmodeid: _i(j['transportmodeid']),
         currencyid: _i(j['currencyid']),
+        attachments: _s(j['attachments']),
+        attachmentkeys: _s(j['attachmentkeys']),
       );
 }
 

@@ -340,6 +340,10 @@ class MrnDetailData {
   final String currency;
   final String billfile;
   final String dcfile;
+  // ERP S3 attachments: `attachments` = presigned URLs (display), `attachmentkeys` =
+  // raw keys (re-sent on edit so the stored value stays a key, not an expiring URL).
+  final String attachments;
+  final String attachmentkeys;
   final List<MrnDetailItem> items;
   final List<MrnOtherItem> mrnother;
 
@@ -376,6 +380,8 @@ class MrnDetailData {
     this.currency = '',
     this.billfile = '',
     this.dcfile = '',
+    this.attachments = '',
+    this.attachmentkeys = '',
     this.items = const [],
     required this.mrnother,
   });
@@ -417,6 +423,8 @@ class MrnDetailData {
       currency: json['currency']?.toString() ?? '',
       billfile: json['billfile']?.toString() ?? '',
       dcfile: json['dcfile']?.toString() ?? '',
+      attachments: json['attachments']?.toString() ?? '',
+      attachmentkeys: json['attachmentkeys']?.toString() ?? '',
       items: rawItems is List
           ? rawItems
               .map((e) => MrnDetailItem.fromJson(e as Map<String, dynamic>))

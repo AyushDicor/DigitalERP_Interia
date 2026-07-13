@@ -76,12 +76,15 @@ class ApprovalDetailData {
   final List<ApprovalChainStep> approvalChain;
   final List<RelatedDoc> relatedDocs;
   final List<ApprovalItemData> itemsList; // ✅ added
+  // View-only: presigned URLs of the underlying document's attachment(s).
+  final String attachments;
 
   const ApprovalDetailData({
     this.header,
     this.approvalChain = const [],
     this.relatedDocs = const [],
     this.itemsList = const [], // ✅ added
+    this.attachments = '',
   });
 
   factory ApprovalDetailData.fromJson(Map<String, dynamic> json) =>
@@ -105,6 +108,7 @@ class ApprovalDetailData {
                     (e) => ApprovalItemData.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [],
+        attachments: json['attachments']?.toString() ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -112,6 +116,7 @@ class ApprovalDetailData {
         'approvalchain': approvalChain.map((e) => e.toJson()).toList(),
         'relateddocs': relatedDocs.map((e) => e.toJson()).toList(),
         'itemslist': itemsList.map((e) => e.toJson()).toList(), // ✅ added
+        'attachments': attachments,
       };
 }
 

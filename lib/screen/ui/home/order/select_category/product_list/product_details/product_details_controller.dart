@@ -22,6 +22,11 @@ class ProductDetailsController extends AppBaseController {
   final variantQuantityTextController = TextEditingController();
   final quantityTextFocus = FocusNode();
   final variantQuantityTextFocus = FocusNode();
+
+  // How many units to add to the cart in one tap. Bound to the stepper + typeable
+  // field on the detail page, so adding 100 is one entry instead of 100 taps.
+  int orderQty = 1;
+  final orderQtyController = TextEditingController(text: '1');
   RxBool isInCart = false.obs;
   ProductDetailsData? productDetailsResponse;
   var selectedIndexValue = 0;
@@ -245,24 +250,63 @@ class ProductDetailsController extends AppBaseController {
     totalAmount = (prductdeatailPrice + variantFinalValue).obs;
   }
 
-  void addItem() async {
-    if ((productDetailsResponse?.quantity ?? 0) < 0 || productDetailsResponse?.quantity == 0.0) {
-      ShowMessage.showSnackBar('mes', 'product quantity must be grater then 0');
-    } else {
-      ///for adding offlineItem
-      List offlineCartList = [];
-      offlineCartList.add(productDetailsResponse?.toJson());
-      await SharedPre.setValue(SharedPre.offlineCartList, json.encode(offlineCartList));
+  // ── Order-quantity stepper (detail page) ──
+  void incQty() {
+    orderQty += 1;
+    orderQtyController.text = orderQty.toString();
+    isInCart.value = false;
+    update();
+  }
 
-      isInCart.value = true;
-      var response = await addToCartAPI(
-          itemId: productDetailsResponse?.itemId.toString() ?? '',
-          itemRate: productDetailsResponse?.rate.toString() ?? '',
-          quantity: productDetailsResponse?.quantity?.toInt().toString() ?? "",
-          unitId: unitList[selectedIndexValue].unitid.toString());
-      _homeController.itemInCart.value = response?.data?.first.totalnumber ?? _homeController.itemInCart.value;
-      //update();
+  void decQty() {
+    if (orderQty > 1) {
+      orderQty -= 1;
+      orderQtyController.text = orderQty.toString();
+      isInCart.value = false;
+      update();
     }
+  }
+
+  // Typed quantity (e.g. "100"). Empty/invalid falls back to 1; don't rewrite the
+  // field text here so the cursor doesn't jump while typing.
+  void setQtyFromText(String value) {
+    final n = int.tryParse(value.trim());
+    orderQty = (n == null || n < 1) ? 1 : n;
+    isInCart.value = false;
+    update();
+  }
+
+  void addItem() async {
+    if (orderQty < 1) {
+      ShowMessage.showSnackBar('mes', 'Quantity must be greater than 0');
+      return;
+    }
+    ///for adding offlineItem — store the chosen order quantity, not the stock value
+    ///(productDetailsResponse.quantity feeds the "In Stock" display).
+    final itemJson = productDetailsResponse?.toJson() ?? <String, dynamic>{};
+    itemJson['quantity'] = orderQty;
+    List offlineCartList = [];
+    offlineCartList.add(itemJson);
+    await SharedPre.setValue(SharedPre.offlineCartList, json.encode(offlineCartList));
+
+    // Use the SELECTED unit's rate + id (the display total uses the unit rate too).
+    // Previously this sent the base product rate — often 0/null — so the cart line
+    // total showed ₹0. Guard the index so an item with no units can't crash.
+    final hasUnit = unitList.isNotEmpty && selectedIndexValue < unitList.length;
+    final unitRate = hasUnit
+        ? (unitList[selectedIndexValue].rate ?? productDetailsResponse?.rate ?? 0)
+        : (productDetailsResponse?.rate ?? 0);
+    final unitIdStr =
+        hasUnit ? (unitList[selectedIndexValue].unitid?.toString() ?? '0') : '0';
+
+    isInCart.value = true;
+    var response = await addToCartAPI(
+        itemId: productDetailsResponse?.itemId.toString() ?? '',
+        itemRate: unitRate.toString(),
+        quantity: orderQty.toString(),
+        unitId: unitIdStr);
+    _homeController.itemInCart.value = response?.data?.first.totalnumber ?? _homeController.itemInCart.value;
+    update();
   }
 
   void addToCartFormVariant() async {

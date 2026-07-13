@@ -31,7 +31,45 @@ class PurchaseOrderController extends AppBaseController {
       homeController.currentUserData?.compId?.toString() ?? '';
   String get _branchId =>
       homeController.currentUserData?.branchId?.toString() ?? '0';
-  String get _yearId => homeController.currentUserData?.yearId?.toString() ?? '';
+
+  // ── Server-side date window (on Create Date) ──
+  // Defaults to the last 30 days, like the other modules. Widen it from the
+  // Date Range filter to pull older records.
+  // NOTE: we deliberately do NOT send `yearid`. Login returns a numeric year *id*
+  // ("9") while TransMaster.YearID stores the label ("2026-27"), so sending it
+  // matched nothing and the list came back empty.
+  static const int defaultWindowDays = 30;
+  DateTime fromDate =
+      DateTime.now().subtract(const Duration(days: defaultWindowDays));
+  DateTime toDate = DateTime.now();
+
+  static String _ymd(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+  static String _dmy(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/'
+      '${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  String get dateRangeLabel => '${_dmy(fromDate)} — ${_dmy(toDate)}';
+
+  bool get isDefaultDateRange {
+    final d = toDate.difference(fromDate).inDays;
+    return d == defaultWindowDays || d == defaultWindowDays - 1;
+  }
+
+  /// Widen/narrow the window, then re-query the server.
+  Future<void> setDateRange(DateTime from, DateTime to) async {
+    fromDate = from;
+    toDate = to;
+    update();
+    await loadList();
+  }
+
+  Future<void> resetDateRange() => setDateRange(
+        DateTime.now().subtract(const Duration(days: defaultWindowDays)),
+        DateTime.now(),
+      );
 
   @override
   void onInit() {
@@ -143,7 +181,8 @@ class PurchaseOrderController extends AppBaseController {
       final res = await api.getPurchaseOrderList({
         'compid': _compId,
         'branchid': _branchId,
-        'yearid': _yearId,
+        'fromdate': _ymd(fromDate),
+        'todate': _ymd(toDate),
       });
       if (res.status == 200) {
         allOrders = res.data;

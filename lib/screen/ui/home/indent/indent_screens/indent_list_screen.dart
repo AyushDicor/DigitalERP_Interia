@@ -121,16 +121,83 @@ class IndentListScreen extends StatelessWidget {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: ctrl.refresh,
-      color: indBlueColor,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 90),
-        itemCount: ctrl.filteredItems.length,
-        itemBuilder: (_, i) => _IndentCard(item: ctrl.filteredItems[i]),
+    return Column(children: [
+      _statsRow(ctrl),
+      Expanded(
+        child: RefreshIndicator(
+          onRefresh: ctrl.refresh,
+          color: indBlueColor,
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(14, 4, 14, 90),
+            itemCount: ctrl.filteredItems.length,
+            itemBuilder: (_, i) => _IndentCard(item: ctrl.filteredItems[i]),
+          ),
+        ),
       ),
+    ]);
+  }
+
+  // Reimbursement-style summary cards: Total / Pending / Approved.
+  Widget _statsRow(IndentListController ctrl) {
+    int approved = 0, pending = 0;
+    for (final e in ctrl.filteredItems) {
+      final s = e.approvalStatus.toLowerCase();
+      if (s.contains('approve')) {
+        approved++;
+      } else if (s.contains('reject')) {
+        // rejected — not shown as its own card; excluded from pending.
+      } else {
+        pending++;
+      }
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 2),
+      child: Row(children: [
+        _statCard('${ctrl.filteredItems.length}', 'Total',
+            newBlueColor, newBlueLightColor),
+        const SizedBox(width: 10),
+        _statCard('$pending', 'Pending', newOrangeColor, newOrangeLightColor),
+        const SizedBox(width: 10),
+        _statCard('$approved', 'Approved', newGreenColor, newGreenLightColor),
+      ]),
     );
   }
+
+  Widget _statCard(String val, String label, Color fg, Color bg) => Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2))
+            ],
+          ),
+          child: Column(children: [
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                  color: bg, borderRadius: BorderRadius.circular(8)),
+              child: Text(val,
+                  style: TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w800, color: fg)),
+            ),
+            const SizedBox(height: 6),
+            Text(label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: newTextSecondary)),
+          ]),
+        ),
+      );
 
   // FAB
   Widget _buildFab() {

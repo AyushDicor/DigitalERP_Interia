@@ -28,6 +28,16 @@ class MrnListController extends AppBaseController {
   );
   bool get hasActiveFilter => activeFilter.isActive;
 
+  // Count shown under the "MRN List" title: total loaded, or "shown of total"
+  // when a filter narrows the list.
+  String get listCountLabel {
+    if (isLoadingList) return 'Loading…';
+    final total = mrnItems.length;
+    final shown = filteredItems.length;
+    if (hasActiveFilter && shown != total) return '$shown of $total items';
+    return '$total ${total == 1 ? 'item' : 'items'}';
+  }
+
   final TextEditingController fromDateCtrl = TextEditingController();
   final TextEditingController toDateCtrl = TextEditingController();
 

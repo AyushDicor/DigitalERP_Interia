@@ -1,21 +1,17 @@
-// Purchase Order — list page. Stat header + search + dynamic filter
-// (auto-populated dropdowns) + record cards. Tapping a card opens the
-// read-only detail. Add New opens the create form.
+// Pending Indent for PO — list of approved indents awaiting a Purchase Order.
+// Tapping a row opens the PO create form pre-seeded from that indent; once the
+// PO is saved the indent closes and drops off this list on refresh.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:newdigitalerp/purchase_order/purchase_order_controller.dart';
-import 'package:newdigitalerp/purchase_order/purchase_order_models.dart';
-import 'package:newdigitalerp/purchase_order/purchase_order_filter_view.dart';
-import 'package:newdigitalerp/purchase_order/purchase_order_detail_view.dart';
+import 'package:newdigitalerp/purchase_order/pending_indent_po/pending_indent_po_controller.dart';
+import 'package:newdigitalerp/purchase_order/pending_indent_po/pending_indent_po_models.dart';
 import 'package:newdigitalerp/purchase_order/purchase_order_create_view.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/summary_cards.dart';
 
-
 const Color _kPrimary = purpleColor;
-const Color _kPrimaryLightest = Color(0xFFEFF4FE);
 const Color _kBg = Color(0xFFF6F7FB);
 const Color _kSurface = Colors.white;
 const Color _kBorder = Color(0xFFE4E7F0);
@@ -23,39 +19,18 @@ const Color _kTextPrimary = Color(0xFF111827);
 const Color _kTextSecondary = Color(0xFF6B7280);
 const Color _kTextHint = Color(0xFF9CA3AF);
 
-class PurchaseOrderListView extends StatelessWidget {
-  const PurchaseOrderListView({super.key});
+class PendingIndentPoView extends StatelessWidget {
+  const PendingIndentPoView({super.key});
 
-  String _money(double v) {
-    final s = v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2);
-    // simple thousands grouping
-    final parts = s.split('.');
-    final intp = parts[0];
-    final buf = StringBuffer();
-    for (int i = 0; i < intp.length; i++) {
-      if (i > 0 && (intp.length - i) % 3 == 0) buf.write(',');
-      buf.write(intp[i]);
-    }
-    return buf.toString() + (parts.length > 1 ? '.${parts[1]}' : '');
-  }
+  static String _qty(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<PurchaseOrderController>(
-      init: PurchaseOrderController(),
+    return GetBuilder<PendingIndentPoController>(
+      init: PendingIndentPoController(),
       builder: (c) => Scaffold(
         backgroundColor: _kBg,
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final created = await Get.to(() => const PurchaseOrderCreateView());
-            if (created == true) c.loadList();
-          },
-          backgroundColor: _kPrimary,
-          elevation: 3,
-          shape: const CircleBorder(
-            side: BorderSide(color: Colors.white, width: 2)),
-          child: const Icon(Icons.add, color: Colors.white, size: 32),
-        ),
         appBar: AppBar(
           backgroundColor: _kSurface,
           elevation: 0,
@@ -74,61 +49,22 @@ class PurchaseOrderListView extends StatelessWidget {
           title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text('Purchase Order',
+                Text('Pending Indent for PO',
                     style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: _kTextPrimary)),
-                Text('Manage and analyze your data',
+                Text('Generate a Purchase Order from an indent',
                     style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
                         color: _kTextSecondary)),
               ]),
-          actions: [
-            GestureDetector(
-              onTap: () => Get.to(() => const PurchaseOrderFilterView()),
-              child: Container(
-                margin: const EdgeInsets.only(right: 18),
-                width: 40,
-                height: 40,
-                // padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: _kPrimaryLightest,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Stack(
-                    alignment: Alignment.topRight,
-                    children: [
-                      Center(
-                        child: Icon(Icons.filter_list_sharp,
-                            size: 20,
-                            color: _kPrimary),
-                      ),
-                      if (c.activeFilterCount > 0) ...[
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        Text('${c.activeFilterCount}',
-                            style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: _kPrimary)),
-                      ],
-                    ]),
-              ),
-            ),
-          ],
         ),
         body: RefreshIndicator(
           color: _kPrimary,
           onRefresh: () => c.loadList(),
-          child: c.isBusy && c.allOrders.isEmpty
+          child: c.isBusy && c.allIndents.isEmpty
               ? const Center(
                   child: CircularProgressIndicator(
                       color: _kPrimary, strokeWidth: 2.5))
@@ -139,22 +75,22 @@ class PurchaseOrderListView extends StatelessWidget {
                     const SizedBox(height: 14),
                     _searchField(c),
                     const SizedBox(height: 12),
-                    if (c.orderList.isEmpty)
+                    if (c.indentList.isEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 60),
                         child: Center(
                           child: Column(children: const [
-                            Icon(Icons.receipt_long_outlined,
+                            Icon(Icons.playlist_add_check_circle_outlined,
                                 size: 46, color: _kTextHint),
                             SizedBox(height: 10),
-                            Text('No records found',
+                            Text('No pending indents',
                                 style: TextStyle(
                                     fontSize: 13.5, color: _kTextSecondary)),
                           ]),
                         ),
                       )
                     else
-                      ...c.orderList.map((o) => _orderCard(c, o)),
+                      ...c.indentList.map((o) => _indentCard(context, c, o)),
                   ],
                 ),
         ),
@@ -162,15 +98,16 @@ class PurchaseOrderListView extends StatelessWidget {
     );
   }
 
-  Widget _statsRow(PurchaseOrderController c) {
+  Widget _statsRow(PendingIndentPoController c) {
     return SummaryCards([
-      SummaryStat('${c.totalRecords}', 'Total', newBlueColor, newBlueLightColor),
       SummaryStat(
-          '${c.filteredCount}', 'Filtered', newGreenColor, newGreenLightColor),
+          '${c.totalRecords}', 'Pending', newOrangeColor, newOrangeLightColor),
+      SummaryStat(
+          '${c.filteredCount}', 'Showing', newBlueColor, newBlueLightColor),
     ], padding: EdgeInsets.zero);
   }
 
-  Widget _searchField(PurchaseOrderController c) => Container(
+  Widget _searchField(PendingIndentPoController c) => Container(
         decoration: BoxDecoration(
             color: _kSurface,
             borderRadius: BorderRadius.circular(12),
@@ -179,7 +116,7 @@ class PurchaseOrderListView extends StatelessWidget {
           onChanged: c.onSearch,
           style: const TextStyle(fontSize: 14, color: _kTextPrimary),
           decoration: const InputDecoration(
-            hintText: 'Search order no, party, entry type…',
+            hintText: 'Search indent no, request by, plant…',
             hintStyle: TextStyle(fontSize: 13.5, color: _kTextHint),
             prefixIcon: Icon(Icons.search, size: 20, color: _kTextSecondary),
             border: InputBorder.none,
@@ -188,11 +125,13 @@ class PurchaseOrderListView extends StatelessWidget {
         ),
       );
 
-  Widget _orderCard(PurchaseOrderController c, PurchaseOrderListItem o) {
+  Widget _indentCard(
+      BuildContext context, PendingIndentPoController c, PendingIndentItem o) {
     return GestureDetector(
-      onTap: () {
-        c.loadDetail(o.mainid);
-        Get.to(() => const PurchaseOrderDetailView());
+      onTap: () async {
+        final created = await Get.to(
+            () => PurchaseOrderCreateView(seedIndentId: o.indentid));
+        if (created == true) c.loadList();
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -205,7 +144,7 @@ class PurchaseOrderListView extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
-              child: Text(o.orderno.isEmpty ? '(no order no)' : o.orderno,
+              child: Text(o.indentno.isEmpty ? '(no indent no)' : o.indentno,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -217,31 +156,28 @@ class PurchaseOrderListView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                   color: _kBg, borderRadius: BorderRadius.circular(6)),
-              child: Text('#${o.mainid}',
+              child: Text('#${o.indentid}',
                   style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: _kTextSecondary)),
             ),
           ]),
-          const SizedBox(height: 8),
-          Text(o.partyname,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: _kTextPrimary)),
           const SizedBox(height: 10),
           Row(children: [
-            _meta(Icons.person_outline_rounded, o.createdby),
+            _meta(Icons.person_outline_rounded, o.reqby),
             const SizedBox(width: 14),
             _meta(Icons.event_outlined, o.createdate),
           ]),
-          if (o.entrytype.trim().isNotEmpty) ...[
+          if (o.requestto.trim().isNotEmpty || o.plant.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(children: [
-              _meta(Icons.category_outlined, o.entrytype),
+              if (o.requestto.trim().isNotEmpty)
+                _meta(Icons.store_outlined, o.requestto),
+              if (o.plant.trim().isNotEmpty) ...[
+                const SizedBox(width: 14),
+                _meta(Icons.factory_outlined, o.plant),
+              ],
             ]),
           ],
           const SizedBox(height: 10),
@@ -249,44 +185,51 @@ class PurchaseOrderListView extends StatelessWidget {
           const SizedBox(height: 10),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('GRAND TOTAL',
+              const Text('INDENT QTY',
                   style: TextStyle(
                       fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       color: _kTextSecondary,
                       letterSpacing: 0.4)),
               const SizedBox(height: 2),
-              Text('${_money(o.grandtotal)}  ',
+              Text(_qty(o.totalqty),
                   style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: _kTextPrimary)),
             ]),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('Qty ${o.totalqty.toStringAsFixed(o.totalqty == o.totalqty.roundToDouble() ? 0 : 2)}',
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _kTextSecondary)),
-              const SizedBox(height: 3),
-              Text(o.currency,
-                  style: const TextStyle(fontSize: 11, color: _kTextHint)),
-            ]),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                  color: _kPrimary, borderRadius: BorderRadius.circular(9)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: const [
+                Text('Create PO',
+                    style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white)),
+                SizedBox(width: 5),
+                Icon(Icons.arrow_forward_rounded,
+                    size: 16, color: Colors.white),
+              ]),
+            ),
           ]),
         ]),
       ),
     );
   }
 
-  Widget _meta(IconData icon, String text) => Expanded(
-        child: Row(children: [
-          Icon(icon, size: 13, color: _kTextSecondary),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Text(text.isEmpty ? '-' : text,
+  Widget _meta(IconData icon, String text) => Flexible(
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 14, color: _kTextSecondary),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(text,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, color: _kTextSecondary)),
+                style:
+                    const TextStyle(fontSize: 12, color: _kTextSecondary)),
           ),
         ]),
       );

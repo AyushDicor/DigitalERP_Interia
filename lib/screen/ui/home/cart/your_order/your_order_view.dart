@@ -727,27 +727,6 @@ class YourOrderView extends StatelessWidget {
                                     .toString()
                                     : '0',
                               ),
-                              const SizedBox(height: 10),
-                              _percentRow(
-                                label: 'Discount %',
-                                fieldController:
-                                controller.discountController,
-                                focusNode: controller.discountFocus,
-                                onChanged: controller.discountCalculate,
-                              ),
-                              const SizedBox(height: 10),
-                              _amountLine(
-                                name: 'Subtotal',
-                                amount: controller.subTotal.toString(),
-                              ),
-                              const SizedBox(height: 10),
-                              _percentRow(
-                                label: 'Cash Discount %',
-                                fieldController:
-                                controller.cashDiscountController,
-                                focusNode: controller.cashDiscountFocus,
-                                onChanged: controller.cashDiscountCalculate,
-                              ),
                               const Divider(
                                   height: 24, color: orderBorderColor),
                               _amountLine(

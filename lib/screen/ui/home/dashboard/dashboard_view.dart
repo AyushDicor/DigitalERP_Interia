@@ -771,7 +771,20 @@ class DashboardView extends StatelessWidget {
     }
 
     final details = controller.attendanceSummaryData?[0].details ?? [];
-    final displayList = details.take(5).toList();
+    // Show latest first. The API returns oldest→newest, so sort descending by the
+    // dd-MM-yyyy date (string sort would be wrong) before taking the top 5.
+    DateTime parseDate(String? s) {
+      final p = (s ?? '').split(RegExp(r'[-/]'));
+      if (p.length == 3) {
+        return DateTime(int.tryParse(p[2]) ?? 1900, int.tryParse(p[1]) ?? 1,
+            int.tryParse(p[0]) ?? 1);
+      }
+      return DateTime(1900);
+    }
+
+    final sorted = [...details]
+      ..sort((a, b) => parseDate(b.date).compareTo(parseDate(a.date)));
+    final displayList = sorted.take(5).toList();
 
     return Container(
       decoration: BoxDecoration(

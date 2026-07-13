@@ -495,6 +495,11 @@ class _DocPreview extends StatelessWidget {
       fileUrls.insert(0, docUrl);
     }
 
+    // ✅ Presigned URLs of the underlying document's file(s) (view-only, from backend).
+    for (final u in ctrl.documentAttachments) {
+      if (!fileUrls.contains(u)) fileUrls.add(u);
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -541,7 +546,9 @@ class _DocPreview extends StatelessWidget {
                 ...fileUrls.asMap().entries.map((e) {
                   final index = e.key;
                   final url = e.value;
-                  final fileName = url.split('/').last.split('\\').last;
+                  // Strip any presigned query string so the name reads cleanly.
+                  final fileName =
+                      url.split('?').first.split('/').last.split('\\').last;
                   final isPdf = fileName.toLowerCase().endsWith('.pdf');
 
                   return Container(

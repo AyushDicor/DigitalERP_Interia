@@ -23,12 +23,17 @@ String _n(double v) =>
 class PurchaseOrderCreateView extends StatelessWidget {
   /// > 0 opens an existing purchase order for editing (its order number is kept).
   final int editId;
-  const PurchaseOrderCreateView({super.key, this.editId = 0});
+
+  /// > 0 pre-fills a NEW PO from a pending indent (Pending Indent for PO).
+  final int seedIndentId;
+  const PurchaseOrderCreateView(
+      {super.key, this.editId = 0, this.seedIndentId = 0});
 
   @override
   Widget build(BuildContext context) {
     return GetBuilder<PurchaseOrderCreateController>(
-      init: PurchaseOrderCreateController()..loadForm(editId: editId),
+      init: PurchaseOrderCreateController()
+        ..loadForm(editId: editId, seedIndentId: seedIndentId),
       builder: (c) => Scaffold(
         backgroundColor: _kBg,
         appBar: AppBar(
@@ -48,7 +53,9 @@ class PurchaseOrderCreateView extends StatelessWidget {
                   ? (c.editingOrderNo.isEmpty
                       ? 'Edit Purchase Order'
                       : 'Edit ${c.editingOrderNo}')
-                  : 'New Purchase Order',
+                  : (c.isFromIndent
+                      ? 'PO from ${c.seededFromIndentNo}'
+                      : 'New Purchase Order'),
               style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
@@ -78,6 +85,8 @@ class PurchaseOrderCreateView extends StatelessWidget {
                   _totalsCard(c),
                   const SizedBox(height: 14),
                   _termsCard(c),
+                  const SizedBox(height: 14),
+                  _attachmentCard(c),
                   const SizedBox(height: 18),
                   _saveButton(c),
                   const SizedBox(height: 24),
@@ -500,6 +509,59 @@ class PurchaseOrderCreateView extends StatelessWidget {
           ),
         ]),
       );
+
+  // ── Attachments ──
+  Widget _attachmentCard(PurchaseOrderCreateController c) =>
+      _card('Attachments', Icons.attach_file, [
+        if (c.attachmentNames.isNotEmpty)
+          Column(
+            children: List.generate(
+              c.attachmentNames.length,
+              (i) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: _kBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _kBorder),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.insert_drive_file_outlined,
+                      size: 18, color: _kPrimary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(c.attachmentNames[i],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 12, color: _kTextPrimary)),
+                  ),
+                  InkWell(
+                    onTap: () => c.removeAttachmentAt(i),
+                    child: const Icon(Icons.close,
+                        size: 18, color: Colors.redAccent),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        if (c.uploadingAttachment)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Row(children: [
+              SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: _kPrimary)),
+              SizedBox(width: 10),
+              Text('Uploading…',
+                  style: TextStyle(fontSize: 12, color: _kTextSecondary)),
+            ]),
+          ),
+        _addButton('Add Attachment',
+            c.uploadingAttachment ? () {} : () => c.pickAndUploadAttachment()),
+      ]);
 
   Widget _addButton(String label, VoidCallback onTap) => SizedBox(
         width: double.infinity,

@@ -138,16 +138,24 @@ class ReimbursementRepo {
     }
   }
 
-//  UploadReimbursementFile (multipart) 
-  static Future<ResponseItem> uploadReimbursementFile(String filePath) async {
+//  UploadReimbursementFile (multipart)
+  // For the ERP document modules (Performa/PO/MRN/Indent) pass storage:'s3' + the
+  // compid so the file lands in the ERP's S3 bucket and the response carries a `key`
+  // to persist on the document. Omitting them keeps the original local-disk behaviour
+  // (reimbursement/attendance/payment/task), so existing callers are unaffected.
+  static Future<ResponseItem> uploadReimbursementFile(String filePath,
+      {String? storage, String? compid, String? userid}) async {
     try {
       final url = AppUrls.baseUrl + MethodName.uploadReimbursementFile;
-      log('UploadReimbursementFile → $filePath');
+      log('UploadReimbursementFile → $filePath (storage=$storage)');
 
       final request = http.MultipartRequest('POST', Uri.parse(url));
       // Multipart bypasses requestHeader(); send the API key explicitly.
       request.headers['X-Api-Key'] = 'nd3rp-M0b!le-2026-a7F3kQ9zR2xL8vN5pT4w';
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      if (storage != null) request.fields['storage'] = storage;
+      if (compid != null) request.fields['compid'] = compid;
+      if (userid != null) request.fields['userid'] = userid;
 
       final streamed = await request.send();
       final body = await streamed.stream.bytesToString();

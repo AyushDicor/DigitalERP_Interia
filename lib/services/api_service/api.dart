@@ -9,6 +9,7 @@ import 'package:newdigitalerp/performa_invoice/sale_order_models.dart';
 import 'package:newdigitalerp/performa_invoice/sale_order_form_models.dart';
 import 'package:newdigitalerp/purchase_order/purchase_order_models.dart';
 import 'package:newdigitalerp/purchase_order/purchase_order_form_models.dart';
+import 'package:newdigitalerp/purchase_order/pending_indent_po/pending_indent_po_models.dart';
 import 'package:newdigitalerp/change_company/Company_list_responce.dart';
 import 'package:newdigitalerp/change_company/branch_list_response.dart';
 import 'package:newdigitalerp/change_company/financial_year_response.dart';
@@ -5311,6 +5312,39 @@ class Api {
       }
     }
     return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  // ── Pending Indent for PO ──
+  Future<PendingIndentListResponse> getPendingIndentsForPo(
+      Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.purchaseorderPendingIndents, body: body);
+        if (res.isNotEmpty) {
+          return PendingIndentListResponse.fromJson(jsonDecode(res));
+        }
+        return PendingIndentListResponse(
+            status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return PendingIndentListResponse(status: 500, message: e.toString());
+      }
+    }
+    return PendingIndentListResponse(status: 500, message: 'No internet');
+  }
+
+  Future<IndentSeedResponse> getIndentForPo(Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.purchaseorderIndentForPo, body: body);
+      if (res.isNotEmpty) return IndentSeedResponse.fromJson(jsonDecode(res));
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return IndentSeedResponse(status: 500, message: 'Something went wrong');
   }
 
   Future<CommonResponse> saveLeadQuotation(Map<String, String> body) async {
