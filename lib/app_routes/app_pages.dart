@@ -72,6 +72,7 @@ import '../screen/ui/home/mis_module/mis_outstanding/mis_outstanding_view.dart';
 import '../screen/ui/home/mis_module/pending_shipping/pending_shipping_view.dart';
 import '../screen/ui/home/mis_module/print_report/print_report_view.dart';
 import '../screen/ui/home/mis_module/stock_report/stock_report_view.dart';
+import '../screen/ui/home/mis_module/stock_enquiry/stock_enquiry_view.dart';
 import '../screen/ui/home/mrn_module/mrn_screens/mrn_list_screen.dart';
 import '../screen/ui/home/mrn_qc/mrn_qc_list/mrn_qc_list_screen.dart';
 import '../screen/ui/home/mrn_qc/mrn_qc_screens/mrn_qc_screen.dart';
@@ -344,6 +345,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.misStockReport,
       page: () => const StockReportView(),
+    ),
+    GetPage(
+      name: AppRoutes.misStockEnquiry,
+      page: () => const StockEnquiryView(),
     ),
     GetPage(
       name: AppRoutes.misModule,

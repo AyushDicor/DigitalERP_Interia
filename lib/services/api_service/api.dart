@@ -77,6 +77,8 @@ import 'package:newdigitalerp/response/get_sales_receipt_graph_res_model.dart';
 import 'package:newdigitalerp/response/get_shipping_status_resp.dart';
 import 'package:newdigitalerp/response/get_stock_report_resp.dart';
 import 'package:newdigitalerp/response/get_store_name_resp.dart';
+import 'package:newdigitalerp/response/stock_enquiry_item_resp.dart';
+import 'package:newdigitalerp/response/stock_enquiry_godown_resp.dart';
 import 'package:newdigitalerp/response/image_list_resp.dart';
 import 'package:newdigitalerp/response/incentive_graph_detail_res_model.dart';
 import 'package:newdigitalerp/response/login_response.dart';
@@ -4809,6 +4811,50 @@ class Api {
     } else {
       return GetStockReportResp(status: 500, message: 'No internet');
     }
+  }
+
+  // ── Stock / Item Enquiry ──
+  /// Item list with total current stock (search + optional category filter).
+  Future<StockEnquiryItemResp> getStockEnquiryItems(
+      Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.stockEnquiryItems, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return stockEnquiryItemRespFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return StockEnquiryItemResp(status: 500, message: e.toString());
+        }
+      }
+      return StockEnquiryItemResp(status: 500, message: 'Something went wrong');
+    }
+    return StockEnquiryItemResp(status: 500, message: 'No internet');
+  }
+
+  /// One item's stock broken down per godown (+ header totals).
+  Future<StockEnquiryGodownResp> getStockEnquiryGodownWise(
+      Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.stockEnquiryGodownWise, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return stockEnquiryGodownRespFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return StockEnquiryGodownResp(status: 500, message: e.toString());
+        }
+      }
+      return StockEnquiryGodownResp(
+          status: 500, message: 'Something went wrong');
+    }
+    return StockEnquiryGodownResp(status: 500, message: 'No internet');
   }
 
   // ── Lead Management ──

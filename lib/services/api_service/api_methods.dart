@@ -270,6 +270,8 @@ class ApiMethods {
   String genericReportDetail     = 'report/getreportdetail';
   String getStoreName            = 'storename/getstorename';
   String getStockReport          = 'stockreport/getstockreport';
+  String stockEnquiryItems       = 'stockenquiry/items';
+  String stockEnquiryGodownWise  = 'stockenquiry/godownwise';
 
   ///Image Stamping
   String executiveReportPersonListForeImageStamping =

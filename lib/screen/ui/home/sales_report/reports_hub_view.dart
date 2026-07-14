@@ -30,6 +30,10 @@ class ReportsHubView extends StatelessWidget {
     _Report('Stock Report', 'Godown-wise stock with category & item filter',
         Icons.warehouse_outlined, Color(0xFFCC9900), 'stock',
         route: AppRoutes.misStockReport),
+    // Stock / Item Enquiry — item-first lookup with per-godown breakdown.
+    _Report('Stock / Item Enquiry', 'Search an item, see stock per godown',
+        Icons.manage_search_rounded, Color(0xFF14B8A6), 'stockenquiry',
+        route: AppRoutes.misStockEnquiry),
   ];
 
   @override

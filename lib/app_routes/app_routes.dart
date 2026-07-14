@@ -89,6 +89,7 @@ class AppRoutes {
   static const misAttendanceReport = '/mis-attendance-report';
   static const misOrderReport = '/mis-order-report';
   static const misStockReport = '/mis-stock-report';
+  static const misStockEnquiry = '/mis-stock-enquiry';
 
   //MRN Module
   static const mrnScreen = '/mrn';
