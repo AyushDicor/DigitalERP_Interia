@@ -697,8 +697,11 @@ class _DateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentYear = int.parse(
-        '${controller.homeController.currentUserData?.yearId?.split('-').first}');
+    // yearId may be empty/null or a non-numeric id (e.g. "9") on some logins —
+    // int.parse crashed the whole screen. Fall back to the current calendar year.
+    final yearStr =
+        controller.homeController.currentUserData?.yearId?.split('-').first ?? '';
+    final currentYear = int.tryParse(yearStr) ?? DateTime.now().year;
     final date = isFirst ? controller.firstDate : controller.lastDate;
     final initDate = date != AppString.dateTimeEmpty
         ? DateTime.parse(

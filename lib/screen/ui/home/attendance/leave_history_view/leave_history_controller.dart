@@ -2,9 +2,9 @@
 import 'package:get/get.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_controller.dart';
-import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/approved_or_reject_leave_model.dart';
+import 'package:newdigitalerp/response/approved_or_rejected_leave_response.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/executive_list_model.dart';
-import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/pending_leave_list_model.dart';
+import 'package:newdigitalerp/response/pending_leave_list_response.dart';
 import 'package:newdigitalerp/services/api_service/request_keys.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/custom_dialogbox.dart';

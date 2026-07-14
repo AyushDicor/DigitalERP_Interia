@@ -174,9 +174,11 @@ class PartyTransactionsView extends StatelessWidget {
           initialDate: selectDate,
           firstDate: AppConst.calenderFirstDate ??
               DateTime(
-                  int.parse(ctrl.homeController.currentUserData!.yearId!
-                      .split('-')
-                      .first),
+                  int.tryParse(ctrl.homeController.currentUserData?.yearId
+                              ?.split('-')
+                              .first ??
+                          '') ??
+                      DateTime.now().year,
                   4,
                   1),
           lastDate: AppConst.calenderLastDate ??

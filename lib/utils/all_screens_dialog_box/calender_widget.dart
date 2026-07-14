@@ -25,7 +25,7 @@ class CalenderWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
-        int currentYear = int.parse('${homeController.currentUserData?.yearId?.split('-').first}');
+        int currentYear = (int.tryParse('${homeController.currentUserData?.yearId?.split('-').first}') ?? DateTime.now().year);
         DateTime initDate = value != AppString.dateTimeEmpty
             ? DateTime.parse(formatDate(value, AppString.ddMMyyyy, AppString.yyyyMMdd))
             : DateTime.now();

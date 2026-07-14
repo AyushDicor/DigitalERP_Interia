@@ -610,7 +610,7 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
           if (!_dateValidate()) return;
 
           int currentYear =
-          int.parse('${homeController.currentUserData?.yearId?.split('-').first}');
+          (int.tryParse('${homeController.currentUserData?.yearId?.split('-').first}') ?? DateTime.now().year);
 
           String monthFirstDate = formatDate(
               DateTime(
@@ -976,7 +976,7 @@ class _CustomDialogBoxState extends State<CustomDialogBox>
   //           onPressed: () {
   //             /*int currentYear  = int.parse(DateFormat('yyyy').format(DateTime.now()));*/
   //
-  //             int currentYear = int.parse('${homeController.currentUserData?.yearId?.split('-').first}');
+  //             int currentYear = (int.tryParse('${homeController.currentUserData?.yearId?.split('-').first}') ?? DateTime.now().year);
   //
   //             String monthFirstDate = formatDate(
   //                 DateTime(

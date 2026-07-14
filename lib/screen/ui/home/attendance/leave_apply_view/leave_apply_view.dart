@@ -561,7 +561,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:newdigitalerp/screen/ui/home/attendance/attendance_model/approved_or_reject_leave_model.dart';
+import 'package:newdigitalerp/response/approved_or_rejected_leave_response.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/leave_apply_view/leave_apply_controller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 

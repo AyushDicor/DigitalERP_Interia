@@ -109,7 +109,7 @@ class VisitPlanFilterController extends AppBaseController {
   }
 
   void onApplyFilter() {
-    int currentYear = int.parse('${homeController.currentUserData?.yearId?.split('-').first}');
+    int currentYear = (int.tryParse('${homeController.currentUserData?.yearId?.split('-').first}') ?? DateTime.now().year);
     String monthFirstDate =
         formatDate(DateTime(currentYear, 4, 1).toString(), AppString.dateTimeFormat, AppString.ddMMyyyy);
     String monthLastDate = formatDate(DateTime(currentYear + 1, (3) + 1).subtract(const Duration(days: 1)).toString(),

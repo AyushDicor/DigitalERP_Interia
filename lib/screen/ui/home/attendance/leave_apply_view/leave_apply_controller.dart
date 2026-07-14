@@ -91,8 +91,15 @@ class LeaveApplyController extends AppBaseController {
         var res = await api.applyLeave(body);
         if (res.status == 200) {
           setSegmentValue(0);
-        //  leaveHistoryController.getDetails();
-          ShowMessage.showSnackBar('Apply leave', res.message.toString());
+          reasonController.clear();
+          responsibleController.clear();
+          fromDate = AppString.dateTimeEmpty;
+          toDate = AppString.dateTimeEmpty;
+          // Pop the whole leave flow back to the Attendance screen, then show the
+          // result there (GetX snackbars persist across the navigation).
+          Get.until((route) =>
+              route.settings.name == AppRoutes.attendance || route.isFirst);
+          ShowMessage.showSnackBar('Apply Leave', res.message.toString());
         } else {
           ShowMessage.showSnackBar('Server Res', res.message.toString());
         }

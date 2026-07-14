@@ -107,7 +107,7 @@ import 'package:newdigitalerp/utils/show_message.dart';
 //
 //     if (isValidate()) {
 //       if (isFilterByMonth.value) {
-//         int currentYear = int.parse('${homeController.currentUserData?.yearId?.split('-').first}');
+//         int currentYear = (int.tryParse('${homeController.currentUserData?.yearId?.split('-').first}') ?? DateTime.now().year);
 //
 //         currentYear = ((selectedMonthDropdownValue?.id ?? 5) < 4) ? currentYear + 1 : currentYear;
 //         String monthFirstDate = formatDate(
@@ -250,7 +250,7 @@ class LeaveHistoryFilterController extends AppBaseController {
 
     if (isValidate()) {
       if (isFilterByMonth.value) {
-        int currentYear = int.parse('${homeController.currentUserData?.yearId?.split('-').first}');
+        int currentYear = (int.tryParse('${homeController.currentUserData?.yearId?.split('-').first}') ?? DateTime.now().year);
         currentYear = ((selectedMonthDropdownValue?.id ?? 5) < 4) ? currentYear + 1 : currentYear;
 
         String monthFirstDate = formatDate(
