@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/screen/ui/home/mrn_module/mrn_response/mrn_models.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:flutter/material.dart';
@@ -543,7 +544,7 @@ class MrnReviewScreen extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 12, color: newTextSecondary)),
                 Text(
-                  '${ctrl.roundOff >= 0 ? '+' : '−'}$sym${ctrl.roundOff.abs().toStringAsFixed(2)}',
+                  '${ctrl.roundOff >= 0 ? '+' : '−'}$sym${ctrl.roundOff.abs().toInr()}',
                   style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -979,7 +980,7 @@ class _ReviewChargeRow extends StatelessWidget {
                     child: Text(
                       charge.calcType == ChargeCalcType.percentage
                           ? '${charge.value.toStringAsFixed(1)}%'
-                          : '$sym${charge.value.toStringAsFixed(2)} fixed',
+                          : '$sym${charge.value.toInr()} fixed',
                       style: TextStyle(
                           fontSize: 8,
                           fontWeight: FontWeight.w800,
@@ -1015,7 +1016,7 @@ class _ReviewChargeRow extends StatelessWidget {
 
         // Amount
         Text(
-          '${isPlus ? "+" : "−"}$sym${amt.toStringAsFixed(2)}',
+          '${isPlus ? "+" : "−"}$sym${amt.toInr()}',
           style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
@@ -1095,7 +1096,7 @@ class _ReviewItemRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('$sym${lineTotal.toStringAsFixed(0)}',
+              Text('$sym${lineTotal.toInr(decimals: 0)}',
                   style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -1128,16 +1129,16 @@ class _ReviewItemRow extends StatelessWidget {
             _sectionLabel('Financials'),
             const SizedBox(height: 6),
             _fieldGrid([
-              _FieldTile('Rate', '$sym${item.rate.toStringAsFixed(2)}'),
+              _FieldTile('Rate', '$sym${item.rate.toInr()}'),
               _FieldTile('Discount %',
                   '${item.discountPercent.toStringAsFixed(1)}%'),
               _FieldTile('Discount ($sym)',
-                  '$sym${item.discountAmount.toStringAsFixed(2)}'),
-              _FieldTile('Amount', '$sym${item.amount.toStringAsFixed(2)}'),
+                  '$sym${item.discountAmount.toInr()}'),
+              _FieldTile('Amount', '$sym${item.amount.toInr()}'),
               if (showGst)
                 _FieldTile('GST ${item.gstPercent.toInt()}%',
-                    '$sym${item.gstAmount.toStringAsFixed(2)}'),
-              _FieldTile('Total', '$sym${lineTotal.toStringAsFixed(2)}',
+                    '$sym${item.gstAmount.toInr()}'),
+              _FieldTile('Total', '$sym${lineTotal.toInr()}',
                   valueColor: newBlueColor, bold: true, full: true),
             ]),
             const SizedBox(height: 12),

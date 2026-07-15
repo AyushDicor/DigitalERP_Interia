@@ -302,8 +302,9 @@ import 'package:newdigitalerp/utils/my_app_bar_new.dart';
 import 'package:newdigitalerp/utils/solid_app_button.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:newdigitalerp/utils/app_assets.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 
-//  Design tokens 
+//  Design tokens
 const Color _kBg          = Color(0xFFF8F9FC);
 const Color _kWhite       = Colors.white;
 const Color _kText        = newTextPrimary;
@@ -387,15 +388,15 @@ class StockReportView extends StatelessWidget {
                         ),
                         CommonItemRowModel(
                           leftTitle: AppString.rate,
-                          leftValue: item.rate.toString(),
+                          leftValue: inrNum(item.rate),
                           rightTitle: AppString.qty,
-                          rightValue: item.quantity.toString(),
+                          rightValue: inrNum(item.quantity),
                         ),
                         CommonItemRowModel(
                           leftTitle: AppString.unit,
                           leftValue: item.unit.toString(),
                           rightTitle: AppString.amount,
-                          rightValue: item.amount.toString(),
+                          rightValue: inrNum(item.amount),
                         ),
                       ],
                     );

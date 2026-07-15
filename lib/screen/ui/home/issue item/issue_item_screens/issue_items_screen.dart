@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -133,7 +134,7 @@ class IssueItemItemsScreen extends StatelessWidget {
       child: Column(children: [
         _totalRow('Total Qty',    ctrl.totalQty.toStringAsFixed(2)),
         const SizedBox(height: 6),
-        _totalRow('Total Amount', '₹${ctrl.totalAmount.toStringAsFixed(2)}'),
+        _totalRow('Total Amount', '₹${ctrl.totalAmount.toInr()}'),
         const Divider(height: 16, color: newBorderColor),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           const Text('Grand Total',
@@ -141,7 +142,7 @@ class IssueItemItemsScreen extends StatelessWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: newTextPrimary)),
-          Text('₹${ctrl.grandTotal.toStringAsFixed(2)}',
+          Text('₹${ctrl.grandTotal.toInr()}',
               style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
@@ -368,9 +369,9 @@ class _ItemRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Wrap(spacing: 5, children: [
                   _pill(item.unitName, newSurfaceColor, newTextSecondary),
-                  _pill('₹${item.rate.toStringAsFixed(2)}',
+                  _pill('₹${item.rate.toInr()}',
                       newBlueLightColor, newBlueColor),
-                  _pill('Amt: ₹${item.amount.toStringAsFixed(2)}',
+                  _pill('Amt: ₹${item.amount.toInr()}',
                       newGreenLightColor, newGreenColor),
                 ]),
               ]),
@@ -599,10 +600,10 @@ class _IssueDirectItemFormState extends State<_IssueDirectItemForm> {
             child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${_qty.toInt()} × ₹${_rate.toStringAsFixed(2)}',
+                  Text('${_qty.toInt()} × ₹${_rate.toInr()}',
                       style: const TextStyle(
                           fontSize: 12, color: newBlueColor)),
-                  Text('= ₹${_amt.toStringAsFixed(2)}',
+                  Text('= ₹${_amt.toInr()}',
                       style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,

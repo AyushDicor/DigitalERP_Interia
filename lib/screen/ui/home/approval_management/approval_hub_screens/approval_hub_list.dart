@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:newdigitalerp/screen/ui/home/approval_management/approval_model/approvals_list_responce.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import '../approval_hub_controller/approval_hub_controller.dart';
 import 'approval_hub_bulk.dart';
 
@@ -845,7 +846,7 @@ class _ApprovalCard extends StatelessWidget {
           // Amount + badge
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             if ((item.totalamount ?? '').isNotEmpty)
-              Text('₹${item.totalamount}',
+              Text('₹${inrNum(item.totalamount)}',
                   style: TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w700, color: color)),
             const SizedBox(height: 4),

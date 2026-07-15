@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/response/stcok_category_data_response.dart';
 import 'package:newdigitalerp/response/stock_enquiry_item_resp.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'stock_enquiry_controller.dart';
 import 'stock_enquiry_detail_view.dart';
 
@@ -240,7 +241,4 @@ AppBar _appBar(String title) => AppBar(
               fontSize: 19, fontWeight: FontWeight.w700, color: _kText)),
     );
 
-String _fmt(double v) {
-  if (v == v.roundToDouble()) return v.toInt().toString();
-  return v.toStringAsFixed(2);
-}
+String _fmt(double v) => inrNum(v);

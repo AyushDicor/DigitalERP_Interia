@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/screen/ui/home/approval_management/approval_model/approvals_list_responce.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import '../approval_hub_controller/approval_hub_controller.dart';
 
 class ApprovalHubBulk extends StatelessWidget {
@@ -143,7 +144,7 @@ class _SelItem extends StatelessWidget {
                         const TextStyle(fontSize: 10, color: newTextSecondary)),
               ])),
           if ((item.totalamount ?? '').isNotEmpty)
-            Text('₹${item.totalamount}',
+            Text('₹${inrNum(item.totalamount)}',
                 style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -339,7 +340,7 @@ class _SummaryCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const _SecHead('Summary'),
       _SR('Total items', '${ctrl.selectionCount}'),
-      _SR('Total value', '₹${totalVal.toStringAsFixed(0)}'),
+      _SR('Total value', '₹${inrNum(totalVal, decimals: 0)}'),
       _SR('Types', types.join(', ')),
       _SR('Authority', '',
           trailing: Container(

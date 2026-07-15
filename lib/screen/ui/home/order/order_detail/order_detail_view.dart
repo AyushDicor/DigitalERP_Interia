@@ -360,6 +360,7 @@
 //   }
 // }
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/screen/base/base_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/order/order_detail/order_detail_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/order/order_detail/order_detail_edit/order_detail_edit_dialog.dart';
@@ -627,8 +628,8 @@ class OrderDetailView extends StatelessWidget {
                 children: [
                   _statChip('Qty', item.quantity.toString()),
                   _statChip('Unit', item.unit.toString()),
-                  _statChip('Rate', '₹${item.rate}'),
-                  _statChip('Amount', '₹${item.amount}',
+                  _statChip('Rate', '₹${inrNum(item.rate)}'),
+                  _statChip('Amount', '₹${inrNum(item.amount)}',
                       valueColor: const Color(0xFF27AE60)),
                 ],
               ),

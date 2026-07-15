@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -529,7 +530,7 @@ class _ItemCardState extends State<_ItemCard> {
                       if (item.rate > 0) ...[
                         const SizedBox(height: 4),
                         Text(
-                          '₹${item.rate.toStringAsFixed(2)} × ${item.indentQty.toStringAsFixed(0)} = ₹${item.amount.toStringAsFixed(2)}',
+                          '₹${item.rate.toInr()} × ${item.indentQty.toInr(decimals: 0)} = ₹${item.amount.toInr()}',
                           style: const TextStyle(
                               fontSize: 10, color: indTextSecondary),
                         ),

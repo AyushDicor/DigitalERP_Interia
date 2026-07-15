@@ -3,6 +3,7 @@
 // and computed totals. Saves via /api/lead/saveestimate → Proc_CreateEstimateNEW.
 
 import 'package:flutter/material.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -44,8 +45,7 @@ class _LeadEstimateViewState extends State<LeadEstimateView> {
     super.dispose();
   }
 
-  String _n(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+  String _n(double v) => inrNum(v);
 
   @override
   Widget build(BuildContext context) {

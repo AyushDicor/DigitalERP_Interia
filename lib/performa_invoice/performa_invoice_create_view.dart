@@ -3,6 +3,7 @@
 // Totals, Terms & Condition. Saves via /api/saleorder/save.
 
 import 'package:flutter/material.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
@@ -18,8 +19,7 @@ const Color _kTextPrimary = Color(0xFF111827);
 const Color _kTextSecondary = Color(0xFF6B7280);
 const Color _kTextHint = Color(0xFF9CA3AF);
 
-String _n(double v) =>
-    v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+String _n(double v) => inrNum(v);
 
 class PerformaInvoiceCreateView extends StatelessWidget {
   /// > 0 opens an existing performa invoice for editing (its order number is kept).

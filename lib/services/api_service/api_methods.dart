@@ -33,6 +33,8 @@ class ApiMethods {
   String pendingLeaveList     = 'pendingleavelist/leavlistforapprovedandreject';
   String updateLeaveStatus    =
       'approveleavprocess/listofleav'; // Approved and Rejected manage by status in param
+  String cancelLeave          = 'leavecancel/cancelleave'; // applicant cancels own pending leave
+  String leaveApprovalAccess  = 'leaveapproval/access'; // can this user approve leaves? (menu 2388)
   String executiveListWithLatAndLong =
       'Executivelistwithlatlong/executivelistforlatlong';
   String executiveOrderList   =

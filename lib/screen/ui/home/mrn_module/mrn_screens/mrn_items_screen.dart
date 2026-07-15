@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/screen/ui/home/mrn_module/mrn_response/mrn_models.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:flutter/material.dart';
@@ -676,7 +677,7 @@ class _ChargeRow extends StatelessWidget {
                       Text(
                         charge.calcType == ChargeCalcType.percentage
                             ? '${charge.value.toStringAsFixed(1)}%'
-                            : '₹${charge.value.toStringAsFixed(2)}',
+                            : '₹${charge.value.toInr()}',
                         style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -689,7 +690,7 @@ class _ChargeRow extends StatelessWidget {
                       const SizedBox(width: 6),
                       // Computed amount
                       Text(
-                        '${isPlus ? "+" : "−"}₹${amt.toStringAsFixed(2)}',
+                        '${isPlus ? "+" : "−"}₹${amt.toInr()}',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -1272,7 +1273,7 @@ class _ChargeEditSheetState extends State<_ChargeEditSheet> {
         _dependsOption(
           id: null,
           label: 'Item Subtotal (Base)',
-          subtitle: '₹${widget.ctrl.subtotal.toStringAsFixed(2)}',
+          subtitle: '₹${widget.ctrl.subtotal.toInr()}',
           icon: Icons.inventory_2_outlined,
           color: newBlueColor,
         ),
@@ -1288,7 +1289,7 @@ class _ChargeEditSheetState extends State<_ChargeEditSheet> {
                 id: c.localId,
                 label: c.head?.label ?? '—',
                 subtitle:
-                    '${isPlus ? "+" : "−"}₹${c.calculatedAmount.toStringAsFixed(2)}',
+                    '${isPlus ? "+" : "−"}₹${c.calculatedAmount.toInr()}',
                 icon: isPlus
                     ? Icons.add_circle_outline_rounded
                     : Icons.remove_circle_outline_rounded,
@@ -2216,16 +2217,16 @@ class _ItemCard extends StatelessWidget {
               ]),
             ),
             _finRow('Order No', item.orderNo, mono: true),
-            _finRow('Rate', '₹${item.rate.toStringAsFixed(2)}'),
+            _finRow('Rate', '₹${item.rate.toInr()}'),
             _finRow(
                 'Discount',
                 '${item.discountPercent.toStringAsFixed(1)}%  '
-                    '(₹${item.discountAmount.toStringAsFixed(2)})'),
-            _finRow('Amount', '₹${item.amount.toStringAsFixed(2)}'),
+                    '(₹${item.discountAmount.toInr()})'),
+            _finRow('Amount', '₹${item.amount.toInr()}'),
             _finRow('GST %', '${item.gstPercent.toStringAsFixed(1)}%'),
-            _finRow('GST Amount', '₹${item.gstAmount.toStringAsFixed(2)}'),
+            _finRow('GST Amount', '₹${item.gstAmount.toInr()}'),
             _finRowTotal(
-                'Total Amount', '₹${item.totalAmount.toStringAsFixed(2)}'),
+                'Total Amount', '₹${item.totalAmount.toInr()}'),
           ]),
         ),
         const SizedBox(height: 12),

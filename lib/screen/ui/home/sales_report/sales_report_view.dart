@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/screen/ui/home/sales_report/sales_report_controller.dart';
@@ -201,10 +202,5 @@ class SalesReportView extends StatelessWidget {
     );
   }
 
-  static String _fmtAmount(num v) {
-    final s = v.toStringAsFixed(0);
-    // simple Indian-ish grouping fallback
-    return s.replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},');
-  }
+  static String _fmtAmount(num v) => inrNum(v, decimals: 0);
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 
 //  New Figma Design System
 const Color newBlueColor        = Color(0xFF5B6CF6); // Primary CTA
@@ -386,24 +387,10 @@ class AppString {
 }
 
 class NumberFormatter {
+  /// Formats a value with Indian grouping (1,00,000). Whole numbers show no
+  /// decimals; fractional values show [decimal] places. Backed by [inrNum].
   static String format(dynamic value, {int decimal = 0}) {
     if (value == null) return "0";
-
-    double number;
-
-    if (value is String) {
-      number = double.tryParse(value) ?? 0;
-    } else if (value is num) {
-      number = value.toDouble();
-    } else {
-      return "0";
-    }
-
-    // 🔥 remove trailing .00 if not needed
-    if (number % 1 == 0) {
-      return number.toInt().toString();
-    }
-
-    return number.toStringAsFixed(decimal);
+    return inrNum(value, decimals: decimal);
   }
 }

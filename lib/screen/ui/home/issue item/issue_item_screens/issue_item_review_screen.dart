@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -82,14 +83,14 @@ class IssueItemReviewScreen extends StatelessWidget {
                                   const SizedBox(height: 3),
                                   Text(
                                     '${item.qty.toStringAsFixed(2)} ${item.unitName}  ·  '
-                                        '₹${item.rate.toStringAsFixed(2)}',
+                                        '₹${item.rate.toInr()}',
                                     style: const TextStyle(
                                         fontSize: 11,
                                         color: newTextSecondary),
                                   ),
                                 ]),
                           ),
-                          Text('₹${item.amount.toStringAsFixed(2)}',
+                          Text('₹${item.amount.toInr()}',
                               style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
@@ -110,7 +111,7 @@ class IssueItemReviewScreen extends StatelessWidget {
                           ctrl.totalQty.toStringAsFixed(2)),
                       const SizedBox(height: 6),
                       _totalRow('Total Amount',
-                          '₹${ctrl.totalAmount.toStringAsFixed(2)}'),
+                          '₹${ctrl.totalAmount.toInr()}'),
                       const Divider(height: 16, color: newBorderColor),
                       Row(
                         mainAxisAlignment:
@@ -122,7 +123,7 @@ class IssueItemReviewScreen extends StatelessWidget {
                                   fontWeight: FontWeight.w800,
                                   color: newTextPrimary)),
                           Text(
-                            '₹${ctrl.grandTotal.toStringAsFixed(2)}',
+                            '₹${ctrl.grandTotal.toInr()}',
                             style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,

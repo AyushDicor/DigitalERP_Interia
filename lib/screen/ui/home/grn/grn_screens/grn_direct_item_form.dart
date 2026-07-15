@@ -1,5 +1,6 @@
 import 'package:newdigitalerp/screen/ui/home/grn/grn_response/grn_models.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -499,15 +500,15 @@ class _CalcPreview extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         //_row('Qty × Rate', '${qty.toInt()} × ₹${rate.toStringAsFixed(2)}'),
-        _row('Amount', '₹${amount.toStringAsFixed(2)}'),
+        _row('Amount', '₹${inrNum(amount)}'),
         if (disc > 0)
           _row(
               discPct > 0
                   ? 'Discount ${discPct.toStringAsFixed(1)}%'
                   : 'Discount',
-              '- ₹${disc.toStringAsFixed(2)}'),
+              '- ₹${inrNum(disc)}'),
 
-        _row('GST ${gstPct.toInt()}%', '₹${gstAmt.toStringAsFixed(2)}'),
+        _row('GST ${gstPct.toInt()}%', '₹${inrNum(gstAmt)}'),
         const Divider(color: newBlueColor, height: 16, thickness: 0.5),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -517,7 +518,7 @@ class _CalcPreview extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: newBlueColor)),
-            Text('₹${totalAmt.toStringAsFixed(2)}',
+            Text('₹${inrNum(totalAmt)}',
                 style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
@@ -588,7 +589,7 @@ class _DirectItemRow extends StatelessWidget {
               _pill(item.unit, newSurfaceColor, newTextSecondary),
               _pill('Qty: ${item.receiveNowQty.toInt()}', newGreenLightColor,
                   newGreenColor),
-              _pill('₹${item.rate.toStringAsFixed(2)}', newBlueLightColor,
+              _pill('₹${inrNum(item.rate)}', newBlueLightColor,
                   newBlueColor),
               _pill('GST ${item.gstPercent.toInt()}%', newSurfaceColor,
                   newTextSecondary),
@@ -605,7 +606,7 @@ class _DirectItemRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('₹${item.totalAmount.toStringAsFixed(2)}',
+          Text('₹${item.totalAmount.toInr()}',
               style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -654,9 +655,9 @@ class _DirectTotalsFooter extends StatelessWidget {
           color: newSurfaceColor,
           border: Border(top: BorderSide(color: newBorderColor))),
       child: Column(children: [
-        _row('Subtotal', '₹${ctrl.subtotal.toStringAsFixed(2)}'),
+        _row('Subtotal', '₹${ctrl.subtotal.toInr()}'),
         const SizedBox(height: 6),
-        _row('Total GST', '₹${ctrl.totalGst.toStringAsFixed(2)}'),
+        _row('Total GST', '₹${ctrl.totalGst.toInr()}'),
         const Divider(height: 16, color: newBorderColor),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -666,7 +667,7 @@ class _DirectTotalsFooter extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: newTextPrimary)),
-            Text('₹${ctrl.grandTotal.toStringAsFixed(2)}',
+            Text('₹${ctrl.grandTotal.toInr()}',
                 style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,

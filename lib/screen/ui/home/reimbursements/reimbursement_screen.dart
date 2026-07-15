@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/screen/ui/home/reimbursements/Add/add_reimbursement_screen.dart';
 import 'package:newdigitalerp/screen/ui/home/reimbursements/controller/reimbursement_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/reimbursements/detail/reimbursement_detail_screen.dart';
@@ -571,7 +572,7 @@ class _ReimbursementListScreenState extends State<ReimbursementListScreen> {
                       Expanded(
                         child: _simpleInfo(
                           "Amount",
-                          "₹${item.amount ?? 0}",
+                          "₹${inrNum(item.amount ?? 0)}",
                           valueColor: _kBlue,
                           isBold: true,
                         ),

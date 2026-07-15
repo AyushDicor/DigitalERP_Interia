@@ -850,6 +850,7 @@
 //   }
 // }
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/contactsview/contacts_details.dart';
 import 'package:newdigitalerp/response/customer_detail_response.dart';
 import 'package:newdigitalerp/response/get_executive_dropdown_response.dart';
@@ -1238,7 +1239,7 @@ class _CustomerCard extends StatelessWidget {
                                 fontSize: 11, color: newTextSecondary)),
                         const SizedBox(height: 2),
                         Text(
-                          '₹${double.tryParse(item.outstanding ?? '0')?.toStringAsFixed(2) ?? '0.00'}',
+                          '₹${double.tryParse(item.outstanding ?? '0')?.toInr() ?? '0.00'}',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,

@@ -1086,6 +1086,7 @@
 // }
 
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/response/related_product_response.dart';
 import 'package:newdigitalerp/response/unit_list_response.dart';
 import 'package:newdigitalerp/screen/base/base_controller.dart';
@@ -1348,7 +1349,7 @@ class ProductDetailsView extends StatelessWidget {
           Icon(Icons.star_rounded, size: 12, color: Color(0xFFF59E0B)),
           Text(' 4.4', style: TextStyle(fontSize: 11, color: newTextSecondary)),
         ]),
-        Text('₹${item.rate?.toStringAsFixed(0) ?? '0'}',
+        Text('₹${item.rate?.toInr(decimals: 0) ?? '0'}',
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: newBlueColor)),
       ]),
     );

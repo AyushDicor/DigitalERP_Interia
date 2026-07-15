@@ -440,6 +440,7 @@
 //   }
 // }
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/screen/ui/home/order/select_category/product_list/product_list_controller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/app_network_image.dart';
@@ -754,7 +755,7 @@ class ProductListView extends StatelessWidget {
                     Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('₹${item.rate?.toStringAsFixed(0) ?? '0'}',
+                          Text('₹${item.rate?.toInr(decimals: 0) ?? '0'}',
                               style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
@@ -875,7 +876,7 @@ class ProductListView extends StatelessWidget {
                         Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('₹${item.rate?.toStringAsFixed(0) ?? '0'}',
+                              Text('₹${item.rate?.toInr(decimals: 0) ?? '0'}',
                                   style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,

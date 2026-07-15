@@ -3,6 +3,7 @@
 // Terms & Condition. Saves via /api/purchaseorder/save.
 
 import 'package:flutter/material.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -19,8 +20,7 @@ const Color _kTextPrimary = Color(0xFF111827);
 const Color _kTextSecondary = Color(0xFF6B7280);
 const Color _kTextHint = Color(0xFF9CA3AF);
 
-String _n(double v) =>
-    v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+String _n(double v) => inrNum(v);
 
 class PurchaseOrderCreateView extends StatelessWidget {
   /// > 0 opens an existing purchase order for editing (its order number is kept).

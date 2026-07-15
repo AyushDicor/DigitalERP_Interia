@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/response/stock_enquiry_godown_resp.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'stock_enquiry_controller.dart';
 
 //  Design tokens
@@ -195,7 +196,4 @@ class StockEnquiryDetailView extends StatelessWidget {
       );
 }
 
-String _fmt(double v) {
-  if (v == v.roundToDouble()) return v.toInt().toString();
-  return v.toStringAsFixed(2);
-}
+String _fmt(double v) => inrNum(v);

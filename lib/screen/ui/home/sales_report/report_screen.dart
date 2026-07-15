@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
@@ -309,9 +310,7 @@ class ReportScreen extends StatelessWidget {
         ),
       );
 
-  static String _amt(num v) => v
-      .toStringAsFixed(0)
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},');
+  static String _amt(num v) => inrNum(v, decimals: 0);
 
   void _openFilter(BuildContext context, ReportListController c) {
     showModalBottomSheet(

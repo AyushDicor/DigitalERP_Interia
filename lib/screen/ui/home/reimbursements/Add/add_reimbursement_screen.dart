@@ -1,5 +1,6 @@
 // lib/screen/ui/home/reimbursements/Add/add_new_reimbursement_screen.dart
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/screen/ui/home/reimbursements/controller/new_reimbursement_controller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:flutter/material.dart';
@@ -168,7 +169,7 @@ class _FormBody extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               color: newTextPrimary)),
                       Text(
-                        "₹${ctrl.totalAmount.toStringAsFixed(2)}",
+                        "₹${ctrl.totalAmount.toInr()}",
                         style: GoogleFonts.dmSans(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,

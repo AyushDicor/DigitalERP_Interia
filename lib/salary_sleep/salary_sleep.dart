@@ -147,6 +147,7 @@
 //
 // }
 //old code commented
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'dart:developer';
 import 'package:newdigitalerp/salary_sleep/salary_sleep_controller/salary_sleep_controller.dart';
 import 'package:newdigitalerp/screen/base/base_controller.dart';
@@ -274,7 +275,7 @@ class _SalarySleepState extends State<SalarySleep> {
                   color: newTextSecondary,
                   fontWeight: FontWeight.w400)),
           const SizedBox(height: 2),
-          Text('₹${data.netsalary ?? 'N/A'}',
+          Text(data.netsalary == null ? '₹N/A' : '₹${inrNum(data.netsalary)}',
               style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -390,7 +391,7 @@ class _MasterCard extends StatelessWidget {
                 // Row 2: Amount + Site
                 if (amount > 0 || site.isNotEmpty)
                   _PairedRow(
-                    left: amount > 0 ? _IT('Amount', '₹$amount', vc: color) : null,
+                    left: amount > 0 ? _IT('Amount', '₹${inrNum(amount)}', vc: color) : null,
                     right: site.isNotEmpty ? _IT('Site', site) : null,
                   ),
 
@@ -711,7 +712,7 @@ class _ItemsCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text('₹${it.amount.toStringAsFixed(0)}',
+                Text('₹${inrNum(it.amount, decimals: 0)}',
                     style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,

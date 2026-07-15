@@ -43,6 +43,7 @@ class ApprovedOrRejectLeaveResponse {
 
 class LeaveData {
   LeaveData({
+    this.id,
     this.title,
     this.time,
     this.date,
@@ -53,6 +54,7 @@ class LeaveData {
     this.responsibleperson,
   });
 
+  int? id;
   String? title;
   String? time;
   String? date;
@@ -63,6 +65,7 @@ class LeaveData {
   String? responsibleperson;
 
   factory LeaveData.fromJson(Map<String, dynamic> json) => LeaveData(
+        id: json['id'],
         title: json['title'],
         time: json['time'],
         date: json['date'],
@@ -74,6 +77,7 @@ class LeaveData {
       );
 
   Map<String, dynamic> toJson() => {
+        'id': id,
         'title': title,
         'time': time,
         'date': date,

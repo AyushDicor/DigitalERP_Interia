@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -163,7 +164,7 @@ class PaymentRequestModel {
   /// Get formatted amount string
   String getFormattedAmount() {
     if (amount == null) return '₹ 0.00';
-    return '₹ ${amount!.toStringAsFixed(2)}';
+    return '₹ ${amount!.toInr()}';
   }
 
   /// Get formatted request date

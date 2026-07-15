@@ -4,6 +4,7 @@
 // dropdowns whose typed values become reusable options next time.
 
 import 'package:flutter/material.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -423,8 +424,7 @@ class _LeadEntryViewState extends State<LeadEntryView> {
         ),
       );
 
-  static String _n(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+  static String _n(double v) => inrNum(v);
 
   // ── modal pickers ──
   void _openPicker(BuildContext ctx, String title, List<LeadOption> options,

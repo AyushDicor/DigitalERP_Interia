@@ -470,6 +470,7 @@
 //
 // }
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'dart:io';
 import 'package:newdigitalerp/screen/ui/home/mis_module/mis_sales_invoice/sales_invoice_controller/sales_invoice_controller.dart';
 import 'package:newdigitalerp/utils/app_assets.dart';
@@ -651,7 +652,7 @@ class SalesInvoiceView extends StatelessWidget {
                         color: newTextSecondary,
                         fontSize: 12,
                         fontWeight: FontWeight.w500)),
-                Text('₹ ${data.amount ?? '—'}',
+                Text(data.amount == null ? '₹ —' : '₹ ${inrNum(data.amount)}',
                     style: const TextStyle(
                         color: newBlueColor,
                         fontSize: 14,

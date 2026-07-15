@@ -578,6 +578,7 @@
 
 
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/utils/app_assets.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/app_network_image.dart';
@@ -732,7 +733,7 @@ class YourOrderView extends StatelessWidget {
                               _amountLine(
                                 name: 'Grand Total',
                                 amount:
-                                controller.grandTotal.toStringAsFixed(2),
+                                controller.grandTotal.toInr(),
                                 emphasize: true,
                               ),
                             ],
@@ -839,10 +840,10 @@ class YourOrderView extends StatelessWidget {
                     _miniStat('Qty', item.quantity?.toString() ?? ''),
                     _miniStat('Unit', item.unit ?? ''),
                     _miniStat(
-                        'Rate', item.itemrate?.toStringAsFixed(2) ?? '0',
+                        'Rate', item.itemrate?.toInr() ?? '0',
                         moneySign: true),
                     _miniStat(
-                        'Amount', item.total?.toStringAsFixed(2) ?? '0',
+                        'Amount', item.total?.toInr() ?? '0',
                         moneySign: true, highlight: true),
                   ],
                 ),
@@ -982,7 +983,7 @@ class YourOrderView extends StatelessWidget {
                       .copyWith(color: Colors.white, fontSize: 20),
                 )
                     : Text(
-                  '\u{20B9}${controller.grandTotal.toStringAsFixed(2)}',
+                  '\u{20B9}${controller.grandTotal.toInr()}',
                   style: const TextStyle()
                       .bold
                       .copyWith(color: Colors.white, fontSize: 20),

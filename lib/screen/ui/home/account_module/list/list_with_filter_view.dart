@@ -243,6 +243,7 @@
 //   }
 // }
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/fab/menu_fab.dart';
 import 'package:newdigitalerp/response/collection_list_response.dart';
 import 'package:newdigitalerp/response/customer_detail_response.dart';
@@ -406,7 +407,7 @@ class ListWithFilterView extends StatelessWidget {
                     color: kAccentText),
               ),
               statusBadge(
-                '₹ $amount',
+                '₹ ${inrNum(amount)}',
                 amtNum > 10000 ? BadgeVariant.green : BadgeVariant.amber,
               ),
             ],
@@ -498,7 +499,7 @@ class ListWithFilterView extends StatelessWidget {
                 fontSize: 13, color: kMuted, fontWeight: FontWeight.w500),
           ),
           Text(
-            'Total  ₹ ${total.toStringAsFixed(0)}',
+            'Total  ₹ ${total.toInr(decimals: 0)}',
             style: const TextStyle(
                 fontSize: 14, fontWeight: FontWeight.w700, color: kText),
           ),

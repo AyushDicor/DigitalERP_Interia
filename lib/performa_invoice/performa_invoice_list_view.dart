@@ -2,6 +2,7 @@
 // filter (auto-populated dropdowns) + record cards. Tapping a card opens the
 // read-only detail. Read-only module (Phase 1).
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -24,18 +25,7 @@ const Color _kTextHint = Color(0xFF9CA3AF);
 class PerformaInvoiceListView extends StatelessWidget {
   const PerformaInvoiceListView({Key? key}) : super(key: key);
 
-  String _money(double v) {
-    final s = v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2);
-    // simple thousands grouping
-    final parts = s.split('.');
-    final intp = parts[0];
-    final buf = StringBuffer();
-    for (int i = 0; i < intp.length; i++) {
-      if (i > 0 && (intp.length - i) % 3 == 0) buf.write(',');
-      buf.write(intp[i]);
-    }
-    return buf.toString() + (parts.length > 1 ? '.${parts[1]}' : '');
-  }
+  String _money(double v) => inrNum(v);
 
   @override
   Widget build(BuildContext context) {

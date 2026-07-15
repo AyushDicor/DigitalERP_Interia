@@ -4,6 +4,7 @@
 // ProcCreateentrypagewithapprovalnew_v3 (@refid = lead id, 7 TVPs).
 
 import 'package:flutter/material.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -45,8 +46,7 @@ class _LeadQuotationViewState extends State<LeadQuotationView> {
     super.dispose();
   }
 
-  String _n(double v) =>
-      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(2);
+  String _n(double v) => inrNum(v);
 
   @override
   Widget build(BuildContext context) {

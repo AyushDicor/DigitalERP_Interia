@@ -2297,6 +2297,7 @@
 //     );
 //   }
 // }
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/screen/ui/home/grn/grn_response/grn_models.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:flutter/material.dart';
@@ -2698,7 +2699,7 @@ class _ChargeRow extends StatelessWidget {
                       Text(
                         charge.calcType == ChargeCalcType.percentage
                             ? '${charge.value.toStringAsFixed(1)}%'
-                            : '₹${charge.value.toStringAsFixed(2)}',
+                            : '₹${charge.value.toInr()}',
                         style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -2711,7 +2712,7 @@ class _ChargeRow extends StatelessWidget {
                       const SizedBox(width: 6),
                       // Computed amount
                       Text(
-                        '${isPlus ? "+" : "−"}₹${amt.toStringAsFixed(2)}',
+                        '${isPlus ? "+" : "−"}₹${amt.toInr()}',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -3400,7 +3401,7 @@ class _ChargeEditSheetState extends State<_ChargeEditSheet> {
               ? 'Item Subtotal (Base)'
               : 'No dependency — standalone amount',
           subtitle: _calcType == ChargeCalcType.percentage
-              ? '₹${widget.ctrl.subtotal.toStringAsFixed(2)}'
+              ? '₹${widget.ctrl.subtotal.toInr()}'
               : 'Amount = ₹${double.tryParse(_valueCtrl.text)?.toStringAsFixed(2) ?? "0.00"}',
           icon: _calcType == ChargeCalcType.percentage
               ? Icons.inventory_2_outlined
@@ -3421,8 +3422,8 @@ class _ChargeEditSheetState extends State<_ChargeEditSheet> {
                 id: c.localId,
                 label: c.head?.label ?? '—',
                 subtitle: _calcType == ChargeCalcType.percentage
-                    ? '${isPlus ? "+" : "−"}₹${depAmt.toStringAsFixed(2)}'
-                    : 'Amount = ₹${double.tryParse(_valueCtrl.text)?.toStringAsFixed(2) ?? "0.00"} + ₹${depAmt.toStringAsFixed(2)} = ₹${previewForFixed.toStringAsFixed(2)}',
+                    ? '${isPlus ? "+" : "−"}₹${depAmt.toInr()}'
+                    : 'Amount = ₹${double.tryParse(_valueCtrl.text)?.toInr() ?? "0.00"} + ₹${depAmt.toInr()} = ₹${previewForFixed.toInr()}',
                 icon: isPlus
                     ? Icons.add_circle_outline_rounded
                     : Icons.remove_circle_outline_rounded,

@@ -1797,6 +1797,23 @@ class ApprovalHubController extends AppBaseController {
     selectedCategory = '';
     _loadDashboard(); // real API
     _loadDummyForwardOptions(); // forward list still local for now
+    _loadLeaveAccess(); // whether to show the gated Leave Requests section
+  }
+
+  /// True if this user may approve leaves (ERP menu 2388). Gates the Leave
+  /// Requests entry in the Approvals hub — accounts without the grant don't see it.
+  bool canApproveLeave = false;
+
+  Future<void> _loadLeaveAccess() async {
+    final u = homeController.currentUserData;
+    final ok = await api.getLeaveApprovalAccess({
+      'userid': u?.userid?.toString() ?? '',
+      'compid': u?.compId?.toString() ?? '',
+    });
+    if (ok != canApproveLeave) {
+      canApproveLeave = ok;
+      update();
+    }
   }
 
   /// Real dashboard loader — fetches approvals from the API and builds categories.

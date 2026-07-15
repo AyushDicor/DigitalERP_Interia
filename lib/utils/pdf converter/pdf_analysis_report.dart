@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:number_to_words/number_to_words.dart';
@@ -172,7 +173,7 @@ class PdfReportAnalysisApi {
         '${item.unit}',
         'mrp',
         ' ${item.rate}',
-        ' ${total.toStringAsFixed(2)}',
+        ' ${total.toInr()}',
       ];
     }).toList();
 
@@ -588,7 +589,7 @@ class PdfReportAnalysisApi {
     List<Info> asd = [
       Info(
           '0%',
-          netTotal.toStringAsFixed(2),
+          netTotal.toInr(),
           cgst.toStringAsFixed(2),
           sgst.toStringAsFixed(2),
           '0',

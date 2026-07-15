@@ -683,23 +683,64 @@ class LeaveHistoryView extends StatelessWidget {
     );
   }
 
+  void _confirmCancel(
+      BuildContext context, LeaveHistoryController controller, String id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('Cancel Leave'),
+        content: const Text(
+            'This leave request will be cancelled. To change the dates, cancel '
+            'this one and apply a new leave. Continue?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: redColor),
+            onPressed: () {
+              Get.back();
+              controller.cancelLeave(id: id);
+            },
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget leaveCard(
       LeaveHistoryController controller, int index, BuildContext context) {
     final item = controller.leaveHistoryList[index];
-    final bool isApproved = item.status == 'approved';
-    final bool isPending = item.status == 'Pending';
+    // Case-insensitive status matching (the API returns 'Pending'/'Approved'/
+    // 'Rejected'/'Cancelled' with varying case).
+    final String st = (item.status ?? '').toLowerCase();
+    final bool isPending = st == 'pending';
+    final bool isApproved = st.startsWith('appro');
+    final bool isCancelled = st.startsWith('cancel');
 
     final Color statusColor = isPending
         ? _pending
         : isApproved
         ? _present
+        : isCancelled
+        ? Colors.grey
         : _absent;
-    final String statusLabel =
-    isPending ? 'Pending' : isApproved ? 'Approved' : 'Rejected';
+    final String statusLabel = isPending
+        ? 'Pending'
+        : isApproved
+        ? 'Approved'
+        : isCancelled
+        ? 'Cancelled'
+        : 'Rejected';
     final IconData statusIcon = isPending
         ? Icons.hourglass_top_rounded
         : isApproved
         ? Icons.check_circle_rounded
+        : isCancelled
+        ? Icons.block_rounded
         : Icons.cancel_rounded;
 
     return Container(
@@ -838,34 +879,36 @@ class LeaveHistoryView extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w600)),
                 const Spacer(),
-                GestureDetector(
-                  onTap: () => Get.toNamed(AppRoutes.leaveApply,
-                      arguments:
-                      controller.leaveHistoryList[index]),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: purpleColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border:
-                      Border.all(color: _navy.withValues(alpha:0.2)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.edit_rounded,
-                            size: 12, color: _navy),
-                        SizedBox(width: 4),
-                        Text('Edit',
-                            style: TextStyle(
-                                color: _navy,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600)),
-                      ],
+                // Editing a leave is not supported by design. To correct a mistake,
+                // cancel this pending request and apply a fresh leave. Only the user's
+                // own PENDING leaves can be cancelled.
+                if (isPending)
+                  GestureDetector(
+                    onTap: () => _confirmCancel(
+                        context, controller, (item.id ?? 0).toString()),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: redColor.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(8),
+                        border:
+                            Border.all(color: redColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.close_rounded, size: 12, color: redColor),
+                          const SizedBox(width: 4),
+                          Text('Cancel',
+                              style: TextStyle(
+                                  color: redColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

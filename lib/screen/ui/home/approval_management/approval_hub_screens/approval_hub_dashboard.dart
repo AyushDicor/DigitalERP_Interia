@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/screen/ui/home/approval_management/approval_model/approvals_list_responce.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 
 import '../approval_hub_controller/approval_hub_controller.dart';
 import 'approval_hub_detail.dart';
 import 'approval_hub_list.dart';
+import '../../manager_leave_history_view/manager_leave_history_view.dart';
 
 class ApprovalHubDashboard extends StatelessWidget {
   const ApprovalHubDashboard({super.key});
@@ -39,6 +41,13 @@ class ApprovalHubDashboard extends StatelessWidget {
                           children: [
                             _StatsRow(ctrl: ctrl),
                             const SizedBox(height: 14),
+                            // Leave Requests — shown only to users granted menu 2388
+                            // (leave-approval access). Opens the dedicated approve/reject
+                            // screen backed by the real leave table.
+                            if (ctrl.canApproveLeave) ...[
+                              _LeaveApprovalCard(),
+                              const SizedBox(height: 14),
+                            ],
                             if (_hasOverdue(ctrl)) _OverdueBanner(),
                             _SectionHead('By Category'),
                             const SizedBox(height: 10),
@@ -214,6 +223,57 @@ class _OverdueBanner extends StatelessWidget {
 }
 
 //  Section heading
+// Gated Leave Requests entry — opens the real approve/reject screen.
+class _LeaveApprovalCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: () => Get.to(() => ManagerLeaveHistoryView()),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE8ECF0)),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3)),
+            ],
+          ),
+          child: Row(children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF97316).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: const Text('🏖', style: TextStyle(fontSize: 22)),
+            ),
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Leave Requests',
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: newTextPrimary)),
+                    SizedBox(height: 3),
+                    Text('Approve or reject pending leave applications',
+                        style:
+                            TextStyle(fontSize: 12, color: newTextSecondary)),
+                  ]),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: newTextSecondary),
+          ]),
+        ),
+      );
+}
+
 class _SectionHead extends StatelessWidget {
   final String text;
   const _SectionHead(this.text);
@@ -384,7 +444,7 @@ class _ApprovalRow extends StatelessWidget {
               ])),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             if ((item.totalamount ?? '').isNotEmpty)
-              Text('₹${item.totalamount}',
+              Text('₹${inrNum(item.totalamount)}',
                   style: TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w700, color: color)),
             const SizedBox(height: 3),

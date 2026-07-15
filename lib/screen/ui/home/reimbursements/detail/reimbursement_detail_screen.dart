@@ -1934,6 +1934,7 @@
 // }
 
 
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'dart:io';
 import 'package:newdigitalerp/screen/ui/home/reimbursements/controller/reimbursement_controller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
@@ -2813,7 +2814,7 @@ class _EditBody extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: _kLabel)),
                   Text(
-                    '₹ ${state._editTotal.toStringAsFixed(2)}',
+                    '₹ ${state._editTotal.toInr()}',
                     style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -3191,7 +3192,7 @@ class _ExpenseItemTile extends StatelessWidget {
                   color: _kLabel)),
         ),
         Text(
-          '₹ ${item.amount?.toStringAsFixed(2) ?? "0.00"}',
+          '₹ ${item.amount?.toInr() ?? "0.00"}',
           style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w800,
@@ -3551,7 +3552,7 @@ class _RequestDetailsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(children: [
     _ViewRow('Amount',
-        '₹ ${header.totalAmount?.toStringAsFixed(2) ?? "0.00"}',
+        '₹ ${header.totalAmount?.toInr() ?? "0.00"}',
         Icons.currency_rupee_rounded,
         valueColor: newGreenColor),
     if ((header.expenseDescription ?? '').isNotEmpty) ...[

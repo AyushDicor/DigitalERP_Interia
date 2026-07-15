@@ -644,6 +644,51 @@ class Api {
     }
   }
 
+  /// Whether the user may approve leaves (ERP menu 2388). Returns false on any error.
+  Future<bool> getLeaveApprovalAccess(Map<String, String> body) async {
+    try {
+      final c = await connectivity.checkConnectivity();
+      if (!(c.contains(ConnectivityResult.wifi) ||
+          c.contains(ConnectivityResult.mobile))) {
+        return false;
+      }
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.leaveApprovalAccess, body: body);
+      if (res.isEmpty) return false;
+      final decoded = json.decode(res);
+      return decoded['data']?['authorized'] == true;
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return false;
+    }
+  }
+
+  /// Cancel the user's own pending leave (withdraw a mistake). body: {compid, userid, id}.
+  Future<CommonResponse> cancelLeave(Map<String, String> body) async {
+    List<ConnectivityResult> connectivityResults =
+    await connectivity.checkConnectivity();
+
+    if (connectivityResults.contains(ConnectivityResult.wifi) ||
+        connectivityResults.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.cancelLeave, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return commonResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) {
+            print(e);
+          }
+          return CommonResponse(status: 500, message: e.toString());
+        }
+      } else {
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      }
+    } else {
+      return CommonResponse(status: 500, message: 'No internet');
+    }
+  }
+
   Future<ExecutiveListResponse> getExecutiveListWithLatLong(
       Map<String, String> body) async {
     List<ConnectivityResult> connectivityResults =

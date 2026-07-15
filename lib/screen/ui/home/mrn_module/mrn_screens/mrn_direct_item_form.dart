@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:newdigitalerp/screen/ui/home/mrn_module/mrn_response/mrn_models.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:flutter/material.dart';
@@ -404,7 +405,7 @@ class _CalcPreview extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        _row('Amount', '$symbol${amount.toStringAsFixed(2)}'),
+        _row('Amount', '$symbol${amount.toInr()}'),
         if (disc > 0)
           _row(
               discPct > 0
@@ -412,7 +413,7 @@ class _CalcPreview extends StatelessWidget {
                   : 'Discount',
               '- $symbol${disc.toStringAsFixed(2)}'),
         if (showGst)
-          _row('GST ${gstPct.toInt()}%', '$symbol${gstAmt.toStringAsFixed(2)}'),
+          _row('GST ${gstPct.toInt()}%', '$symbol${gstAmt.toInr()}'),
         const Divider(color: newBlueColor, height: 16, thickness: 0.5),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -422,7 +423,7 @@ class _CalcPreview extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: newBlueColor)),
-            Text('$symbol${totalAmt.toStringAsFixed(2)}',
+            Text('$symbol${totalAmt.toInr()}',
                 style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
@@ -493,7 +494,7 @@ class _DirectItemRow extends StatelessWidget {
               _pill(item.unit, newSurfaceColor, newTextSecondary),
               _pill('Qty: ${item.receiveNowQty.toInt()}', newGreenLightColor,
                   newGreenColor),
-              _pill('${ctrl.currencySymbol}${item.rate.toStringAsFixed(2)}',
+              _pill('${ctrl.currencySymbol}${item.rate.toInr()}',
                   newBlueLightColor, newBlueColor),
               if (ctrl.isGstApplicable)
                 _pill('GST ${item.gstPercent.toInt()}%', newSurfaceColor,
@@ -561,10 +562,10 @@ class _DirectTotalsFooter extends StatelessWidget {
           color: newSurfaceColor,
           border: Border(top: BorderSide(color: newBorderColor))),
       child: Column(children: [
-        _row('Subtotal', '${ctrl.currencySymbol}${ctrl.subtotal.toStringAsFixed(2)}'),
+        _row('Subtotal', '${ctrl.currencySymbol}${ctrl.subtotal.toInr()}'),
         if (ctrl.isGstApplicable) ...[
           const SizedBox(height: 6),
-          _row('Total GST', '${ctrl.currencySymbol}${ctrl.totalGst.toStringAsFixed(2)}'),
+          _row('Total GST', '${ctrl.currencySymbol}${ctrl.totalGst.toInr()}'),
         ],
         const Divider(height: 16, color: newBorderColor),
         Row(
@@ -575,7 +576,7 @@ class _DirectTotalsFooter extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: newTextPrimary)),
-            Text('${ctrl.currencySymbol}${ctrl.grandTotal.toStringAsFixed(2)}',
+            Text('${ctrl.currencySymbol}${ctrl.grandTotal.toInr()}',
                 style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,

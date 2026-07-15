@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../approval_hub_controller/approval_hub_controller.dart';
 import 'approval_hub_dashboard.dart';
@@ -239,7 +240,7 @@ class _LineItemTileState extends State<_LineItemTile> {
                 child: _LabeledBox(
                   label: 'Request Amt',
                   child: Text(
-                    '₹${item.requestAmount.toStringAsFixed(0)}',
+                    '₹${inrNum(item.requestAmount, decimals: 0)}',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -297,7 +298,7 @@ class _LineItemTileState extends State<_LineItemTile> {
                     Padding(
                       padding: const EdgeInsets.only(top: 3, left: 2),
                       child: Text(
-                        'Max ₹${item.requestAmount.toStringAsFixed(0)}',
+                        'Max ₹${inrNum(item.requestAmount, decimals: 0)}',
                         style: const TextStyle(
                           fontSize: 8,
                           color: newTextSecondary,
@@ -509,7 +510,7 @@ class _ItemSummary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '₹${displayAmount.toStringAsFixed(0)}',
+                '₹${inrNum(displayAmount, decimals: 0)}',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
@@ -519,7 +520,7 @@ class _ItemSummary extends StatelessWidget {
               // ✅ Show original requested amount as subtitle for reimbursement
               if (isReimbursement && displayAmount != requestedAmount)
                 Text(
-                  'of ₹${requestedAmount.toStringAsFixed(0)}',
+                  'of ₹${inrNum(requestedAmount, decimals: 0)}',
                   style: const TextStyle(
                     fontSize: 9,
                     color: newTextSecondary,
@@ -786,7 +787,7 @@ class _PartialCard extends StatelessWidget {
                   final entered = double.tryParse(ctrl.partialCtrl.text.trim());
                   final max = ctrl.currentItem?.amount;
                   if (entered != null && max != null && entered > max) {
-                    return 'Cannot exceed requested amount ₹$max';
+                    return 'Cannot exceed requested amount ₹${inrNum(max)}';
                   }
                   return null;
                 }(),
@@ -1252,7 +1253,7 @@ class _TotalRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            '₹${total.toStringAsFixed(2)}',
+            '₹${inrNum(total)}',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,

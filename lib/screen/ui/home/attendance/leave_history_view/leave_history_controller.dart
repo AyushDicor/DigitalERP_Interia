@@ -194,6 +194,31 @@ class LeaveHistoryController extends AppBaseController {
     }
   }
 
+  /// Applicant cancels their own PENDING leave (editing is not supported — to fix a
+  /// mistake, cancel this one and apply a fresh leave). Reloads history on success.
+  Future<void> cancelLeave({required String id}) async {
+    try {
+      setBusy(true);
+      Map<String, String> body = {};
+      body[RequestKeys.compId] =
+          attendanceController.homeController.currentUserData?.compId.toString() ?? '';
+      body[RequestKeys.userId] =
+          attendanceController.homeController.currentUserData?.userid.toString() ?? '';
+      body[RequestKeys.id] = id;
+      var res = await api.cancelLeave(body);
+      if (res.status == 200) {
+        ShowMessage.showSnackBar('Leave Cancelled', res.message.toString());
+        await getDetails();
+      } else {
+        setBusy(false);
+        ShowMessage.showSnackBar('Cancel Failed', res.message.toString());
+      }
+    } catch (e) {
+      setBusy(false);
+      ShowMessage.showSnackBar('Cancel Failed', '$e');
+    }
+  }
+
   Future<void> leaveStatusUpdate({required String id, required bool isApproved}) async {
     try {
       Map<String, String> body = {};
