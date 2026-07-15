@@ -113,7 +113,7 @@ class DashboardView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4361EE), Color(0xFF738EFF)],
+          colors: [purpleColor, Color(0xFF738EFF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -161,7 +161,7 @@ class DashboardView extends StatelessWidget {
     final p = controller.pendency;
     final tiles = <_ActionTile>[
       _ActionTile('Approvals', p.pendingApprovals, Icons.fact_check_outlined,
-          const Color(0xFF4361EE), AppRoutes.approvalHub),
+           purpleColor, AppRoutes.approvalHub),
       _ActionTile('Sale Orders', p.pendingSaleOrders,
           Icons.shopping_bag_outlined, const Color(0xFFF59E0B),
           AppRoutes.orderView),
@@ -257,7 +257,7 @@ class DashboardView extends StatelessWidget {
             Positioned(
                 top: -90,
                 right: -80,
-                child: _blob(260, const Color(0xFF4361EE).withValues(alpha: 0.14))),
+                child: _blob(260,  purpleColor.withValues(alpha: 0.14))),
             Positioned(
                 top: 260,
                 left: -110,
@@ -332,7 +332,7 @@ class DashboardView extends StatelessWidget {
       );
 
   static const List<Color> _mixColors = [
-    Color(0xFF4361EE),
+    purpleColor,
     Color(0xFFF59E0B),
     Color(0xFF16A34A),
     Color(0xFF8B5CF6),

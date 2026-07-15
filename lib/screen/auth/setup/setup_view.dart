@@ -333,7 +333,7 @@ import 'package:image_picker/image_picker.dart';
 import 'setup_controller.dart';
 
 //  Design tokens 
-const Color _kBlue = Color(0xFF4361EE);
+const Color _kBlue = purpleColor;
 const Color _kBlueBg = Color(0xFFEEF1FF);
 const Color _kBorder = Color(0xFFE2E8F0);
 const Color _kTextPrimary = Color(0xFF0F172A);

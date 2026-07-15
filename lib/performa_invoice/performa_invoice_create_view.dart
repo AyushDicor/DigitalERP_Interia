@@ -164,7 +164,10 @@ class PerformaInvoiceCreateView extends StatelessWidget {
             builder: (_) => _AddItemSheet(
                 itemMaster: c.itemMaster,
                 sizes: c.form.itemsize,
-                units: c.form.billingunit),
+                units: c.form.billingunit,
+                godowns: c.form.godown,
+                onCreateItem: (name, size) =>
+                    c.createNewItem(name: name, size: size)),
           );
           if (line != null) c.addItem(line);
         }),
@@ -197,7 +200,10 @@ class PerformaInvoiceCreateView extends StatelessWidget {
             context: ctx,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (_) => _AddExpenseSheet(othertypes: c.form.othertype),
+            builder: (_) => _AddExpenseSheet(
+                ledgers: c.form.otherledger,
+                baseTotalAmount: c.totalAmount,
+                baseGrandTotal: c.totalAmount + c.totalGst),
           );
           if (o != null) c.addOther(o);
         }),
@@ -223,39 +229,12 @@ class PerformaInvoiceCreateView extends StatelessWidget {
               ]),
         );
     return _card('Totals', Icons.summarize_outlined, [
+      // All totals are auto-computed and read-only (mirrors the ERP form).
       r('Total Qty', _n(c.totalQty)),
       r('Total Amount', '₹${_n(c.totalAmount)}'),
       r('Total GST', '₹${_n(c.totalGst)}'),
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(children: [
-          const Expanded(
-            child: Text('Round Off',
-                style: TextStyle(fontSize: 12.5, color: _kTextSecondary)),
-          ),
-          SizedBox(
-            width: 90,
-            child: TextFormField(
-              initialValue: c.roundOff == 0 ? '' : _n(c.roundOff),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true, signed: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.\-]'))
-              ],
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(
-                isDense: true,
-                hintText: '0',
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (v) => c.setRoundOff(double.tryParse(v) ?? 0),
-            ),
-          ),
-        ]),
-      ),
+      if (c.otherExpenses.isNotEmpty) r('Other Expense', '₹${_n(c.otherNet)}'),
+      r('Round Off', '₹${_n(c.roundOff)}'),
       const Divider(height: 16, color: _kBorder),
       r('Grand Total', '₹${_n(c.grandTotal)}', bold: true),
     ]);
@@ -675,8 +654,14 @@ class _AddItemSheet extends StatefulWidget {
   final List<SaleOrderOption> itemMaster;
   final List<SaleOrderOption> sizes;
   final List<SaleOrderOption> units;
+  final List<SaleOrderOption> godowns;
+  final Future<SaleOrderOption?> Function(String name, String size) onCreateItem;
   const _AddItemSheet(
-      {required this.itemMaster, required this.sizes, required this.units});
+      {required this.itemMaster,
+      required this.sizes,
+      required this.units,
+      required this.godowns,
+      required this.onCreateItem});
   @override
   State<_AddItemSheet> createState() => _AddItemSheetState();
 }
@@ -686,9 +671,55 @@ class _AddItemSheetState extends State<_AddItemSheet> {
   final _qty = TextEditingController();
   final _rate = TextEditingController();
   final _gst = TextEditingController(text: '18');
+  final _discount = TextEditingController();
+  final _desc = TextEditingController();
   SaleOrderOption? _item;
   SaleOrderOption? _size;
   SaleOrderOption? _unit;
+  SaleOrderOption? _godown;
+  bool _creating = false;
+
+  // Prompt for a new item name (+ optional size), create it in the master, then
+  // select it. The controller prepends it to the pickable list on success.
+  Future<void> _promptCreateItem() async {
+    final nameCtl = TextEditingController(text: _search.text.trim());
+    final sizeCtl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Item'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(
+              controller: nameCtl,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Item Name *')),
+          const SizedBox(height: 8),
+          TextField(
+              controller: sizeCtl,
+              decoration:
+                  const InputDecoration(labelText: 'Size (optional)')),
+        ]),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Create')),
+        ],
+      ),
+    );
+    if (ok == true && nameCtl.text.trim().isNotEmpty) {
+      setState(() => _creating = true);
+      final opt =
+          await widget.onCreateItem(nameCtl.text.trim(), sizeCtl.text.trim());
+      if (!mounted) return;
+      setState(() {
+        _creating = false;
+        if (opt != null) _item = opt;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -696,18 +727,28 @@ class _AddItemSheetState extends State<_AddItemSheet> {
     _qty.dispose();
     _rate.dispose();
     _gst.dispose();
+    _discount.dispose();
+    _desc.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final q = _search.text.trim().toLowerCase();
+    // Show the FULL item list (ListView is lazy). Search narrows it; no 40-item cap.
     final list = q.isEmpty
-        ? widget.itemMaster.take(40).toList()
+        ? widget.itemMaster
         : widget.itemMaster
             .where((o) => o.name.toLowerCase().contains(q))
-            .take(40)
             .toList();
+    // Live, read-only computed line amounts (ERP math: discount before GST).
+    final qv = double.tryParse(_qty.text.trim()) ?? 0;
+    final rv = double.tryParse(_rate.text.trim()) ?? 0;
+    final gv = double.tryParse(_gst.text.trim()) ?? 0;
+    final dv = double.tryParse(_discount.text.trim()) ?? 0;
+    final baseAmt = qv * rv;
+    final lineAmt = baseAmt - baseAmt * dv / 100;
+    final lineGst = lineAmt * gv / 100;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
@@ -752,6 +793,23 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                       ),
                     ),
             ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _creating ? null : _promptCreateItem,
+                icon: _creating
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: _kPrimary))
+                    : const Icon(Icons.add, size: 18, color: _kPrimary),
+                label: Text(_creating ? 'Creating…' : 'Add New Item',
+                    style: const TextStyle(
+                        color: _kPrimary, fontWeight: FontWeight.w600)),
+              ),
+            ),
           ] else ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -772,21 +830,46 @@ class _AddItemSheetState extends State<_AddItemSheet> {
             ),
             const SizedBox(height: 10),
             Row(children: [
-              Expanded(child: _sheetField(_qty, 'Qty', number: true)),
+              Expanded(
+                  child: _sheetField(_qty, 'Qty',
+                      number: true, onChanged: (_) => setState(() {}))),
               const SizedBox(width: 8),
-              Expanded(child: _sheetField(_rate, 'Sales Rate', number: true)),
+              Expanded(
+                  child: _sheetField(_rate, 'Sales Rate',
+                      number: true, onChanged: (_) => setState(() {}))),
               const SizedBox(width: 8),
-              Expanded(child: _sheetField(_gst, 'GST %', number: true)),
+              Expanded(
+                  child: _sheetField(_gst, 'GST %',
+                      number: true, onChanged: (_) => setState(() {}))),
             ]),
             const SizedBox(height: 8),
             Row(children: [
               Expanded(
-                  child: _miniPicker('Size', _size?.name, widget.sizes,
-                      (o) => setState(() => _size = o))),
+                  child: _sheetField(_discount, 'Discount %',
+                      number: true, onChanged: (_) => setState(() {}))),
               const SizedBox(width: 8),
               Expanded(
-                  child: _miniPicker('Unit', _unit?.name, widget.units,
+                  child: _miniPicker('Size', _size?.name, widget.sizes,
+                      (o) => setState(() => _size = o))),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                  child: _miniPicker('Godown', _godown?.name, widget.godowns,
+                      (o) => setState(() => _godown = o))),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: _miniPicker('Billing Unit', _unit?.name, widget.units,
                       (o) => setState(() => _unit = o))),
+            ]),
+            const SizedBox(height: 8),
+            _sheetField(_desc, 'Item Description'),
+            const SizedBox(height: 10),
+            // Locked, auto-computed amounts (read-only).
+            Row(children: [
+              Expanded(child: _lockedField('Amount', '₹${_n(lineAmt)}')),
+              const SizedBox(width: 8),
+              Expanded(child: _lockedField('GST Amt', '₹${_n(lineGst)}')),
             ]),
           ],
           const SizedBox(height: 14),
@@ -807,6 +890,7 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                         final qty = double.tryParse(_qty.text.trim()) ?? 0;
                         final rate = double.tryParse(_rate.text.trim()) ?? 0;
                         final gst = double.tryParse(_gst.text.trim()) ?? 0;
+                        final disc = double.tryParse(_discount.text.trim()) ?? 0;
                         if (qty <= 0 || rate <= 0) return;
                         Navigator.pop(
                           context,
@@ -816,10 +900,14 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                             quantity: qty,
                             salerate: rate,
                             gstpercent: gst,
+                            discountpercent: disc,
                             sizeid: _size?.id ?? 0,
                             sizename: _size?.name ?? '',
                             billingunitid: _unit?.id ?? 0,
                             billingunit: _unit?.name ?? '',
+                            godownid: _godown?.id ?? 0,
+                            godownname: _godown?.name ?? '',
+                            itemdescription: _desc.text.trim(),
                           ),
                         );
                       },
@@ -869,26 +957,71 @@ class _AddItemSheetState extends State<_AddItemSheet> {
       );
 }
 
-// ── Add other-expense sheet ──
+// ── Add other-expense sheet (ERP parity) ──
+// Nature = Add/Less, Other Type = ledger (auto tax%), Depends On = Total Amount /
+// Grand Total (the base the % is charged on), Amount = tax% × base (auto, locked)
+// or manual when the ledger has no tax %.
 class _AddExpenseSheet extends StatefulWidget {
-  final List<SaleOrderOption> othertypes;
-  const _AddExpenseSheet({required this.othertypes});
+  final List<SaleOrderLedger> ledgers;
+  final double baseTotalAmount; // items amount (ex-GST)
+  final double baseGrandTotal; // items amount + GST
+  const _AddExpenseSheet({
+    required this.ledgers,
+    required this.baseTotalAmount,
+    required this.baseGrandTotal,
+  });
   @override
   State<_AddExpenseSheet> createState() => _AddExpenseSheetState();
 }
 
 class _AddExpenseSheetState extends State<_AddExpenseSheet> {
-  final _nature = TextEditingController();
-  final _tax = TextEditingController();
   final _amount = TextEditingController();
-  SaleOrderOption? _type;
+  String _nature = 'Add';
+  SaleOrderLedger? _type;
+  String _dependent = 'Total Amount';
+
+  double get _base =>
+      _dependent == 'Grand Total' ? widget.baseGrandTotal : widget.baseTotalAmount;
+  double get _taxper => _type?.taxper ?? 0;
+  double get _computedAmount => _taxper > 0
+      ? _base * _taxper / 100
+      : (double.tryParse(_amount.text.trim()) ?? 0);
 
   @override
   void dispose() {
-    _nature.dispose();
-    _tax.dispose();
     _amount.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickString(
+      String title, List<String> options, ValueChanged<String> onPick) async {
+    final opts = [
+      for (var i = 0; i < options.length; i++)
+        SaleOrderOption(id: i, name: options[i])
+    ];
+    final picked = await showModalBottomSheet<SaleOrderOption>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _OptionSheet(title: title, options: opts, emptyHint: 'None'),
+    );
+    if (picked != null) onPick(picked.name);
+  }
+
+  Future<void> _pickLedger() async {
+    final opts =
+        widget.ledgers.map((l) => SaleOrderOption(id: l.id, name: l.name)).toList();
+    final picked = await showModalBottomSheet<SaleOrderOption>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) =>
+          _OptionSheet(title: 'Other Type', options: opts, emptyHint: 'None'),
+    );
+    if (picked != null) {
+      setState(() => _type = widget.ledgers.firstWhere((l) => l.id == picked.id,
+          orElse: () => SaleOrderLedger(id: picked.id, name: picked.name)));
+    }
   }
 
   @override
@@ -915,46 +1048,29 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                       fontWeight: FontWeight.w800,
                       color: _kTextPrimary))),
           const SizedBox(height: 12),
-          _sheetField(_nature, 'Nature'),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () async {
-              final picked = await showModalBottomSheet<SaleOrderOption>(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => _OptionSheet(
-                    title: 'Other Type',
-                    options: widget.othertypes,
-                    emptyHint: 'None'),
-              );
-              if (picked != null) setState(() => _type = picked);
-            },
-            child: Container(
-              height: 46,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                  color: _kBg,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _kBorder)),
-              child: Row(children: [
-                Expanded(
-                    child: Text(_type?.name ?? 'Other Type',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color:
-                                _type == null ? _kTextHint : _kTextPrimary))),
-                const Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 20, color: _kTextSecondary),
-              ]),
-            ),
-          ),
+          Row(children: [
+            Expanded(
+                child: _pickerBox('Nature', _nature,
+                    () => _pickString('Nature', const ['Add', 'Less'],
+                        (v) => setState(() => _nature = v)))),
+            const SizedBox(width: 8),
+            Expanded(child: _pickerBox('Other Type', _type?.name ?? '', _pickLedger)),
+          ]),
           const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: _sheetField(_tax, 'Tax %', number: true)),
+            Expanded(
+                child: _pickerBox('Depends On', _dependent,
+                    () => _pickString('Depends On',
+                        const ['Total Amount', 'Grand Total'],
+                        (v) => setState(() => _dependent = v)))),
             const SizedBox(width: 8),
-            Expanded(child: _sheetField(_amount, 'Amount', number: true)),
+            Expanded(child: _lockedField('Tax %', '${_n(_taxper)}%')),
           ]),
+          const SizedBox(height: 8),
+          _taxper > 0
+              ? _lockedField('Amount', '₹${_n(_computedAmount)}')
+              : _sheetField(_amount, 'Amount',
+                  number: true, onChanged: (_) => setState(() {})),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(
@@ -968,18 +1084,17 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
                 style: ElevatedButton.styleFrom(
                     backgroundColor: _kPrimary, foregroundColor: Colors.white),
                 onPressed: () {
-                  final amt = double.tryParse(_amount.text.trim()) ?? 0;
-                  if (amt <= 0 && (_type == null && _nature.text.trim().isEmpty)) {
-                    return;
-                  }
+                  final amt = _computedAmount;
+                  if (amt <= 0 || _type == null) return;
                   Navigator.pop(
                     context,
                     SaleOrderOtherExpense(
-                      nature: _nature.text.trim(),
-                      accounttypeid: _type?.id ?? 0,
-                      accounttype: _type?.name ?? '',
-                      taxpercent: double.tryParse(_tax.text.trim()) ?? 0,
+                      nature: _nature,
+                      accounttypeid: _type!.id,
+                      accounttype: _type!.name,
+                      taxpercent: _taxper,
                       amount: amt,
+                      dependentid: 0,
                     ),
                   );
                 },
@@ -991,6 +1106,30 @@ class _AddExpenseSheetState extends State<_AddExpenseSheet> {
       ),
     );
   }
+
+  Widget _pickerBox(String label, String value, VoidCallback onTap) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+              color: _kBg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: _kBorder)),
+          child: Row(children: [
+            Expanded(
+                child: Text(value.isEmpty ? label : value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 13.5,
+                        color: value.isEmpty ? _kTextHint : _kTextPrimary))),
+            const Icon(Icons.keyboard_arrow_down_rounded,
+                size: 20, color: _kTextSecondary),
+          ]),
+        ),
+      );
 }
 
 // shared sheet text field
@@ -1023,4 +1162,30 @@ Widget _sheetField(TextEditingController c, String hint,
             borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
       ),
+    );
+
+// Read-only, auto-computed value box (Amount / GST Amt) — visibly locked.
+Widget _lockedField(String label, String value) => Container(
+      height: 46,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+          color: _kBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: _kBorder)),
+      child: Row(children: [
+        Text('$label: ',
+            style: const TextStyle(fontSize: 12, color: _kTextSecondary)),
+        Expanded(
+          child: Text(value,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: _kTextPrimary)),
+        ),
+        const SizedBox(width: 4),
+        const Icon(Icons.lock_outline, size: 13, color: _kTextHint),
+      ]),
     );

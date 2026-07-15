@@ -15,7 +15,7 @@ import '../utils/app_constant_new.dart';
 import 'lead_list_response.dart';
 
 //  Design tokens
-const Color _kPrimary = Color(0xFF4361EE);
+const Color _kPrimary = purpleColor;
 const Color _kPrimaryLight = Color(0xFFEEF1FF);
 const Color _kBg = Color(0xFFF6F7FB);
 const Color _kSurface = Colors.white;

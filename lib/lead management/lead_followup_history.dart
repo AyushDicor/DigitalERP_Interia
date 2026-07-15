@@ -226,7 +226,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 //  Design tokens 
-const Color _kPrimary       = Color(0xFF4361EE);
+const Color _kPrimary       = purpleColor;
 const Color _kPrimaryLight  = Color(0xFFEEF1FF);
 const Color _kBg            = Color(0xFFF6F7FB);
 const Color _kSurface       = Colors.white;
@@ -334,7 +334,7 @@ class _LeadFolloupHistoryState extends State<LeadFolloupHistory> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: _kBorder)),
             child: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: _kTextPrimary, size: 16),
+                color: _kTextPrimary, size: 18),
           ),
         ),
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [

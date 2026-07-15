@@ -19,6 +19,26 @@ List<SaleOrderOption> _opts(dynamic list) => (list as List? ?? [])
     .map((e) => SaleOrderOption.fromJson(Map<String, dynamic>.from(e as Map)))
     .toList();
 
+double _d(dynamic v) =>
+    v == null ? 0 : (v is num ? v.toDouble() : double.tryParse('$v') ?? 0);
+
+// Other-expense ledger ("Other Type") carrying its tax % (from partymaster.Valuepercent).
+class SaleOrderLedger {
+  final int id;
+  final String name;
+  final double taxper;
+  SaleOrderLedger({this.id = 0, this.name = '', this.taxper = 0});
+  factory SaleOrderLedger.fromJson(Map<String, dynamic> j) => SaleOrderLedger(
+        id: _i(j['id']),
+        name: _s(j['name']),
+        taxper: _d(j['taxper']),
+      );
+}
+
+List<SaleOrderLedger> _ledgers(dynamic list) => (list as List? ?? [])
+    .map((e) => SaleOrderLedger.fromJson(Map<String, dynamic>.from(e as Map)))
+    .toList();
+
 class SaleOrderFormData {
   final List<SaleOrderOption> entrytype;
   final List<SaleOrderOption> series;
@@ -32,6 +52,8 @@ class SaleOrderFormData {
   final List<SaleOrderOption> itemsize;
   final List<SaleOrderOption> deliverystore;
   final List<SaleOrderOption> partycategory;
+  final List<SaleOrderOption> godown;
+  final List<SaleOrderLedger> otherledger;
 
   SaleOrderFormData({
     this.entrytype = const [],
@@ -46,6 +68,8 @@ class SaleOrderFormData {
     this.itemsize = const [],
     this.deliverystore = const [],
     this.partycategory = const [],
+    this.godown = const [],
+    this.otherledger = const [],
   });
 
   factory SaleOrderFormData.fromJson(Map<String, dynamic> j) => SaleOrderFormData(
@@ -61,6 +85,8 @@ class SaleOrderFormData {
         itemsize: _opts(j['itemsize']),
         deliverystore: _opts(j['deliverystore']),
         partycategory: _opts(j['partycategory']),
+        godown: _opts(j['godown']),
+        otherledger: _ledgers(j['otherledger']),
       );
 }
 
@@ -142,6 +168,9 @@ class SaleOrderItemLine {
   int billingunitid;
   String billingunit;
   String itemdescription;
+  int godownid;
+  String godownname;
+  double discountpercent;
 
   SaleOrderItemLine({
     this.itemid = 0,
@@ -154,9 +183,16 @@ class SaleOrderItemLine {
     this.billingunitid = 0,
     this.billingunit = '',
     this.itemdescription = '',
+    this.godownid = 0,
+    this.godownname = '',
+    this.discountpercent = 0,
   });
 
-  double get amount => quantity * salerate;
+  // ERP math (calculateTotals): discount reduces the base BEFORE GST, so
+  // Amount = qty*rate − discount, and GST is charged on that net amount.
+  double get baseAmount => quantity * salerate;
+  double get discountAmount => baseAmount * discountpercent / 100;
+  double get amount => baseAmount - discountAmount;
   double get gstAmount => amount * gstpercent / 100;
 
   Map<String, dynamic> toJson() => {
@@ -173,15 +209,20 @@ class SaleOrderItemLine {
         'billingunitid': billingunitid,
         'billingunit': billingunit,
         'itemdescription': itemdescription,
+        'godownid': godownid,
+        'godownname': godownname,
+        'discountpercent': discountpercent,
+        'discountamount': discountAmount,
       };
 }
 
 class SaleOrderOtherExpense {
-  String nature;
-  int accounttypeid;
-  String accounttype;
+  String nature; // "Add" or "Less"
+  int accounttypeid; // ledger partyid (Other Type)
+  String accounttype; // ledger name
   double taxpercent;
   double amount;
+  int dependentid; // 0 = Total Amount / Grand Total (ERP saves both as 0)
 
   SaleOrderOtherExpense({
     this.nature = '',
@@ -189,7 +230,11 @@ class SaleOrderOtherExpense {
     this.accounttype = '',
     this.taxpercent = 0,
     this.amount = 0,
+    this.dependentid = 0,
   });
+
+  // Signed effect on the grand total: Add = +amount, Less = −amount.
+  double get signedAmount => nature.toLowerCase() == 'less' ? -amount : amount;
 
   Map<String, dynamic> toJson() => {
         'nature': nature,
@@ -197,6 +242,7 @@ class SaleOrderOtherExpense {
         'accounttype': accounttype,
         'taxpercent': taxpercent,
         'amount': amount,
+        'dependentid': dependentid,
       };
 }
 

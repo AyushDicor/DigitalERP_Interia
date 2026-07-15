@@ -29,7 +29,7 @@ class AddCompanyView extends StatelessWidget {
           leading: GestureDetector(
             onTap: () => controller.backTap(),
             child: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: newTextPrimary, size: 20),
+                color: newTextPrimary, size: 18),
           ),
           title: const Text('Add Customer',
               style: TextStyle(

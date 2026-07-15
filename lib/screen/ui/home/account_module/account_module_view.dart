@@ -42,7 +42,7 @@ class AccountModuleView extends StatelessWidget {
           leading: GestureDetector(
             onTap: () => Get.back(),
             child: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: _kText, size: 20),
+                color: _kText, size: 18),
           ),
           title: const Text(
             'Accounts',

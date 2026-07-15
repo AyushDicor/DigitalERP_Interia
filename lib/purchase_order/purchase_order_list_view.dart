@@ -59,7 +59,7 @@ class PurchaseOrderListView extends StatelessWidget {
             child: Container(
               margin: const EdgeInsets.all(10),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: _kTextPrimary, size: 16),
+                  color: _kTextPrimary, size: 20),
             ),
           ),
           title: Column(

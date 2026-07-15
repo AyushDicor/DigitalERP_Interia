@@ -14,6 +14,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'dart:convert';
+import 'package:newdigitalerp/utils/attachment_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -48,19 +49,14 @@ class IndentController extends AppBaseController {
   bool uploadingAttachment = false;
 
   Future<void> pickAndUploadAttachment() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
-      allowMultiple: true,
-    );
-    if (result == null) return;
+    final result = await pickAttachments();
+    if (result.isEmpty) return;
     uploadingAttachment = true;
     update();
     try {
-      for (final pf in result.files) {
-        if (pf.path == null) continue;
+      for (final pf in result) {
         final res = await ReimbursementRepo.uploadReimbursementFile(
-          pf.path!,
+          pf.path,
           storage: 's3',
           compid: '${_home.currentUserData?.compId ?? ''}',
           userid: '${_home.currentUserData?.userid ?? ''}',

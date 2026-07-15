@@ -286,7 +286,7 @@
 //   }
 //
 //   List<Widget> _corners() {
-//     const c = Color(0xFF4361EE);
+//     const c = purpleColor;
 //     const sz = 22.0;
 //     const th = 3.0;
 //     return [

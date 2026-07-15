@@ -354,6 +354,7 @@ class ApiMethods {
   String saleorderItemMaster    = 'saleorder/itemmaster';
   String saleorderPartyDetail   = 'saleorder/partydetail';
   String saleorderSave          = 'saleorder/save';
+  String saleorderCreateItem    = 'saleorder/createitem';
 
   ///Purchase Order
   String purchaseorderList          = 'purchaseorder/list';

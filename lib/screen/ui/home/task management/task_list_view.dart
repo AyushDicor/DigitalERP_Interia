@@ -1,4 +1,3 @@
-
 import 'package:newdigitalerp/screen/ui/home/task%20management/task%20models/Task_list_responce.dart';
 import 'package:newdigitalerp/screen/ui/home/task%20management/task_details_view.dart';
 import 'package:newdigitalerp/screen/ui/home/task%20management/task_filter_screen.dart';
@@ -17,7 +16,8 @@ class TaskListView extends StatefulWidget {
 }
 
 class _TaskListViewState extends State<TaskListView>
-    with SingleTickerProviderStateMixin { // ✅ add mixin
+    with SingleTickerProviderStateMixin {
+  // ✅ add mixin
   late TaskManagementController ctrl;
   late TabController _tabController; // ✅ add this
 
@@ -46,219 +46,241 @@ class _TaskListViewState extends State<TaskListView>
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
             final ctrl = Get.find<TaskManagementController>();
-            await Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const CreateTaskScreen()));
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreateTaskScreen()),
+            );
             ctrl.getTaskListView();
           },
           backgroundColor: purpleColor,
           shape: const CircleBorder(
-              side: BorderSide(color: Colors.white, width: 2)),
+            side: BorderSide(color: Colors.white, width: 2),
+          ),
           child: const Icon(Icons.add, color: Colors.white, size: 22),
         ),
         backgroundColor: newSurfaceColor,
         body: SafeArea(
           bottom: false,
-          child: Column(children: [
-            MyAppBar(
-              title: 'Task Management',
-              onBackTap: () => Get.back(),
-              onFilterTap: () => Get.dialog(TaskFilterScreen()),
-            ),
-
-            // ✅ Stats — based on current tab list
-            _StatsRow(ctrl: ctrl, list: ctrl.activeTabList),
-
-            // ✅ Tab bar
-            Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFDDE1F5)),
+          child: Column(
+            children: [
+              MyAppBar(
+                title: 'Task Management',
+                onBackTap: () => Get.back(),
+                onFilterTap: () => Get.dialog(TaskFilterScreen()),
               ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: purpleColor,
-                  borderRadius: BorderRadius.circular(10),
+
+              // ✅ Stats — based on current tab list
+              _StatsRow(ctrl: ctrl, list: ctrl.activeTabList),
+
+              // ✅ Tab bar
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFDDE1F5)),
                 ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: Colors.white,
-                unselectedLabelColor: newTextSecondary,
-                labelStyle: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w700),
-                tabs: [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Assigned To Me'),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: ctrl.selectedTabIndex == 0
-                                ? Colors.white.withValues(alpha: 0.3)
-                                : newBlueLightColor,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${ctrl.assignedToMeList.length}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: purpleColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: newTextSecondary,
+                  labelStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Assigned To Me'),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
                               color: ctrl.selectedTabIndex == 0
-                                  ? Colors.white
-                                  : newBlueColor,
+                                  ? Colors.white.withValues(alpha: 0.3)
+                                  : newBlueLightColor,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${ctrl.assignedToMeList.length}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: ctrl.selectedTabIndex == 0
+                                    ? Colors.white
+                                    : newBlueColor,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Assigned By Me'),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: ctrl.selectedTabIndex == 1
-                                ? Colors.white.withValues(alpha: 0.3)
-                                : newBlueLightColor,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${ctrl.assignedByMeList.length}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Assigned By Me'),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
                               color: ctrl.selectedTabIndex == 1
-                                  ? Colors.white
-                                  : newBlueColor,
+                                  ? Colors.white.withValues(alpha: 0.3)
+                                  : newBlueLightColor,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${ctrl.assignedByMeList.length}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: ctrl.selectedTabIndex == 1
+                                    ? Colors.white
+                                    : newBlueColor,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // ✅ Flag filter chips — same in both tabs
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: ctrl.taskFilterOptions.map((filter) {
-                    final isSelected = ctrl.selectedTaskFilter == filter;
-                    final count = filter == 'All'
-                        ? ctrl.activeTabList.length
-                        : ctrl.activeTabList
-                        .where((t) => t.flag == filter)
-                        .length;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 5),
-                      child: GestureDetector(
-                        onTap: () => ctrl.setTaskFilter(filter),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: isSelected ? newBlueColor : Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isSelected
-                                  ? newBlueColor
-                                  : const Color(0xFFDDE1F5),
-                              width: 1.5,
+              // ✅ Flag filter chips — same in both tabs
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: ctrl.taskFilterOptions.map((filter) {
+                      final isSelected = ctrl.selectedTaskFilter == filter;
+                      final count = filter == 'All'
+                          ? ctrl.activeTabList.length
+                          : ctrl.activeTabList
+                                .where((t) => t.flag == filter)
+                                .length;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 5),
+                        child: GestureDetector(
+                          onTap: () => ctrl.setTaskFilter(filter),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 3,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(filter,
+                            decoration: BoxDecoration(
+                              color: isSelected ? newBlueColor : Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: isSelected
+                                    ? newBlueColor
+                                    : const Color(0xFFDDE1F5),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  filter,
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                     color: isSelected
                                         ? Colors.white
                                         : newTextPrimary,
-                                  )),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Colors.white.withValues(alpha: 0.25)
-                                      : newBlueLightColor,
-                                  borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
-                                child: Text(count.toString(),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.white.withValues(alpha: 0.25)
+                                        : newBlueLightColor,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    count.toString(),
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       color: isSelected
                                           ? Colors.white
                                           : newBlueColor,
-                                    )),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
+              // ✅ Task list
+              Expanded(
+                child: ctrl.isListLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: newBlueColor),
+                      )
+                    : ctrl.filteredTaskList.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.task_outlined,
+                              size: 64,
+                              color: newTextSecondary.withValues(alpha: 0.3),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No ${ctrl.selectedTaskFilter.toLowerCase()} tasks found',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: newTextSecondary,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        color: newBlueColor,
+                        onRefresh: ctrl.getTaskListView,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                          itemCount: ctrl.filteredTaskList.length,
+                          itemBuilder: (_, i) => _TaskCard(
+                            data: ctrl.filteredTaskList[i],
+                            isAssignedToMe: ctrl.selectedTabIndex == 0, // ✅
                           ),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
               ),
-            ),
-
-            // ✅ Task list
-            Expanded(
-              child: ctrl.isListLoading
-                  ? const Center(
-                  child: CircularProgressIndicator(color: newBlueColor))
-                  : ctrl.filteredTaskList.isEmpty
-                  ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.task_outlined,
-                        size: 64,
-                        color: newTextSecondary.withValues(alpha: 0.3)),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No ${ctrl.selectedTaskFilter.toLowerCase()} tasks found',
-                      style: const TextStyle(
-                          fontSize: 16, color: newTextSecondary),
-                    ),
-                  ],
-                ),
-              )
-                  : RefreshIndicator(
-                color: newBlueColor,
-                onRefresh: ctrl.getTaskListView,
-                child: ListView.builder(
-                  padding:
-                  const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                  itemCount: ctrl.filteredTaskList.length,
-                  itemBuilder: (_, i) =>
-                      _TaskCard(
-                        data: ctrl.filteredTaskList[i],
-                        isAssignedToMe: ctrl.selectedTabIndex == 0, // ✅
-                      ),
-                ),
-              ),
-            ),
-          ]),
+            ],
+          ),
         ),
       ),
     );
@@ -283,14 +305,23 @@ class _StatsRow extends StatelessWidget {
 
     final tiles = [
       _StatConfig(
-          'Completed Task',
-          (counts['Close'] ?? 0) + (counts['Completed'] ?? 0), // ✅ merged
-          newGreenColor,
-          newGreenLightColor),
-      _StatConfig('Pending Task', counts['Pending'] ?? 0, newOrangeColor,
-          newOrangeLightColor),
-      _StatConfig('Running Task', counts['Running'] ?? 0, newRedColor,
-          newRedLightColor),
+        'Completed Task',
+        (counts['Close'] ?? 0) + (counts['Completed'] ?? 0), // ✅ merged
+        newGreenColor,
+        newGreenLightColor,
+      ),
+      _StatConfig(
+        'Pending Task',
+        counts['Pending'] ?? 0,
+        newOrangeColor,
+        newOrangeLightColor,
+      ),
+      _StatConfig(
+        'Running Task',
+        counts['Running'] ?? 0,
+        newRedColor,
+        newRedLightColor,
+      ),
     ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -327,36 +358,41 @@ class _StatTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2))
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
-      child: Column(  // ✅ vertical layout for narrow tiles
+      child: Column(
+        // ✅ vertical layout for narrow tiles
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-                color: config.bg,
-                borderRadius: BorderRadius.circular(12)),
+              color: config.bg,
+              borderRadius: BorderRadius.circular(12),
+            ),
             alignment: Alignment.center,
             child: Text(
               config.count.toString().padLeft(2, '0'),
               style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: config.color),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: config.color,
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             config.label,
             style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1A1D2E)),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1D2E),
+            ),
             textAlign: TextAlign.center,
             maxLines: 2,
           ),
@@ -402,58 +438,76 @@ class _TaskCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //  HEADER 
+            //  HEADER
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-              child: Row(children: [
-                CircleAvatar(
-                  radius: 23,
-                  backgroundColor: const Color(0xFFEEF0FB),
-                  child: Text(
-                    isAssignedToMe
-                        ? _initials(data.assignedto) // ✅ show assigner's initial for "To Me"
-                        : _initials(data.assignedto), // ✅ show assignee's initial for "By Me"
-                    style: const TextStyle(
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 23,
+                    backgroundColor: const Color(0xFFEEF0FB),
+                    child: Text(
+                      isAssignedToMe
+                          ? _initials(
+                              data.assignedto,
+                            ) // ✅ show assigner's initial for "To Me"
+                          : _initials(
+                              data.assignedto,
+                            ), // ✅ show assignee's initial for "By Me"
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: purpleColor),
+                        color: purpleColor,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isAssignedToMe
-                            ? (data.assignedto ?? '—') // ✅ "To Me": show who assigned it to you
-                            : (data.assignedto ?? '—'), // ✅ "By Me": show who you assigned it to
-                        style: const TextStyle(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAssignedToMe
+                              ? (data.assignedto ??
+                                    '—') // ✅ "To Me": show who assigned it to you
+                              : (data.assignedto ??
+                                    '—'), // ✅ "By Me": show who you assigned it to
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: newTextPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        isAssignedToMe ? 'Assigned to me' : 'Assigned by me',
-                        style: const TextStyle(fontSize: 10, color: newTextSecondary),
-                      ),
-                      Text('Task #${data.taskid}',
-                          style: const TextStyle(fontSize: 10, color: newTextSecondary)),
+                            color: newTextPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          isAssignedToMe ? 'Assigned to me' : 'Assigned by me',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: newTextSecondary,
+                          ),
+                        ),
+                        Text(
+                          'Task #${data.taskid}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: newTextSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      _StatusBadge(data.status ?? 'Unknown'),
+                      if ((data.flag ?? '').isNotEmpty) ...[
+                        const SizedBox(width: 6),
+                        // _FlagBadge(data.flag!),
+                      ],
                     ],
                   ),
-                ),
-                Row(
-                  children: [
-                    _StatusBadge(data.status ?? 'Unknown'),
-                    if ((data.flag ?? '').isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      // _FlagBadge(data.flag!),
-                    ],
-                  ],
-                ),
-              ]),
+                ],
+              ),
             ),
 
             const Divider(height: 1, color: Color(0xFFF0F1F7)),
@@ -463,7 +517,7 @@ class _TaskCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  //  Priority & Client 
+                  //  Priority & Client
                   if ((data.priority ?? '').isNotEmpty ||
                       (data.clientname ?? '').isNotEmpty)
                     Padding(
@@ -494,7 +548,6 @@ class _TaskCard extends StatelessWidget {
                                 ),
 
                                 const Spacer(), // Pushes the name to the right
-
                                 // Client Name Value (Right Aligned + Wrap Support)
                                 Expanded(
                                   child: Text(
@@ -517,24 +570,32 @@ class _TaskCard extends StatelessWidget {
                       ),
                     ),
 
-                  //  Site Name + Task 
+                  //  Site Name + Task
                   if ((data.sitename ?? '').isNotEmpty ||
                       (data.task ?? '').isNotEmpty)
-                    Row(children: [
-                      if ((data.sitename ?? '').isNotEmpty)
-                        Expanded(
+                    Row(
+                      children: [
+                        if ((data.sitename ?? '').isNotEmpty)
+                          Expanded(
                             child: _AccentChip(
-                                label: 'Site', value: data.sitename!)),
-                      if ((data.sitename ?? '').isNotEmpty &&
-                          (data.task ?? '').isNotEmpty)
-                        const SizedBox(width: 10),
-                      if ((data.task ?? '').isNotEmpty)
-                        Expanded(
-                            child:
-                                _AccentChip(label: 'Task', value: data.task!)),
-                    ]),
+                              label: 'Site',
+                              value: data.sitename!,
+                            ),
+                          ),
+                        if ((data.sitename ?? '').isNotEmpty &&
+                            (data.task ?? '').isNotEmpty)
+                          const SizedBox(width: 10),
+                        if ((data.task ?? '').isNotEmpty)
+                          Expanded(
+                            child: _AccentChip(
+                              label: 'Task',
+                              value: data.task!,
+                            ),
+                          ),
+                      ],
+                    ),
 
-                  //  Dates 
+                  //  Dates
                   if ((data.assigndate ?? '').isNotEmpty ||
                       (data.duedate ?? '').isNotEmpty) ...[
                     const SizedBox(height: 12),
@@ -549,16 +610,19 @@ class _TaskCard extends StatelessWidget {
                     ),
                   ],
 
-                  //  Last Comment 
+                  //  Last Comment
                   if ((data.lastcomment ?? '').isNotEmpty) ...[
                     const SizedBox(height: 12),
                     const Divider(height: 1, color: Color(0xFFF0F1F7)),
                     const SizedBox(height: 10),
-                    const Text('Last Comment:',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1D2E))),
+                    const Text(
+                      'Last Comment:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1D2E),
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Container(
                       width: double.infinity,
@@ -570,9 +634,10 @@ class _TaskCard extends StatelessWidget {
                       child: Text(
                         data.lastcomment!,
                         style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF6B7280),
-                            height: 1.5),
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
+                          height: 1.5,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -613,22 +678,28 @@ class _AccentChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF4F5FA),
         borderRadius: BorderRadius.circular(10),
-        border: const Border(
-          left: BorderSide(color: Color(0xFF4361EE), width: 3),
-        ),
+        border: const Border(left: BorderSide(color: purpleColor, width: 3)),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label,
-            style: const TextStyle(fontSize: 10, color: Color(0xFF9DA3BB))),
-        const SizedBox(height: 3),
-        Text(value,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: Color(0xFF9DA3BB)),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
             style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1D2E)),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1D2E),
+            ),
             maxLines: 1,
-            overflow: TextOverflow.ellipsis),
-      ]),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -639,22 +710,25 @@ class _DateItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(Icons.calendar_today_outlined,
-          size: 13, color: const Color(0xFF4361EE)),
-      const SizedBox(width: 5),
-      RichText(
-        text: TextSpan(
-          style: const TextStyle(fontSize: 12, color: Color(0xFF5A5F7D)),
-          children: [
-            TextSpan(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.calendar_today_outlined, size: 13, color: purpleColor),
+        const SizedBox(width: 5),
+        RichText(
+          text: TextSpan(
+            style: const TextStyle(fontSize: 12, color: Color(0xFF5A5F7D)),
+            children: [
+              TextSpan(
                 text: '$label: ',
-                style: const TextStyle(fontWeight: FontWeight.w600)),
-            TextSpan(text: date),
-          ],
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              TextSpan(text: date),
+            ],
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -685,11 +759,14 @@ class _StatusBadge extends StatelessWidget {
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(status,
-          style:
-              TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg),
+      ),
     );
   }
 }

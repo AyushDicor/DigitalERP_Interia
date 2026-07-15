@@ -19,9 +19,9 @@ class ApiClient extends GetConnect {
   // slash (e.g. 'purchaseorder/list'), so this MUST end with a trailing '/'.
   // Without it every call 404s on '/apipurchaseorder/list'.
   // Production (live on IIS).
-  static const baseAppUrl = 'http://newcoreerp.digitalerp.biz/api/';
+  //static const baseAppUrl = 'http://newcoreerp.digitalerp.biz/api/';
 
- // static const baseAppUrl = 'http://10.0.2.2:5080/api/';
+  static const baseAppUrl = 'http://10.0.2.2:5080/api/';
   // LOCAL DEV (emulator -> host:5080, API on ERPPlatform_Dev): 'http://10.0.2.2:5080/api/'
   // Earlier: 'http://103.180.212.12:5080/api/'
 

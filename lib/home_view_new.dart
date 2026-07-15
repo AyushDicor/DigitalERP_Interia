@@ -106,7 +106,7 @@
 // // //       padding: const EdgeInsets.all(14),
 // // //       decoration: BoxDecoration(
 // // //         gradient: const LinearGradient(
-// // //           colors: [Color(0xFF4361EE), Color(0xFF738EFF)],
+// // //           colors: [purpleColor, Color(0xFF738EFF)],
 // // //           begin: Alignment.topLeft, end: Alignment.bottomRight,
 // // //         ),
 // // //         borderRadius: BorderRadius.circular(14),
@@ -335,7 +335,7 @@
 // //       padding: const EdgeInsets.all(14),
 // //       decoration: BoxDecoration(
 // //         gradient: const LinearGradient(
-// //           colors: [Color(0xFF4361EE), Color(0xFF738EFF)],
+// //           colors: [purpleColor, Color(0xFF738EFF)],
 // //           begin: Alignment.topLeft,
 // //           end: Alignment.bottomRight,
 // //         ),
@@ -669,7 +669,7 @@
 //       padding: const EdgeInsets.all(16),
 //       decoration: BoxDecoration(
 //         gradient: const LinearGradient(
-//           colors: [Color(0xFF4361EE), Color(0xFF738EFF)],
+//           colors: [purpleColor, Color(0xFF738EFF)],
 //           begin: Alignment.topLeft,
 //           end: Alignment.bottomRight,
 //         ),
@@ -1076,7 +1076,7 @@ class _HomeViewNewState extends State<HomeViewNew> with WidgetsBindingObserver {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4361EE), Color(0xFF738EFF)],
+          colors: [purpleColor, Color(0xFF738EFF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

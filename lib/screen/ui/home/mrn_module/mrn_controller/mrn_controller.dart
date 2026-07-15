@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:newdigitalerp/utils/attachment_picker.dart';
 import 'dart:io';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/repo/reimbursement_repo.dart';
@@ -169,19 +170,14 @@ class MrnController extends AppBaseController with MrnAdditionalChargesMixin {
   bool uploadingAttachment = false;
 
   Future<void> pickAndUploadAttachment() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
-      allowMultiple: true,
-    );
-    if (result == null) return;
+    final result = await pickAttachments();
+    if (result.isEmpty) return;
     uploadingAttachment = true;
     update();
     try {
-      for (final pf in result.files) {
-        if (pf.path == null) continue;
+      for (final pf in result) {
         final res = await ReimbursementRepo.uploadReimbursementFile(
-          pf.path!,
+          pf.path,
           storage: 's3',
           compid: '${homeController.currentUserData?.compId ?? ''}',
           userid: '${homeController.currentUserData?.userid ?? ''}',

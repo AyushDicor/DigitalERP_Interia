@@ -5259,6 +5259,29 @@ class Api {
     return SaleOrderPartyDetailResponse(status: 500);
   }
 
+  // Create a new item master record; returns the created {id,name} option or null.
+  Future<SaleOrderOption?> createSaleOrderItem(Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.saleorderCreateItem, body: body);
+      if (res.isNotEmpty) {
+        final decoded = jsonDecode(res);
+        if (decoded['status'] == 200 && decoded['data'] != null) {
+          final d = decoded['data'] as Map<String, dynamic>;
+          return SaleOrderOption(
+            id: (d['id'] is num)
+                ? (d['id'] as num).toInt()
+                : int.tryParse('${d['id']}') ?? 0,
+            name: '${d['name'] ?? ''}',
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return null;
+  }
+
   Future<CommonResponse> saveSaleOrder(Map<String, String> body) async {
     final c = await connectivity.checkConnectivity();
     if (c.contains(ConnectivityResult.wifi) ||

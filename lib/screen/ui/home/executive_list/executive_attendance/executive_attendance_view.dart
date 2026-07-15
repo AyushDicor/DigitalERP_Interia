@@ -646,7 +646,7 @@ class ExecutiveAttendanceView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4361EE), Color(0xFF738EFF)],
+          colors: [purpleColor, Color(0xFF738EFF)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

@@ -71,7 +71,7 @@ class _AppBar extends StatelessWidget {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                size: 20, color: blackColor),
+                size: 18, color: blackColor),
             onPressed: () => Get.back(),
           ),
           const Text(

@@ -228,7 +228,7 @@ class ResetPasswordView extends StatelessWidget {
                           ),
                           child: const Icon(
                             Icons.arrow_back_ios_new_rounded,
-                            size: 16,
+                            size: 18,
                             color: newTextPrimary,
                           ),
                         ),

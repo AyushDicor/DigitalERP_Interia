@@ -470,7 +470,7 @@ AppBar _buildAppBar(String title, {List<Widget>? actions}) => AppBar(
   leading: GestureDetector(
     onTap: () => Get.back(),
     child: const Icon(Icons.arrow_back_ios_new_rounded,
-        color: Color(0xFF111827), size: 20),
+        color: Color(0xFF111827), size: 18),
   ),
   title: Text(title,
       style: const TextStyle(

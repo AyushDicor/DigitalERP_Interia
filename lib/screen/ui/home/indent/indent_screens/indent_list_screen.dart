@@ -35,7 +35,7 @@ class IndentListScreen extends StatelessWidget {
       titleSpacing: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios_new_rounded,
-            size: 18, color: indTextPrimary),
+            size: 20, color: indTextPrimary),
         onPressed: () => Get.back(),
       ),
       title: const Column(

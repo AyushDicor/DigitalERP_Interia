@@ -59,6 +59,16 @@ android {
                 signingConfigs.getByName("release")
             else
                 signingConfigs.getByName("debug")
+
+            // R8 code shrinking + resource shrinking (Play Console recommendation).
+            // Keep-rules live in proguard-rules.pro — test the release APK on a
+            // device before uploading; R8 issues only surface at runtime.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

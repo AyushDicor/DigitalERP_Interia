@@ -4,6 +4,7 @@
 // auto-fill), computes totals, and submits to /api/saleorder/save.
 
 import 'package:flutter/material.dart';
+import 'package:newdigitalerp/utils/attachment_picker.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -65,19 +66,14 @@ class SaleOrderCreateController extends AppBaseController {
   // Pick one or more files and upload them to the ERP's S3 bucket (storage=s3), keeping
   // the returned key to persist on the document and the presigned url to preview.
   Future<void> pickAndUploadAttachment() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
-      allowMultiple: true,
-    );
-    if (result == null) return;
+    final result = await pickAttachments();
+    if (result.isEmpty) return;
     uploadingAttachment = true;
     update();
     try {
-      for (final pf in result.files) {
-        if (pf.path == null) continue;
+      for (final pf in result) {
         final res = await ReimbursementRepo.uploadReimbursementFile(
-          pf.path!,
+          pf.path,
           storage: 's3',
           compid: _compId,
           userid: _userId,
@@ -147,7 +143,6 @@ class SaleOrderCreateController extends AppBaseController {
     }
     items = [];
     otherExpenses = [];
-    roundOff = 0;
     // Sensible defaults from the loaded lists.
     if (form.series.isNotEmpty) _setDefault('series', form.series.first);
     if (form.entrytype.isNotEmpty) {
@@ -243,7 +238,6 @@ class SaleOrderCreateController extends AppBaseController {
     mobileNo.text = h.mobileno;
     projectName.text = h.projectname;
     terms.text = h.terms;
-    roundOff = h.roundoff;
 
     items = res.items
         .map((i) => SaleOrderItemLine(
@@ -339,6 +333,28 @@ class SaleOrderCreateController extends AppBaseController {
     update();
   }
 
+  // Create a brand-new item in the master (ERP ItemMaster), then make it
+  // immediately selectable by prepending it to the picker list.
+  Future<SaleOrderOption?> createNewItem(
+      {required String name, String size = '', int unitid = 0}) async {
+    final opt = await api.createSaleOrderItem({
+      'compid': _compId,
+      'branchid': _branchId,
+      'userid': _userId,
+      'yearid': _yearId,
+      'itemname': name,
+      'size': size,
+      'unitid': '$unitid',
+    });
+    if (opt != null && opt.id > 0) {
+      itemMaster = [opt, ...itemMaster];
+      update();
+      return opt;
+    }
+    ShowMessage.showSnackBar('Add Item', 'Could not create item');
+    return null;
+  }
+
   void removeItem(int i) {
     if (i >= 0 && i < items.length) {
       items.removeAt(i);
@@ -358,16 +374,17 @@ class SaleOrderCreateController extends AppBaseController {
     }
   }
 
-  double roundOff = 0;
-  void setRoundOff(double v) {
-    roundOff = v;
-    update();
-  }
-
   double get totalQty => items.fold(0.0, (a, b) => a + b.quantity);
   double get totalAmount => items.fold(0.0, (a, b) => a + b.amount);
   double get totalGst => items.fold(0.0, (a, b) => a + b.gstAmount);
-  double get grandTotal => totalAmount + totalGst + roundOff;
+  // Other-expense net: Add adds, Less subtracts (ERP nature Add/Less).
+  double get otherNet =>
+      otherExpenses.fold(0.0, (a, b) => a + b.signedAmount);
+  // Round Off is AUTO (mirrors ERP calculateTotals): grand total = round(items+gst
+  // +other net); round-off = that rounding difference (can be negative).
+  double get _preRoundTotal => totalAmount + totalGst + otherNet;
+  double get grandTotal => _preRoundTotal.roundToDouble();
+  double get roundOff => grandTotal - _preRoundTotal;
 
   Future<bool> submit() async {
     if ((selName['party'] ?? '').isEmpty) {

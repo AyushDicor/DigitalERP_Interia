@@ -617,7 +617,7 @@ class OutstandingView extends StatelessWidget {
             child: Icon(
               Icons.arrow_back_ios_new_rounded,
               color: newTextPrimary,
-              size: 20,
+              size: 18,
             ),
           ),
           title: const Text(

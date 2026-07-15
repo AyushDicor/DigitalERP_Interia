@@ -12,9 +12,10 @@ import 'package:newdigitalerp/lead%20management/lead%20management%20controller/l
 import 'package:newdigitalerp/lead%20management/lead_entry_view.dart';
 import 'package:newdigitalerp/lead%20management/lead_estimate_view.dart';
 import 'package:newdigitalerp/lead%20management/lead_quotation_view.dart';
+import '../utils/app_constant_new.dart';
 import 'lead_list_response.dart';
 
-const Color _kPrimary = Color(0xFF4361EE);
+const Color _kPrimary = purpleColor;
 const Color _kBg = Color(0xFFF6F7FB);
 const Color _kSurface = Colors.white;
 const Color _kBorder = Color(0xFFE4E7F0);
@@ -82,7 +83,7 @@ class _LeadDetailViewState extends State<LeadDetailView> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: _kBorder)),
                 child: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: _kTextPrimary, size: 16),
+                    color: _kTextPrimary, size: 18),
               ),
             ),
             title: Text(lead?.companyname ?? 'Lead Detail',

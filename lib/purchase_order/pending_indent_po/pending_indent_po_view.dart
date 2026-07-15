@@ -34,12 +34,12 @@ class PendingIndentPoView extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-            color: _kPrimary.withValues(alpha: 0.10),
+            color: purpleLightest,
             borderRadius: BorderRadius.circular(20)),
         child: Stack(alignment: Alignment.topRight, children: [
           const Center(
               child: Icon(Icons.filter_list_rounded,
-                  size: 20, color: _kPrimary)),
+                  size: 20, color: purpleColor)),
           if (c.activeFilterCount > 0)
             Positioned(
               right: 9,
@@ -244,7 +244,7 @@ class PendingIndentPoView extends StatelessWidget {
             child: Container(
               margin: const EdgeInsets.all(10),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: _kTextPrimary, size: 16),
+                  color: _kTextPrimary, size: 20),
             ),
           ),
           title: Column(

@@ -4,6 +4,7 @@
 // computes totals, and submits to /api/purchaseorder/save.
 
 import 'package:flutter/material.dart';
+import 'package:newdigitalerp/utils/attachment_picker.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -67,19 +68,14 @@ class PurchaseOrderCreateController extends AppBaseController {
   bool uploadingAttachment = false;
 
   Future<void> pickAndUploadAttachment() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
-      allowMultiple: true,
-    );
-    if (result == null) return;
+    final result = await pickAttachments();
+    if (result.isEmpty) return;
     uploadingAttachment = true;
     update();
     try {
-      for (final pf in result.files) {
-        if (pf.path == null) continue;
+      for (final pf in result) {
         final res = await ReimbursementRepo.uploadReimbursementFile(
-          pf.path!,
+          pf.path,
           storage: 's3',
           compid: _compId,
           userid: _userId,

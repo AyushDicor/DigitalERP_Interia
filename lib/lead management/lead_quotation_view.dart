@@ -65,7 +65,7 @@ class _LeadQuotationViewState extends State<LeadQuotationView> {
             leading: GestureDetector(
               onTap: () => Get.back(),
               child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: _kTextPrimary, size: 18),
+                  color: _kTextPrimary, size: 20),
             ),
             title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

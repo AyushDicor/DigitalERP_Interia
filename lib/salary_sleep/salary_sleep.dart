@@ -179,7 +179,7 @@ class _SalarySleepState extends State<SalarySleep> {
           leading: GestureDetector(
             onTap: () => Get.back(),
             child: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: newTextPrimary, size: 20),
+                color: newTextPrimary, size: 18),
           ),
           title: const Text('Salary Slip',
               style: TextStyle(

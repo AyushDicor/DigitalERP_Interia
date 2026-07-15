@@ -7,8 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:newdigitalerp/lead%20management/lead%20management%20controller/lead_management_controller.dart';
+import 'package:newdigitalerp/utils/app_constant_new.dart';
 
-const Color _kPrimary = Color(0xFF4361EE);
+const Color _kPrimary = purpleColor;
 const Color _kBg = Color(0xFFF6F7FB);
 const Color _kSurface = Colors.white;
 const Color _kBorder = Color(0xFFE4E7F0);
