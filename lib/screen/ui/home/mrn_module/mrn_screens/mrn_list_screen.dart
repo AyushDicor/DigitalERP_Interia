@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/document_print.dart';
 import 'package:newdigitalerp/screen/ui/home/mrn_module/mrn_entry_view.dart';
 import 'package:newdigitalerp/screen/ui/home/mrn_module/mrn_response/mrn_models.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
@@ -465,6 +466,7 @@ class _MrnCard extends StatelessWidget {
                         color: newBlueColor,
                         letterSpacing: .2)),
               ),
+              PrintDocButton(id: item.id, size: 18),
               Container(
                 padding:
                 const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

@@ -1,3 +1,4 @@
+import 'package:newdigitalerp/utils/document_print.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -317,6 +318,7 @@ class _IndentCard extends StatelessWidget {
                 _approvalBadge(item.approvalStatus),
               const SizedBox(width: 6),
               StatusBadge(item.status),
+              PrintDocButton(id: item.id, size: 18),
             ]),
             const SizedBox(height: 4),
 

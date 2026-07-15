@@ -3,7 +3,7 @@
 A new Flutter project.
 
 ## Getting Started
-how to build?(paste the code in terminal)o
+how to build?(paste the code in terminal)
 1)Build Split APK (smaller size)
 paste this ----------
 flutter clean

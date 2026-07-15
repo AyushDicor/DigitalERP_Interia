@@ -2,6 +2,7 @@
 // filter (auto-populated dropdowns) + record cards. Tapping a card opens the
 // read-only detail. Read-only module (Phase 1).
 
+import 'package:newdigitalerp/utils/document_print.dart';
 import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -208,6 +209,7 @@ class PerformaInvoiceListView extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: _kTextSecondary)),
             ),
+            PrintDocButton(id: o.mainid),
           ]),
           const SizedBox(height: 8),
           Text(o.partyname,
