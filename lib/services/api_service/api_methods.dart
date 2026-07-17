@@ -365,6 +365,12 @@ class ApiMethods {
   String purchaseorderItemMaster    = 'purchaseorder/itemmaster';
   String purchaseorderPartyDetail   = 'purchaseorder/partydetail';
   String purchaseorderSave          = 'purchaseorder/save';
+  String purchaseorderCreateItem    = 'purchaseorder/createitem';
+
+  /// Inline "+ Add" on form dropdowns (Delivery Type / Transport Name / Freight
+  /// Mode / Transaction Type / Transport Mode). Shared by PO + Performa: they are
+  /// all one master (ERPMasterDB `parameter`), keyed by parentid.
+  String commonAddParameter = 'common/addparameter';
   // Pending Indent for PO: list of approved indents not yet fully converted, and
   // the seed payload for creating a PO from one.
   String purchaseorderPendingIndents = 'purchaseorder/pendingindents';

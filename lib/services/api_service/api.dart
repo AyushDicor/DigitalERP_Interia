@@ -5282,6 +5282,60 @@ class Api {
     return null;
   }
 
+  // Add a dropdown master inline (Delivery Type / Transport Name / Freight Mode /
+  // Transaction Type / Transport Mode) — the app-side of the ERP's "+ Add X" option.
+  // `duplicate` is true when the name already existed: the server returns the
+  // EXISTING row rather than failing, so the caller can just select it.
+  // Returns null only on a real failure; `message` carries the server's wording.
+  Future<({int id, String name, bool duplicate, String message})?>
+      addMasterParameter(Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.commonAddParameter, body: body);
+      if (res.isNotEmpty) {
+        final decoded = jsonDecode(res);
+        if (decoded['status'] == 200 && decoded['data'] != null) {
+          final d = decoded['data'] as Map<String, dynamic>;
+          return (
+            id: (d['id'] is num)
+                ? (d['id'] as num).toInt()
+                : int.tryParse('${d['id']}') ?? 0,
+            name: '${d['name'] ?? ''}',
+            duplicate: d['duplicate'] == true,
+            message: '${decoded['message'] ?? ''}',
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return null;
+  }
+
+  // Create a new item master record from the PO item sheet; mirrors
+  // createSaleOrderItem. Returns the created {id,name} option or null.
+  Future<PoOption?> createPurchaseOrderItem(Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.purchaseorderCreateItem, body: body);
+      if (res.isNotEmpty) {
+        final decoded = jsonDecode(res);
+        if (decoded['status'] == 200 && decoded['data'] != null) {
+          final d = decoded['data'] as Map<String, dynamic>;
+          return PoOption(
+            id: (d['id'] is num)
+                ? (d['id'] as num).toInt()
+                : int.tryParse('${d['id']}') ?? 0,
+            name: '${d['name'] ?? ''}',
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print(e);
+    }
+    return null;
+  }
+
   Future<CommonResponse> saveSaleOrder(Map<String, String> body) async {
     final c = await connectivity.checkConnectivity();
     if (c.contains(ConnectivityResult.wifi) ||

@@ -176,7 +176,9 @@ class PurchaseOrderCreateView extends StatelessWidget {
             builder: (_) => _AddItemSheet(
                 itemMaster: c.itemMaster,
                 sizes: c.form.itemsize,
-                units: c.form.billingunit),
+                units: c.form.billingunit,
+                onCreateItem: (name, size) =>
+                    c.createNewItem(name: name, size: size)),
           );
           if (line != null) c.addItem(line);
         }),
@@ -339,6 +341,9 @@ class PurchaseOrderCreateView extends StatelessWidget {
       String emptyHint = 'No options',
       bool last = false}) {
     final val = c.selName[key] ?? '';
+    // Masters the ERP lets you create from the form itself get the "+ Add" option.
+    final canCreate =
+        PurchaseOrderCreateController.parameterParentIds.containsKey(key);
     return Padding(
       padding: EdgeInsets.only(bottom: last ? 0 : 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -352,7 +357,12 @@ class PurchaseOrderCreateView extends StatelessWidget {
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
               builder: (_) => _OptionSheet(
-                  title: label, options: options, emptyHint: emptyHint),
+                  title: label,
+                  options: options,
+                  emptyHint: emptyHint,
+                  onCreate: canCreate
+                      ? (name) => c.createParameter(key: key, name: name)
+                      : null),
             );
             if (picked != null) {
               if (onPick != null) {
@@ -582,18 +592,61 @@ class PurchaseOrderCreateView extends StatelessWidget {
 }
 
 // ── Generic searchable option sheet ──
+// `onCreate` (when given) adds the ERP's inline "+ Add <master>" affordance for
+// dropdowns whose master can be created from the form. The ERP renders it as the
+// first option in the <select>, so it sits above the list here too.
 class _OptionSheet extends StatefulWidget {
   final String title;
   final List<PoOption> options;
   final String emptyHint;
+  final Future<PoOption?> Function(String name)? onCreate;
   const _OptionSheet(
-      {required this.title, required this.options, required this.emptyHint});
+      {required this.title,
+      required this.options,
+      required this.emptyHint,
+      this.onCreate});
   @override
   State<_OptionSheet> createState() => _OptionSheetState();
 }
 
 class _OptionSheetState extends State<_OptionSheet> {
   final _search = TextEditingController();
+  bool _creating = false;
+
+  // Prompt for the new master's name, create it, then close the sheet with it
+  // selected — the user came here to pick something, so land them on it.
+  Future<void> _promptCreate() async {
+    final label = widget.title.replaceAll(' *', '');
+    final nameCtl = TextEditingController(text: _search.text.trim());
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('New $label'),
+        content: TextField(
+          controller: nameCtl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          decoration: InputDecoration(labelText: '$label *'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Create')),
+        ],
+      ),
+    );
+    if (ok != true || nameCtl.text.trim().isEmpty) return;
+
+    setState(() => _creating = true);
+    final opt = await widget.onCreate!(nameCtl.text.trim());
+    if (!mounted) return;
+    setState(() => _creating = false);
+    if (opt != null) Navigator.pop(context, opt);
+  }
+
   @override
   void dispose() {
     _search.dispose();
@@ -657,6 +710,26 @@ class _OptionSheetState extends State<_OptionSheet> {
                     borderSide: const BorderSide(color: _kPrimary, width: 1.5)),
               ),
             ),
+          if (widget.onCreate != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _creating ? null : _promptCreate,
+                icon: _creating
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: _kPrimary))
+                    : const Icon(Icons.add, size: 18, color: _kPrimary),
+                label: Text(
+                    _creating
+                        ? 'Adding…'
+                        : 'Add ${widget.title.replaceAll(' *', '')}',
+                    style: const TextStyle(
+                        color: _kPrimary, fontWeight: FontWeight.w600)),
+              ),
+            ),
           const SizedBox(height: 10),
           ConstrainedBox(
             constraints: BoxConstraints(
@@ -690,8 +763,12 @@ class _AddItemSheet extends StatefulWidget {
   final List<PoOption> itemMaster;
   final List<PoOption> sizes;
   final List<PoOption> units;
+  final Future<PoOption?> Function(String name, String size) onCreateItem;
   const _AddItemSheet(
-      {required this.itemMaster, required this.sizes, required this.units});
+      {required this.itemMaster,
+      required this.sizes,
+      required this.units,
+      required this.onCreateItem});
   @override
   State<_AddItemSheet> createState() => _AddItemSheetState();
 }
@@ -707,6 +784,48 @@ class _AddItemSheetState extends State<_AddItemSheet> {
   PoOption? _item;
   PoOption? _size;
   PoOption? _unit;
+  bool _creating = false;
+
+  // Prompt for a new item name (+ optional size), create it in the master, then
+  // select it. The controller prepends it to the pickable list on success.
+  Future<void> _promptCreateItem() async {
+    final nameCtl = TextEditingController(text: _search.text.trim());
+    final sizeCtl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New Item'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(
+              controller: nameCtl,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Item Name *')),
+          const SizedBox(height: 8),
+          TextField(
+              controller: sizeCtl,
+              decoration: const InputDecoration(labelText: 'Size (optional)')),
+        ]),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Create')),
+        ],
+      ),
+    );
+    if (ok == true && nameCtl.text.trim().isNotEmpty) {
+      setState(() => _creating = true);
+      final opt =
+          await widget.onCreateItem(nameCtl.text.trim(), sizeCtl.text.trim());
+      if (!mounted) return;
+      setState(() {
+        _creating = false;
+        if (opt != null) _item = opt;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -772,6 +891,23 @@ class _AddItemSheetState extends State<_AddItemSheet> {
                         onTap: () => setState(() => _item = list[i]),
                       ),
                     ),
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _creating ? null : _promptCreateItem,
+                icon: _creating
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: _kPrimary))
+                    : const Icon(Icons.add, size: 18, color: _kPrimary),
+                label: Text(_creating ? 'Creating…' : 'Add New Item',
+                    style: const TextStyle(
+                        color: _kPrimary, fontWeight: FontWeight.w600)),
+              ),
             ),
           ] else ...[
             Container(

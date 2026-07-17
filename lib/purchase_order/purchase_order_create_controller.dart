@@ -398,6 +398,73 @@ class PurchaseOrderCreateController extends AppBaseController {
     update();
   }
 
+  // Create a brand-new item in the master (ERP ItemMaster), then make it
+  // immediately selectable by prepending it to the picker list.
+  Future<PoOption?> createNewItem(
+      {required String name, String size = '', int unitid = 0}) async {
+    final opt = await api.createPurchaseOrderItem({
+      'compid': _compId,
+      'branchid': _branchId,
+      'userid': _userId,
+      'yearid': _yearId,
+      'itemname': name,
+      'size': size,
+      'unitid': '$unitid',
+    });
+    if (opt != null && opt.id > 0) {
+      itemMaster = [opt, ...itemMaster];
+      update();
+      return opt;
+    }
+    ShowMessage.showSnackBar('Add Item', 'Could not create item');
+    return null;
+  }
+
+  // ParentId of each inline-addable dropdown in the shared ERPMasterDB `parameter`
+  // table. These are constants baked into the ERP's read procs (getdelieverytype
+  // filters ParentId=7, gettransportname 8, ...), not configuration. The server
+  // whitelists the same five.
+  static const Map<String, int> parameterParentIds = {
+    'deliverytype': 7,
+    'transportname': 8,
+    'freightmode': 63,
+    'transactiontype': 65,
+    'transportmode': 67,
+  };
+
+  // Add a missing dropdown master inline — the app-side of the ERP's "+ Add X"
+  // option. On success the whole dropdown bundle is re-read (as the ERP's
+  // reload*Dropdown() does) so the list matches the server rather than being
+  // patched locally. Returns the option to select, or null on failure.
+  Future<PoOption?> createParameter(
+      {required String key, required String name}) async {
+    final parentid = parameterParentIds[key];
+    if (parentid == null) return null;
+
+    final res = await api.addMasterParameter({
+      'compid': _compId,
+      'parentid': '$parentid',
+      'detail': name,
+    });
+    if (res == null || res.id <= 0) {
+      ShowMessage.showSnackBar('Add', 'Could not add "$name"');
+      return null;
+    }
+
+    // A duplicate is not a failure: the server hands back the existing row (with
+    // the ERP's stored casing) so the user can carry on with it.
+    if (res.duplicate) ShowMessage.showSnackBar('Add', res.message);
+
+    final refreshed = await api.getPurchaseOrderFormDropdowns(
+        {'compid': _compId, 'branchid': _branchId});
+    if (refreshed.status == 200) form = refreshed.data;
+
+    update();
+    // Selection is left to the caller: the picker applies whatever the sheet
+    // returns, so selecting here too would just double up.
+    return PoOption(id: res.id, name: res.name);
+  }
+
   void addItem(PoItemLine line) {
     items.add(line);
     update();
