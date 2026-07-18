@@ -573,8 +573,8 @@ class PurchaseOrderCreateController extends AppBaseController {
         'attachments': attachmentKeys.join(','),
       });
       if (res.status == 200) {
-        ShowMessage.showSnackBar('Purchase Order',
-            isEdit ? 'Updated successfully' : 'Created successfully');
+        // Success message is shown by the caller AFTER Get.back, so it lands on
+        // the list page rather than being dismissed together with this page.
         return true;
       }
       ShowMessage.showSnackBar('Purchase Order', res.message.toString());

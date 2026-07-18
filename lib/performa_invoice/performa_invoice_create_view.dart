@@ -7,6 +7,7 @@ import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/show_message.dart';
 
 import 'sale_order_create_controller.dart';
 import 'sale_order_form_models.dart';
@@ -252,8 +253,20 @@ class PerformaInvoiceCreateView extends StatelessWidget {
           onPressed: c.submitting
               ? null
               : () async {
+                  final wasEdit = c.isEdit;
                   final ok = await c.submit();
-                  if (ok) Get.back(result: true);
+                  if (ok) {
+                    // Popping the page while a GetX snackbar is open dismisses the
+                    // snackbar instead of the page — close it, return to the list,
+                    // then show the result there.
+                    if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
+                    Get.back(result: true);
+                    ShowMessage.showSnackBar(
+                        'Performa Invoice',
+                        wasEdit
+                            ? 'Updated successfully'
+                            : 'Created successfully');
+                  }
                 },
           icon: c.submitting
               ? const SizedBox(

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:newdigitalerp/utils/indian_number.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:newdigitalerp/utils/show_message.dart';
 
 import 'package:newdigitalerp/lead%20management/lead%20management%20controller/lead_management_controller.dart';
 import 'lead_form_models.dart';
@@ -232,7 +233,14 @@ class _LeadQuotationViewState extends State<LeadQuotationView> {
                     remarks: _remarks.text.trim(),
                     date: _date,
                   );
-                  if (ok) Get.back();
+                  if (ok) {
+                    // Return to the detail page first, then toast there —
+                    // popping while a snackbar is open dismisses the snackbar
+                    // instead of the page.
+                    if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
+                    Get.back();
+                    ShowMessage.showSnackBar('Success', 'Quotation created');
+                  }
                 },
           icon: const Icon(Icons.check_circle_outline, size: 18),
           label: const Text('Create Quotation',

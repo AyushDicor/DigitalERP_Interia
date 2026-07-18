@@ -11,6 +11,7 @@ import 'package:newdigitalerp/purchase_order/purchase_order_create_controller.da
 import 'package:newdigitalerp/purchase_order/purchase_order_form_models.dart';
 
 import '../utils/app_constant_new.dart';
+import '../utils/show_message.dart';
 
 const Color _kPrimary = purpleColor;
 const Color _kBg = Color(0xFFF6F7FB);
@@ -287,8 +288,20 @@ class PurchaseOrderCreateView extends StatelessWidget {
           onPressed: c.submitting
               ? null
               : () async {
+                  final wasEdit = c.isEdit;
                   final ok = await c.submit();
-                  if (ok) Get.back(result: true);
+                  if (ok) {
+                    // Popping the page while a GetX snackbar is open dismisses the
+                    // snackbar instead of the page — close it, return to the list,
+                    // then show the result there.
+                    if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
+                    Get.back(result: true);
+                    ShowMessage.showSnackBar(
+                        'Purchase Order',
+                        wasEdit
+                            ? 'Updated successfully'
+                            : 'Created successfully');
+                  }
                 },
           icon: c.submitting
               ? const SizedBox(

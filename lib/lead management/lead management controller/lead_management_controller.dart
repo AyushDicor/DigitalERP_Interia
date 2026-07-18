@@ -635,15 +635,22 @@ class LeadManagementController extends AppBaseController {
       homeController.currentUserData?.yearId?.toString() ?? '';
 
   // Reload the bundle, re-sync the open lead, and toast the result.
-  Future<bool> _afterDetailWrite(dynamic res, String okMsg) async {
+  // Callers that pop a full page afterwards (estimate/quotation) pass
+  // showToast:false and toast after Get.back — popping the page while a GetX
+  // snackbar is open dismisses the snackbar instead of the page. In-place
+  // actions (follow-up/task/note) close only a dialog, so they keep the toast.
+  Future<bool> _afterDetailWrite(dynamic res, String okMsg,
+      {bool showToast = true}) async {
     if (res.status == 200) {
       await loadDashboard();
       final m = allLeads.where((l) => l.mainid == selectedLead?.mainid);
       if (m.isNotEmpty) setSelectedLead(m.first);
-      ShowMessage.showSnackBar(
-          'Success', (res.message?.toString().isNotEmpty ?? false)
-              ? res.message.toString()
-              : okMsg);
+      if (showToast) {
+        ShowMessage.showSnackBar(
+            'Success', (res.message?.toString().isNotEmpty ?? false)
+                ? res.message.toString()
+                : okMsg);
+      }
       return true;
     }
     ShowMessage.showSnackBar('Error', res.message?.toString() ?? 'Failed');
@@ -766,7 +773,7 @@ class LeadManagementController extends AppBaseController {
       'estimatedate': date,
       'items': jsonEncode(estimateItems.map((e) => e.toJson()).toList()),
     });
-    return _afterDetailWrite(res, 'Estimation created');
+    return _afterDetailWrite(res, 'Estimation created', showToast: false);
   }
 
   // ══════════════════════════ Quotation (from a lead) ═══════════════════════
@@ -818,7 +825,7 @@ class LeadManagementController extends AppBaseController {
       'quotationdate': date,
       'items': jsonEncode(quotationItems.map((e) => e.toJson()).toList()),
     });
-    return _afterDetailWrite(res, 'Quotation created');
+    return _afterDetailWrite(res, 'Quotation created', showToast: false);
   }
 
   // ══════════════════════════ LEAD ENTRY (create/edit) form ═════════════════
@@ -1107,10 +1114,14 @@ class LeadManagementController extends AppBaseController {
       };
       final res = await api.saveLead(body);
       if (res.status == 200) {
-        ShowMessage.showSnackBar('Success', res.message.toString());
+        final msg = res.message.toString();
         _resetEntry();
         await loadDashboard();
+        // Navigate first, then toast on the list — popping the page while a GetX
+        // snackbar is open dismisses the snackbar instead of the page.
+        if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
         backTap();
+        ShowMessage.showSnackBar('Success', msg);
       } else {
         ShowMessage.showSnackBar('Error', res.message.toString());
       }
