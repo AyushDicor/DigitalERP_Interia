@@ -114,5 +114,9 @@ class AppRoutes {
 
   static const String approvalHub = '/approvalHubDashboard';  // ← ADD
 
+ //Cards
+ static const String tapCardList ='/cardList';
+
+
 }
 

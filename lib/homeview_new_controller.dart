@@ -419,6 +419,11 @@ class HomeViewNewController extends AppBaseController {
       // seeded from the indent (PurchaseOrderController.PendingIndents/IndentForPo).
       // 97 is the real ERP menu id for this screen.
       ensureMenu(97, 'Pending Indent for PO');
+      // Tap Card — personal business-card wallet, ported from the standalone
+      // TapCard app (TapCardController, dbo.MobileTapCard). App-native, so the
+      // ERP has no menu id for it; 9403 continues the 94xx placeholder series
+      // (9401 Performa, 9402 PO). Do not use 2755 — Material Received owns it.
+      ensureMenu(9403, 'Tap Card');
       // MIS (menuid 127) already comes from the backend menu and opens the
       // Reports Hub (see _getDirectRoute) — Stock Report is listed there.
 
@@ -495,6 +500,7 @@ class HomeViewNewController extends AppBaseController {
       'MRN QC'              : AppAssets.mrnQcIcon,
       'Material Received'   : AppAssets.mrnrIcon,
       'Indent'              : AppAssets.indentIcon,
+      'Tap Card'            : AppAssets.tapCardIcon,
     };
   }
 
@@ -513,7 +519,7 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2419) return AppRoutes.leadManagement;
     if (menuId == 9401) return AppRoutes.performaInvoice;
     if (menuId == 9402) return AppRoutes.purchaseOrder;
-    if (menuId == 97) return AppRoutes.pendingIndentForPo;
+    if (menuId == 97  ) return AppRoutes.pendingIndentForPo;
     if (menuId == 2423) return AppRoutes.performance;
     if (menuId == 2429) return AppRoutes.catalougeListView;
     if (menuId == 2586) return AppRoutes.paymentRequestListScreen;
@@ -523,6 +529,10 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2761) return AppRoutes.mrnQcList;
     if (menuId == 2762) return AppRoutes.indentList;
     if (menuId == 2755) return AppRoutes.materialReceiptScreen;
+    // Tap Card. NOT 2755 — that id already belongs to Material Received above,
+    // so the old `2755 -> tapCardList` line here was unreachable and the tile
+    // fell through to '/materialReceived', whose GetPage is commented out.
+    if (menuId == 9403) return AppRoutes.tapCardList;
     return AppRoutes.homeNew;
   }
 }

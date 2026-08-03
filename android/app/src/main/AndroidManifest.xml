@@ -12,6 +12,15 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove"/>
+    <!-- Tap Card "save card to gallery". Android 10+ writes via MediaStore and needs
+         no permission, so this is capped at API 29 for older devices only — keeping it
+         out of the scoped-storage permission declarations on Play. -->
+    <!-- tools:replace because the camera plugin declares the same permission capped
+         at API 28; saver_gallery needs it through 29, and the merger won't pick a
+         winner on its own. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29"
+        tools:replace="android:maxSdkVersion"/>
     <application
         android:label="Ribbel"
         android:name="${applicationName}"

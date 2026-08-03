@@ -5,6 +5,7 @@ import 'package:newdigitalerp/Menu_new_list_responce.dart';
 import 'package:newdigitalerp/catalouge/catalogue_list_response.dart';
 import 'package:newdigitalerp/lead%20management/lead_list_response.dart';
 import 'package:newdigitalerp/lead%20management/lead_form_models.dart';
+import 'package:newdigitalerp/tap_card/tap_card_models.dart';
 import 'package:newdigitalerp/performa_invoice/sale_order_models.dart';
 import 'package:newdigitalerp/performa_invoice/sale_order_form_models.dart';
 import 'package:newdigitalerp/purchase_order/purchase_order_models.dart';
@@ -5147,6 +5148,66 @@ class Api {
       }
     }
     return CommonResponse(status: 500, message: 'No internet');
+  }
+
+  // ── Tap Card (business-card wallet) ──
+  // Cards are private per user, so every call carries userid as well as compid.
+  Future<TapCardListResponse> getTapCardList(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.tapcardList, body: body);
+        if (res.isNotEmpty) {
+          return TapCardListResponse.fromJson(jsonDecode(res));
+        }
+        return TapCardListResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return TapCardListResponse(status: 500, message: e.toString());
+      }
+    }
+    // Offline is not an error for this module — the controller falls back to
+    // the local cache and queues writes, so it must be able to tell the two
+    // apart. 503 means "no connection", 500 means "the call failed".
+    return TapCardListResponse(status: 503, message: 'No internet');
+  }
+
+  Future<TapCardSaveResponse> saveTapCard(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.tapcardSave, body: body);
+        if (res.isNotEmpty) {
+          return TapCardSaveResponse.fromJson(jsonDecode(res));
+        }
+        return TapCardSaveResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return TapCardSaveResponse(status: 500, message: e.toString());
+      }
+    }
+    return TapCardSaveResponse(status: 503, message: 'No internet');
+  }
+
+  Future<CommonResponse> deleteTapCard(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        final res = await _apiClient.postMethod(
+            method: _apiMethods.tapcardDelete, body: body);
+        if (res.isNotEmpty) return CommonResponse.fromJson(jsonDecode(res));
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 503, message: 'No internet');
   }
 
   // ── Performa Invoice (Sale Order) — read-only ──

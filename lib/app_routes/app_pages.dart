@@ -37,6 +37,7 @@ import '../download_document_management/download_documents_view.dart';
 import '../home/home_view.dart';
 import '../lead management/lead_management_view.dart';
 import '../performa_invoice/performa_invoice_list_view.dart';
+import '../tap_card/tap_card_list_view.dart';
 import '../purchase_order/purchase_order_list_view.dart';
 import '../purchase_order/pending_indent_po/pending_indent_po_view.dart';
 import '../orderfollowup/order_followup_view.dart';
@@ -425,6 +426,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.performaInvoice,
       page: () => const PerformaInvoiceListView(),
+    ),
+    GetPage(
+      name: AppRoutes.tapCardList,
+      page: () => const TapCardListView(),
     ),
     GetPage(
       name: AppRoutes.purchaseOrder,

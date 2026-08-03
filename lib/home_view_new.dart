@@ -1341,8 +1341,10 @@ class _HomeViewNewState extends State<HomeViewNew> with WidgetsBindingObserver {
       case 2385: return Icons.checklist_rounded;     // Task
       case 126:  return Icons.space_dashboard_outlined; // Dashboard
       case 127:  return Icons.insert_chart_outlined_rounded; // MIS / Reports
+      case 9403: return Icons.badge_outlined;        // Tap Card
     }
     switch ((data.menuname ?? '').trim().toLowerCase()) {
+      case 'tap card':   return Icons.badge_outlined;
       case 'approval':   return Icons.fact_check_outlined;
       case 'task':       return Icons.checklist_rounded;
       case 'dashboard':  return Icons.space_dashboard_outlined;
@@ -1367,6 +1369,7 @@ class _HomeViewNewState extends State<HomeViewNew> with WidgetsBindingObserver {
       case 2385: return const Color(0xFF0EA5E9); // Task - sky
       case 126:  return const Color(0xFF8B5CF6); // Dashboard - violet
       case 127:  return const Color(0xFFF59E0B); // MIS - amber
+      case 9403: return const Color(0xFF0D9488); // Tap Card - teal
     }
     const palette = [
       Color(0xFF5B5BD6), Color(0xFF0EA5E9), Color(0xFF16A34A),

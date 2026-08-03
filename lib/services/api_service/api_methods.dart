@@ -356,6 +356,13 @@ class ApiMethods {
   String saleorderSave          = 'saleorder/save';
   String saleorderCreateItem    = 'saleorder/createitem';
 
+  /// Tap Card (app-native business-card wallet, dbo.MobileTapCard).
+  /// Card images go through the SHARED uploadReimbursementFile endpoint below —
+  /// there is no tapcard-specific upload.
+  String tapcardList   = 'tapcard/list';
+  String tapcardSave   = 'tapcard/save';
+  String tapcardDelete = 'tapcard/delete';
+
   ///Purchase Order
   String purchaseorderList          = 'purchaseorder/list';
   String purchaseorderDetail        = 'purchaseorder/detail';

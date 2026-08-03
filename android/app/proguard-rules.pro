@@ -17,6 +17,21 @@
 #      not bundled; safe to ignore) ----
 -dontwarn com.google.android.play.core.**
 
+# ---- ML Kit text recognition (Tap Card scanner) ----
+# The google_mlkit_text_recognition plugin references ALL five script
+# recognisers (Latin, Chinese, Devanagari, Japanese, Korean) from one
+# initialize() method, but each script ships as a separate artifact and we only
+# depend on the Latin one. R8 then fails the release build on the four classes
+# that genuinely aren't there ("Missing class ...TextRecognizerOptions").
+# These are unreachable at runtime — the app only ever asks for Latin — so tell
+# R8 to stop warning rather than pulling in ~4 unused models. If a non-Latin
+# script is ever needed, add that artifact to dependencies and drop its line.
+-dontwarn com.google.mlkit.vision.text.chinese.**
+-dontwarn com.google.mlkit.vision.text.devanagari.**
+-dontwarn com.google.mlkit.vision.text.japanese.**
+-dontwarn com.google.mlkit.vision.text.korean.**
+-keep class com.google.mlkit.vision.text.** { *; }
+
 # ---- Kotlin ----
 -keep class kotlin.Metadata { *; }
 -dontwarn kotlin.**

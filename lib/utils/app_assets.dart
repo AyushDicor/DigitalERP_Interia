@@ -49,6 +49,7 @@ class AppAssets {
   static const String invoiceIcon            = 'assets/iconsnew/invoice.png';
   static const String poIcon                 = 'assets/iconsnew/po.png';
   static const String indentIcon             = 'assets/iconsnew/indent.png';
+  static const String tapCardIcon            = 'assets/iconsnew/tapCard.png';
 
 
   static const String attendencenewIcon      = 'assets/iconsnew/Attendance.png';
