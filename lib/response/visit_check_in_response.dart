@@ -61,7 +61,7 @@ class VisitCheckInData {
     visitdate: json["visitdate"],
     visittime: json["visittime"],
     visitstatus: json["visitstatus"],
-    distance: json["Distance"],
+    distance: json["Distance"]?.toString(),   // API can send a number
     checkstatus: json["checkstatus"],
   );
 

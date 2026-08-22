@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
+import 'package:newdigitalerp/repo/attachment_repo.dart';
 import 'package:newdigitalerp/services/api_service/api.dart';
+import 'package:newdigitalerp/utils/attachment_picker.dart';
 import 'package:newdigitalerp/utils/show_message.dart';
 
 import 'task_models.dart';
@@ -194,9 +196,12 @@ class TaskModuleController extends GetxController {
     detailLoading = true;
     detail = null;
     followups = [];
+    attachments = [];
     commentCtrl.clear();
     followupStatus = '';
     update();
+    // Attachments come from their own endpoint — fetch alongside the detail.
+    loadAttachments(taskId);
     try {
       final res = await _api.getTaskDetailV2({
         'compid': _compId,
@@ -301,6 +306,7 @@ class TaskModuleController extends GetxController {
     createAssigneeId = null;
     createPriority = 'Medium';
     createDueDate = null;
+    pendingAttachments.clear();
     update();
   }
 
@@ -322,6 +328,100 @@ class TaskModuleController extends GetxController {
   String get createDueDateLabel => createDueDate == null
       ? 'Select due date'
       : '${createDueDate!.day.toString().padLeft(2, '0')}-${createDueDate!.month.toString().padLeft(2, '0')}-${createDueDate!.year}';
+
+  // ── Attachments ───────────────────────────────────────────────────────────
+  // Files live in the shared attachment store keyed by (compid, 'Task', taskid),
+  // NOT on taskmaster. Since the key needs the task id, files chosen on the
+  // create form are held locally and uploaded once the task exists.
+
+  /// Files picked on the create form, not yet uploaded.
+  final List<PickedAttachment> pendingAttachments = [];
+
+  /// Files already stored against the open task.
+  List<AttachmentItem> attachments = [];
+  bool loadingAttachments = false;
+  bool uploadingAttachment = false;
+
+  void pickPendingAttachments() async {
+    final picked = await pickAttachments();
+    if (picked.isEmpty) return;
+    pendingAttachments.addAll(picked);
+    update();
+  }
+
+  void removePendingAttachment(int i) {
+    if (i < 0 || i >= pendingAttachments.length) return;
+    pendingAttachments.removeAt(i);
+    update();
+  }
+
+  /// Uploads everything queued on the create form against a saved task.
+  Future<void> _uploadPendingAttachments(int taskId) async {
+    if (taskId <= 0 || pendingAttachments.isEmpty) return;
+    for (final file in pendingAttachments) {
+      final err = await AttachmentRepo.upload(
+        filePath: file.path,
+        compid: _compId,
+        modulekey: AttachmentRepo.moduleTask,
+        recordid: taskId,
+        userid: _userId,
+      );
+      if (err != null) {
+        ShowMessage.showSnackBar('Attachment', '${file.name}: $err');
+      }
+    }
+    pendingAttachments.clear();
+  }
+
+  Future<void> loadAttachments(int taskId) async {
+    loadingAttachments = true;
+    update();
+    try {
+      attachments = await AttachmentRepo.list(
+        compid: _compId,
+        modulekey: AttachmentRepo.moduleTask,
+        recordid: taskId,
+      );
+    } finally {
+      loadingAttachments = false;
+      update();
+    }
+  }
+
+  /// Add a file to a task that already exists (from the detail screen).
+  Future<void> addAttachmentToTask(int taskId) async {
+    final picked = await pickAttachments();
+    if (picked.isEmpty) return;
+    uploadingAttachment = true;
+    update();
+    try {
+      for (final file in picked) {
+        final err = await AttachmentRepo.upload(
+          filePath: file.path,
+          compid: _compId,
+          modulekey: AttachmentRepo.moduleTask,
+          recordid: taskId,
+          userid: _userId,
+        );
+        if (err != null) {
+          ShowMessage.showSnackBar('Attachment', '${file.name}: $err');
+        }
+      }
+    } finally {
+      uploadingAttachment = false;
+      update();
+      await loadAttachments(taskId);
+    }
+  }
+
+  Future<void> deleteAttachment(int attachmentId, int taskId) async {
+    final ok = await AttachmentRepo.delete(compid: _compId, id: attachmentId);
+    if (!ok) {
+      ShowMessage.showSnackBar('Attachment', 'Could not remove the file');
+      return;
+    }
+    await loadAttachments(taskId);
+  }
 
   Future<bool> createTask() async {
     if (titleCtrl.text.trim().isEmpty) {
@@ -356,6 +456,9 @@ class TaskModuleController extends GetxController {
       };
       final res = await _api.createTaskV2(body);
       if (res.status == 200) {
+        // Attachments are keyed by task id, so they can only go up now that
+        // the task exists. Failures are reported but don't undo the task.
+        await _uploadPendingAttachments(res.taskid);
         resetCreateForm();
         await loadTasks();
         ShowMessage.showSnackBar('Success', 'Task created');

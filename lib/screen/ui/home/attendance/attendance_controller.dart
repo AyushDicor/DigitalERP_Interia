@@ -191,11 +191,12 @@
 
 
 
+import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
-import 'package:newdigitalerp/repo/reimbursement_repo.dart';
+import 'package:newdigitalerp/repo/attachment_repo.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/response/attendance_summary_response.dart';
@@ -247,6 +248,25 @@ class AttendanceController extends AppBaseController {
     } catch (_) {/* best-effort — punching still works, just without GPS */}
   }
 
+  /// Month the summary is showing. The API defaults to the current month when
+  /// month/year are omitted, which is all the app could ever show before.
+  DateTime summaryMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
+  bool get isCurrentSummaryMonth {
+    final now = DateTime.now();
+    return summaryMonth.year == now.year && summaryMonth.month == now.month;
+  }
+
+  /// Step the summary a month back/forward. Never goes past the current month —
+  /// there is no attendance in the future.
+  void shiftSummaryMonth(int months) {
+    final next = DateTime(summaryMonth.year, summaryMonth.month + months);
+    final now = DateTime(DateTime.now().year, DateTime.now().month);
+    if (next.isAfter(now)) return;
+    summaryMonth = next;
+    loadAttendanceSummary();
+  }
+
   Future<void> loadAttendanceSummary() async {
     setBusy(true);
     try {
@@ -255,6 +275,10 @@ class AttendanceController extends AppBaseController {
         'compid': u?.compId?.toString() ?? '',
         'branchid': u?.branchId?.toString() ?? '',
         'userid': u?.userid?.toString() ?? '',
+        // Verified against the live API: without these it always returns the
+        // current month, so past months were unreachable.
+        'month': summaryMonth.month.toString(),
+        'year': summaryMonth.year.toString(),
       };
       final res = await api.getAttendanceSummary(body);
       attendanceSummaryData =
@@ -411,15 +435,33 @@ class AttendanceController extends AppBaseController {
         'batterylevel': battery,
         'photo': photoName,
       };
+      final wasMarked = isAttendanceMarked;
       final res = await api.markAttendance(body);
-      Get.snackbar('Attendance', res.message ?? '');
+
       if (res.status == 200) {
-        isAttendanceMarked = !isAttendanceMarked;
         // Clear the captured selfie so the next punch doesn't reuse it.
         selectedImage.value = '';
         selectedImageBase64.value = '';
         selectedImageFileName.value = '';
+
+        // Re-read from the server rather than trusting the 200. The API can
+        // answer 200 "Attendance processed." and save NOTHING — e.g. closing a
+        // day whose check-in row it can't match — which previously looked like
+        // success while out_time stayed null.
         await loadAttendanceSummary();
+
+        if (isAttendanceMarked == wasMarked) {
+          Get.snackbar(
+            'Attendance not saved',
+            'The server accepted the request but the record did not change '
+                '(${res.message ?? ''}). Please try again or contact support.',
+            duration: const Duration(seconds: 5),
+          );
+        } else {
+          Get.snackbar('Attendance', res.message ?? '');
+        }
+      } else {
+        Get.snackbar('Attendance', res.message ?? 'Could not mark attendance');
       }
     } catch (e) {
       Get.snackbar('Attendance', '$e');
@@ -432,22 +474,38 @@ class AttendanceController extends AppBaseController {
   /// Uploads the captured selfie file and returns the stored filename (empty if none).
   /// Reuses the shared file-upload endpoint (wwwroot/ReimbursementFiles); the API turns
   /// the filename back into an image URL on the attendance detail/list.
+  /// Uploads the selfie and returns the object key to store on the attendance
+  /// row's `photo` column.
+  ///
+  /// Goes through the shared attachment store — the same endpoint task and
+  /// visit attachments use — filed under module `Attendance`. A punch has no
+  /// id of its own (markAttendancenew returns no id), so the **userid** is the
+  /// record id, giving keys like:
+  ///
+  ///     2/Attendance/6/20260818145709177_selfie.jpg
+  ///
+  /// This replaces the old UploadReimbursementFile call, which was broken two
+  /// ways and meant no selfie was ever saved: without `storage`/`compid` that
+  /// endpoint returns HTTP 500, and its `filename` is a presigned URL that
+  /// expires in an hour — not a stable reference.
   Future<String> _uploadSelfie() async {
     final path = selectedImage.value;
     if (path.isEmpty) return '';
     try {
-      final res = await ReimbursementRepo.uploadReimbursementFile(path);
-      if (res.status == true && res.statusCode == 200) {
-        final jsonData = res.data as Map<String, dynamic>?;
-        String fn = jsonData?['data']?['filename'] as String? ??
-            jsonData?['data']?['file_name'] as String? ??
-            jsonData?['filename'] as String? ??
-            jsonData?['file_name'] as String? ??
-            '';
-        if (fn.contains('/')) fn = fn.split('/').last;
-        return fn;
-      }
-    } catch (_) {/* non-blocking: mark attendance even if photo upload fails */}
+      final u = homeController.currentUserData;
+      final res = await AttachmentRepo.uploadReturningKey(
+        filePath: path,
+        compid: u?.compId?.toString() ?? '',
+        modulekey: AttachmentModule.attendance,
+        recordid: u?.userid ?? 0,
+        userid: u?.userid?.toString(),
+      );
+      if (res.error == null && res.objectKey.isNotEmpty) return res.objectKey;
+      debugPrint('Selfie upload failed: ${res.error ?? "no object key returned"}');
+    } catch (e) {
+      // Non-blocking: attendance still marks even if the photo upload fails.
+      debugPrint('Selfie upload error: $e');
+    }
     return '';
   }
 

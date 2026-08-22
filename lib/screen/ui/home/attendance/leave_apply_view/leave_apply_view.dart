@@ -855,6 +855,12 @@ class _LeaveApplyViewState extends State<LeaveApplyView>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Leave type — required, same list as the web ERP's form.
+                _label('Leave Type *'),
+                const SizedBox(height: 8),
+                _leaveTypeDropdown(controller),
+                const SizedBox(height: 16),
+
                 // Day selector
                 _label('Leave Duration'),
                 const SizedBox(height: 8),
@@ -944,6 +950,36 @@ class _LeaveApplyViewState extends State<LeaveApplyView>
           fontWeight: FontWeight.w600,
           fontSize: 12,
           letterSpacing: 0.2));
+
+  /// Leave type picker. Values match the web ERP's LEAVE TYPE dropdown so both
+  /// clients store the same thing.
+  Widget _leaveTypeDropdown(LeaveApplyController controller) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: _bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: controller.leaveType.isEmpty ? null : controller.leaveType,
+          hint: const Text('-- select --',
+              style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+          items: LeaveApplyController.leaveTypes
+              .map((t) => DropdownMenuItem(
+                    value: t,
+                    child: Text(t,
+                        style: const TextStyle(fontSize: 13, color: _navy)),
+                  ))
+              .toList(),
+          onChanged: controller.setLeaveType,
+        ),
+      ),
+    );
+  }
 
   Widget _dayToggle(LeaveApplyController controller) {
     return Container(

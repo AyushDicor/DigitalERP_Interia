@@ -143,6 +143,25 @@ class ApprovalDetailHeader {
   final String? requestType;
   final String? jobType;
 
+  // ── Added by the backend (Aug 2026) — document header details ──
+  final String? documentName;
+  final int? branchId;
+  final String? branchName;
+  final String? seriesType;
+  final String? entryType;
+  final String? receiptDate;
+  final String? deliveryDate;
+  final String? deliveryType;
+  final String? customerOrderNo;
+  final String? transport;
+  final String? headerRemark;
+  final String? paymentTerms;
+  final String? gstNo;
+  final String? mobileNo;
+  final String? contactPerson;
+  final String? billToAddress;
+  final String? shipToAddress;
+
   const ApprovalDetailHeader({
     this.approvalType,
     this.approvalId,
@@ -163,7 +182,33 @@ class ApprovalDetailHeader {
     this.pdfUrl,
     this.requestType,
     this.jobType,
+    this.documentName,
+    this.branchId,
+    this.branchName,
+    this.seriesType,
+    this.entryType,
+    this.receiptDate,
+    this.deliveryDate,
+    this.deliveryType,
+    this.customerOrderNo,
+    this.transport,
+    this.headerRemark,
+    this.paymentTerms,
+    this.gstNo,
+    this.mobileNo,
+    this.contactPerson,
+    this.billToAddress,
+    this.shipToAddress,
   });
+
+  /// '--Select--' / '0' are placeholder values the ERP stores — treat as empty.
+  static String? _clean(dynamic v) {
+    final s = v?.toString().trim() ?? '';
+    if (s.isEmpty || s == '0' || s == '--Select--' || s.toLowerCase() == 'null') {
+      return null;
+    }
+    return s;
+  }
 
   factory ApprovalDetailHeader.fromJson(Map<String, dynamic> json) =>
       ApprovalDetailHeader(
@@ -186,6 +231,23 @@ class ApprovalDetailHeader {
         pdfUrl: json['pdfurl'] as String?,
         requestType: json['RequestType'] as String?,
         jobType: (json['Jobtype'] ?? json['JobType']) as String?,
+        documentName: _clean(json['DocumentName']),
+        branchId: (json['BranchId'] as num?)?.toInt(),
+        branchName: _clean(json['BranchName']),
+        seriesType: _clean(json['SeriesType']),
+        entryType: _clean(json['EntryType']),
+        receiptDate: _clean(json['ReceiptDate']),
+        deliveryDate: _clean(json['DeliveryDate']),
+        deliveryType: _clean(json['DeliveryType']),
+        customerOrderNo: _clean(json['CustomerOrderNo']),
+        transport: _clean(json['Transport']),
+        headerRemark: _clean(json['HeaderRemark']),
+        paymentTerms: _clean(json['PaymentTerms']),
+        gstNo: _clean(json['GSTNo']),
+        mobileNo: _clean(json['MobileNo']),
+        contactPerson: _clean(json['ContactPerson']),
+        billToAddress: _clean(json['BillToAddress']),
+        shipToAddress: _clean(json['ShipToAddress']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -208,6 +270,23 @@ class ApprovalDetailHeader {
         'pdfurl': pdfUrl,
         'RequestType': requestType,
         'JobType': jobType,
+        'DocumentName': documentName,
+        'BranchId': branchId,
+        'BranchName': branchName,
+        'SeriesType': seriesType,
+        'EntryType': entryType,
+        'ReceiptDate': receiptDate,
+        'DeliveryDate': deliveryDate,
+        'DeliveryType': deliveryType,
+        'CustomerOrderNo': customerOrderNo,
+        'Transport': transport,
+        'HeaderRemark': headerRemark,
+        'PaymentTerms': paymentTerms,
+        'GSTNo': gstNo,
+        'MobileNo': mobileNo,
+        'ContactPerson': contactPerson,
+        'BillToAddress': billToAddress,
+        'ShipToAddress': shipToAddress,
       };
 }
 
@@ -306,6 +385,15 @@ class ApprovalItemData {
   final String? receiptFile;
   final int? transId;
 
+  // ── Added by the backend (Aug 2026) — real document line details ──
+  final int? itemId;
+  final String itemName;
+  final String size;
+  final String unit;
+  final double rate;
+  final double taxPercent;
+  final double taxAmount;
+
   const ApprovalItemData({
     this.detailId,
     this.expenseId,
@@ -322,7 +410,20 @@ class ApprovalItemData {
     this.referenceFile,
     this.receiptFile,
     this.transId,
+    this.itemId,
+    this.itemName = '',
+    this.size = '',
+    this.unit = '',
+    this.rate = 0.0,
+    this.taxPercent = 0.0,
+    this.taxAmount = 0.0,
   });
+
+  /// Line total before tax (the API's Amount is the taxable value).
+  double get taxableAmount => amount;
+
+  /// Line total including tax.
+  double get totalAmount => amount + taxAmount;
 
   factory ApprovalItemData.fromJson(Map<String, dynamic> json) =>
       ApprovalItemData(
@@ -341,6 +442,13 @@ class ApprovalItemData {
         referenceFile: json['ReferenceFile'] as String?,
         receiptFile: json['ReceiptFile'] as String?,
         transId: json['TransId'] as int?,
+        itemId: (json['ItemId'] as num?)?.toInt(),
+        itemName: json['ItemName'] as String? ?? '',
+        size: json['Size'] as String? ?? '',
+        unit: json['Unit'] as String? ?? '',
+        rate: (json['Rate'] as num?)?.toDouble() ?? 0.0,
+        taxPercent: (json['TaxPercent'] as num?)?.toDouble() ?? 0.0,
+        taxAmount: (json['TaxAmount'] as num?)?.toDouble() ?? 0.0,
       );
 
   Map<String, dynamic> toJson() => {
@@ -358,5 +466,12 @@ class ApprovalItemData {
         'ReferenceFile': referenceFile,
         'ReceiptFile': receiptFile,
         'TransId': transId, // ← added
+        'ItemId': itemId,
+        'ItemName': itemName,
+        'Size': size,
+        'Unit': unit,
+        'Rate': rate,
+        'TaxPercent': taxPercent,
+        'TaxAmount': taxAmount,
       };
 }

@@ -1804,6 +1804,11 @@ class ApprovalHubController extends AppBaseController {
   /// Requests entry in the Approvals hub — accounts without the grant don't see it.
   bool canApproveLeave = false;
 
+  /// How many leave applications are sitting at Pending for this approver.
+  /// Drives the badge on the Leave Requests card — without it the card looks
+  /// the same whether there is nothing to do or ten people are waiting.
+  int pendingLeaveCount = 0;
+
   Future<void> _loadLeaveAccess() async {
     final u = homeController.currentUserData;
     final ok = await api.getLeaveApprovalAccess({
@@ -1814,6 +1819,26 @@ class ApprovalHubController extends AppBaseController {
       canApproveLeave = ok;
       update();
     }
+    if (canApproveLeave) loadPendingLeaveCount();
+  }
+
+  /// The endpoint returns only status='Pending' rows, and returns an empty list
+  /// for anyone without the leave-approval grant — so the count is simply its
+  /// length. No date filter is sent: a leave applied for last month that nobody
+  /// actioned is still waiting.
+  Future<void> loadPendingLeaveCount() async {
+    try {
+      final u = homeController.currentUserData;
+      final res = await api.getPendingLeaveList({
+        'userid': u?.userid?.toString() ?? '',
+        'compid': u?.compId?.toString() ?? '',
+        'executiveid': '0',
+      });
+      if (res.status == 200) {
+        pendingLeaveCount = (res.data ?? []).length;
+        update();
+      }
+    } catch (_) {/* the card still works without a badge */}
   }
 
   /// Real dashboard loader — fetches approvals from the API and builds categories.
@@ -2129,6 +2154,7 @@ class ApprovalHubController extends AppBaseController {
   Future<void> refreshDashboard() async {
     // Keep the current view on screen while re-fetching so the dashboard
     // doesn't flash/reset; _loadDashboard() rebuilds the lists in place.
+    if (canApproveLeave) loadPendingLeaveCount();
     await _loadDashboard(); // real API (was loading dummy data → screen changed)
   }
 

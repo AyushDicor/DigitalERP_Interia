@@ -1145,11 +1145,34 @@ class _AttendanceViewState extends State<AttendanceView>
                         fontSize: 14,
                         letterSpacing: 0.3)),
                 const Spacer(),
+                // Step through months — the summary endpoint takes month/year.
+                InkWell(
+                  onTap: () => controller.shiftSummaryMonth(-1),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: Icon(Icons.chevron_left_rounded,
+                        color: _goldLight, size: 20),
+                  ),
+                ),
                 Text(controller.attendanceSummaryData?[0].month ?? '',
                     style: const TextStyle(
                         color: _goldLight,
                         fontSize: 12,
                         fontWeight: FontWeight.w600)),
+                InkWell(
+                  // Disabled on the current month; there is no future attendance.
+                  onTap: controller.isCurrentSummaryMonth
+                      ? null
+                      : () => controller.shiftSummaryMonth(1),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Icon(Icons.chevron_right_rounded,
+                        color: controller.isCurrentSummaryMonth
+                            ? _goldLight.withValues(alpha: 0.3)
+                            : _goldLight,
+                        size: 20),
+                  ),
+                ),
               ],
             ),
           ),

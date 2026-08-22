@@ -37,6 +37,8 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:newdigitalerp/services/notification/task_notification_service.dart';
 import 'package:newdigitalerp/app_routes/app_pages.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/firebase_options.dart';
@@ -46,9 +48,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Connect to the Firebase project (DigitalERP Ribbel). Must run before any
   // Firebase API (e.g. FCM) is used.
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Firebase (FCM push) may not be configured for every platform (e.g. a web/desktop
+  // test build has no DefaultFirebaseOptions). Don't let that crash the whole app —
+  // push just won't work there; everything else runs normally.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // Handles a task push that arrives while the app is backgrounded/killed.
+    // Registering it is harmless until the backend starts sending pushes.
+    FirebaseMessaging.onBackgroundMessage(taskPushBackgroundHandler);
+  } catch (_) {}
   // MUST init local storage BEFORE anything reads the saved session, otherwise
   // a fast cold start reads it before the box loads from disk → wrong/empty user.
   await GetStorage.init();

@@ -55,7 +55,7 @@ class PreviewVisitDataList {
     id: json["id"],
     clientname: json["clientname"],
     areaname: json["areaname"],
-    distance: json["distance"],
+    distance: json["distance"]?.toString(),   // API can send a number
     visitdate: json["visitdate"],
   );
 

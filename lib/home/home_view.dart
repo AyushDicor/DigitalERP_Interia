@@ -9,6 +9,7 @@ import 'package:newdigitalerp/screen/ui/home/attendance/attendance_view.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/dashboard_view.dart';
 import 'package:newdigitalerp/screen/ui/home/drawer/drawer_view.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_drawer_view.dart';
+import 'package:newdigitalerp/screen/ui/home/quick_links/quick_links_sheet.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:upgrader/upgrader.dart';
 
@@ -19,12 +20,18 @@ class _NavItem {
   final IconData activeIcon;
   final String label;
   final Widget page;
+
+  /// True for tabs that open a sheet instead of switching pages (More).
+  /// Such a tab never becomes the selected tab — the sheet is the destination.
+  final bool opensSheet;
+
   const _NavItem({
     this.assetImage,
     this.icon,
     required this.activeIcon,
     required this.label,
     required this.page,
+    this.opensSheet = false,
   });
 }
 
@@ -138,12 +145,15 @@ class HomeView extends StatelessWidget {
       }
     }
 
+    // More opens the Quick Links sheet directly — the old behaviour landed on
+    // HomeViewNew and needed a second tap on "Quick Links" to reach the modules.
     tabs.add(const _NavItem(
       assetImage: 'assets/bottomNavIcons/moreNav.png',
       icon: Icons.apps_outlined,
       activeIcon: Icons.apps_rounded,
       label: 'More',
       page: HomeViewNew(),
+      opensSheet: true,
     ));
 
     return tabs;
@@ -280,6 +290,12 @@ class _BottomNav extends StatelessWidget {
                 isSelected: selectedIndex == i,
                 onTap: () {
                   HapticFeedback.lightImpact();
+                  // A sheet tab keeps the current page underneath, so the tab
+                  // selection is left untouched.
+                  if (tabs[i].opensSheet) {
+                    openQuickLinksSheet();
+                    return;
+                  }
                   onTap(i);
                 },
               ),

@@ -23,6 +23,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:newdigitalerp/services/notification/task_notification_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:upgrader/upgrader.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -155,6 +156,9 @@ class AppBaseController extends GetxController {
       var res = await api.logout(body);
       if (res.status == 200) {
         backTap();
+        // Stop watching for task assignments — the next user must not get
+        // notifications meant for this account.
+        TaskNotificationService.instance.stop();
         SharedPre.clearAll();
         ShowMessage.showSnackBar('', 'Logout successfully');
         Get.offAllNamed(AppRoutes.login);

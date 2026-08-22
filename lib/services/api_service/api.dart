@@ -5116,6 +5116,26 @@ class Api {
     return CommonResponse(status: 500, message: 'No internet');
   }
 
+  /// Hands this device's FCM token to the backend so it can push task
+  /// assignments to the logged-in user. The endpoint is not live yet — the
+  /// caller is gated behind TaskNotificationService.backendSupportsPush.
+  Future<CommonResponse> registerPushToken(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      try {
+        String res = await _apiClient.postMethod(
+            method: _apiMethods.registerPushToken, body: body);
+        if (res.isNotEmpty) return commonResponseFromJson(res);
+        return CommonResponse(status: 500, message: 'Something went wrong');
+      } catch (e) {
+        if (kDebugMode) print(e);
+        return CommonResponse(status: 500, message: e.toString());
+      }
+    }
+    return CommonResponse(status: 500, message: 'No internet');
+  }
+
   Future<CommonResponse> addLeadTask(Map<String, String> body) async {
     final c = await connectivity.checkConnectivity();
     if (c.contains(ConnectivityResult.wifi) ||

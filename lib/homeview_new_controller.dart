@@ -247,7 +247,18 @@ class HomeViewNewController extends AppBaseController {
   RxInt unApprovalCount = 0.obs;
   List<UpdateApprovalstatusResponse> value = [];
   List<MenuNewData> menuListData = [];
-  bool get hasApprovalAccess => menuListData.any((m) => m.menuid == 2384);
+  bool get hasApprovalAccess => hasMenu(2384);
+
+  /// Whether this user's menu grants the given module.
+  ///
+  /// Returns true while the menu is still loading (menuListData empty) so a
+  /// slow menu call doesn't blank out screens that gate on access — callers
+  /// should treat "unknown" as visible rather than hiding real data.
+  bool hasMenu(int menuId) =>
+      menuListData.isEmpty || menuListData.any((m) => m.menuid == menuId);
+
+  /// True only once the menu has actually loaded.
+  bool get menuLoaded => menuListData.isNotEmpty;
 
   bool isOpeningExternalFile = false;
 
@@ -386,48 +397,13 @@ class HomeViewNewController extends AppBaseController {
         debugPrint("[ERR] Unexpected res.data type: ${rawData.runtimeType}");
       }
 
-      // Ensure new mobile modules are visible even when the logged-in user's menu
-      // permissions don't include them. These menuIds already route correctly
-      // (2701 → reimbursement, 2586 → paymentRequestListScreen). Added so the new
-      // modules can be reached without changing prod/master menu-permission tables.
-      void ensureMenu(int id, String name) {
-        if (menuListData.isNotEmpty &&
-            !menuListData.any((m) => m.menuid == id)) {
-          menuListData.add(
-            MenuNewData()
-              ..menuid = id
-              ..menuname = name
-              ..child = 0,
-          );
-        }
-      }
+      // The menu list now comes PURELY from the Mobile App Menu access (server-side:
+      // tbl_MobileAppMenu + per-user grants). A user sees ONLY the modules an admin
+      // granted them on mobile. The old client-side ensureMenu(...) block force-injected
+      // modules (Reimbursement/MRN/Indent/Lead/Performa/PO/…) regardless of the grant —
+      // removed so the access control actually takes effect.
 
-      ensureMenu(2701, 'Reimbursement');
-      // ensureMenu(2586, 'Payment Request'); // hidden for now (per request 2026-06-22)
-      ensureMenu(2754, 'MRN');
-      ensureMenu(2761, 'MRN QC');
-      ensureMenu(2762, 'Indent');
-      ensureMenu(2419, 'Lead Management'); // native Lead module (LeadController)
-      // Performa Invoice (CreateSaleOrder) — read-only list+detail (SaleOrderController).
-      // 9401 is a mobile-injected id; swap for the real ERP menu id once known so it
-      // shows via the user's menu grant instead of force-injection.
-      ensureMenu(9401, 'Performa Invoice');
-      // Purchase Order (flag 'Purchaseorder') — list+detail+create (PurchaseOrderController).
-      // 9402 is likewise a mobile-injected placeholder id.
-      ensureMenu(9402, 'Purchase Order');
-      // Pending Indent for PO — approved indents awaiting a PO; tap to generate a PO
-      // seeded from the indent (PurchaseOrderController.PendingIndents/IndentForPo).
-      // 97 is the real ERP menu id for this screen.
-      ensureMenu(97, 'Pending Indent for PO');
-      // Tap Card — personal business-card wallet, ported from the standalone
-      // TapCard app (TapCardController, dbo.MobileTapCard). App-native, so the
-      // ERP has no menu id for it; 9403 continues the 94xx placeholder series
-      // (9401 Performa, 9402 PO). Do not use 2755 — Material Received owns it.
-      ensureMenu(9403, 'Tap Card');
-      // MIS (menuid 127) already comes from the backend menu and opens the
-      // Reports Hub (see _getDirectRoute) — Stock Report is listed there.
-
-      // Hide the Dashboard quick-link tile (menuid 126) — not needed (2026-06-22).
+      // Hide the Dashboard quick-link tile (menuid 126) if the backend ever returns it.
       menuListData.removeWhere((m) => m.menuid == 126);
 
       if (menuListData.isEmpty) {

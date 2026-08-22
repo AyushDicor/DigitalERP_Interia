@@ -303,8 +303,260 @@ class PreviewView extends StatelessWidget {
                   itemBuilder: (ctx, i) =>
                       _planCard(controller, i),
                 ),
+
+                const SizedBox(height: 4),
+                _visitDetailsSection(controller, context),
               ]),
         ),
+      ),
+    );
+  }
+
+  /// Visit details — the same field set as the web ERP's New Visit form.
+  /// Captured here and submitted along with the plan.
+  Widget _visitDetailsSection(PreviewController c, BuildContext context) {
+    const border = Color(0xFFE8ECF0);
+    const primary = Color(0xFF5B5FC7);
+
+    Widget label(String t) => Padding(
+          padding: const EdgeInsets.only(bottom: 7, top: 14),
+          child: Text(t,
+              style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: newTextPrimary)),
+        );
+
+    Widget input(TextEditingController ctl, String hint,
+            {int maxLines = 1, TextInputType? keyboard}) =>
+        TextField(
+          controller: ctl,
+          maxLines: maxLines,
+          keyboardType: keyboard,
+          style: const TextStyle(fontSize: 13.5, color: newTextPrimary),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle:
+                const TextStyle(fontSize: 13.5, color: Color(0xFF94A3B8)),
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: border)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: border)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: primary)),
+          ),
+        );
+
+    // Options come from /api/visit/dropdowns, so the values always match what
+    // the ERP accepts.
+    Widget dropdown({
+      required String? value,
+      required String hint,
+      required List<String> options,
+      required void Function(String?) onChanged,
+    }) =>
+        Container(
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: border),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: value,
+              hint: Text(hint,
+                  style: const TextStyle(
+                      fontSize: 13.5, color: Color(0xFF94A3B8))),
+              items: options
+                  .map((o) => DropdownMenuItem(
+                      value: o,
+                      child: Text(o,
+                          style: const TextStyle(
+                              fontSize: 13.5, color: newTextPrimary))))
+                  .toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        );
+
+    Future<void> pickDateTime({required bool isCheckIn}) async {
+      final now = DateTime.now();
+      final base = (isCheckIn ? c.checkIn : c.checkOut) ?? now;
+      final date = await showDatePicker(
+        context: context,
+        initialDate: base,
+        firstDate: DateTime(now.year - 1),
+        lastDate: DateTime(now.year + 2),
+      );
+      if (date == null) return;
+      if (!context.mounted) return;
+      final time = await showTimePicker(
+          context: context, initialTime: TimeOfDay.fromDateTime(base));
+      final picked = DateTime(date.year, date.month, date.day,
+          time?.hour ?? 0, time?.minute ?? 0);
+      isCheckIn ? c.setCheckIn(picked) : c.setCheckOut(picked);
+    }
+
+    Widget dateField(String hint, DateTime? value, bool isCheckIn) => InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => pickDateTime(isCheckIn: isCheckIn),
+          child: Container(
+            height: 46,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: border),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              const Icon(Icons.event_outlined, size: 17, color: Color(0xFF64748B)),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(value == null ? hint : c.dtLabel(value),
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: value == null
+                            ? const Color(0xFF94A3B8)
+                            : newTextPrimary)),
+              ),
+              if (value != null)
+                InkWell(
+                  onTap: () =>
+                      isCheckIn ? c.setCheckIn(null) : c.setCheckOut(null),
+                  child: const Icon(Icons.close_rounded,
+                      size: 16, color: Color(0xFF64748B)),
+                ),
+            ]),
+          ),
+        );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          label('Status'),
+          dropdown(
+            value: c.statuses.contains(c.status) ? c.status : null,
+            hint: '-- Select --',
+            options: c.statuses,
+            onChanged: c.setStatus,
+          ),
+
+          label('Visited (party / place / person) *'),
+          input(c.visitedCtrl, 'e.g. City Hospital'),
+
+          label('Purpose Type'),
+          dropdown(
+            value: c.purposeType.isEmpty ? null : c.purposeType,
+            hint: '-- Select --',
+            options: c.purposeTypes,
+            onChanged: c.setPurposeType,
+          ),
+
+          label('Location / City'),
+          input(c.locationCtrl, 'Where is the visit'),
+
+          label('Contact Person'),
+          input(c.contactPersonCtrl, 'Who you are meeting'),
+
+          label('Contact No'),
+          input(c.contactNoCtrl, 'Phone number',
+              keyboard: TextInputType.phone),
+
+          label('Check-in'),
+          dateField('dd-mm-yyyy --:--', c.checkIn, true),
+
+          label('Check-out'),
+          dateField('dd-mm-yyyy --:--', c.checkOut, false),
+
+          label('Distance (km)'),
+          input(c.distanceCtrl, 'e.g. 15',
+              keyboard: const TextInputType.numberWithOptions(decimal: true)),
+
+          label('Travel Mode'),
+          dropdown(
+            value: c.travelMode.isEmpty ? null : c.travelMode,
+            hint: '-- Select --',
+            options: c.travelModes,
+            onChanged: c.setTravelMode,
+          ),
+
+          label('Purpose / Details'),
+          input(c.purposeCtrl, 'What is this visit about', maxLines: 3),
+
+          label('Outcome / Remarks'),
+          input(c.outcomeCtrl, 'How did it go', maxLines: 3),
+
+          label('Attachment (optional)'),
+          ...c.pendingAttachments.asMap().entries.map((e) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  border: Border.all(color: border),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.insert_drive_file_outlined,
+                      size: 18, color: primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(e.value.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: newTextPrimary)),
+                  ),
+                  IconButton(
+                    onPressed: () => c.removeAttachment(e.key),
+                    icon: const Icon(Icons.close_rounded,
+                        size: 18, color: Color(0xFF64748B)),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ]),
+              )),
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: c.pickVisitAttachments,
+            child: Container(
+              height: 46,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                border: Border.all(color: border),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(children: [
+                const Icon(Icons.attach_file_rounded,
+                    size: 18, color: Color(0xFF64748B)),
+                const SizedBox(width: 10),
+                Text(
+                  c.pendingAttachments.isEmpty
+                      ? 'Choose file'
+                      : 'Add another file',
+                  style: const TextStyle(
+                      fontSize: 13.5, color: Color(0xFF64748B)),
+                ),
+              ]),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -75,13 +75,19 @@ class ManagerLeaveHistoryController extends AppBaseController {
     }
   }
 
-  Future<void> leaveStatusUpdate({required String id, required bool isApproved}) async {
+  Future<void> leaveStatusUpdate(
+      {required String id, required bool isApproved, String? rejectReason}) async {
     try {
       Map<String, String> body = {};
-      body[RequestKeys.userId] = homeController.currentUserData?.userid.toString() ?? '342613';
-      body[RequestKeys.compId] = homeController.currentUserData?.compId.toString() ?? '39';
+      body[RequestKeys.userId] = homeController.currentUserData?.userid.toString() ?? '';
+      body[RequestKeys.compId] = homeController.currentUserData?.compId.toString() ?? '';
       body[RequestKeys.id] = id;
       body[RequestKeys.status] = isApproved ? 'approved' : 'reject';
+      // Send the rejection reason so the leave-history UI can show why it was rejected
+      // (the API reads `reason`/`rejectreason`). Only meaningful on reject.
+      if (!isApproved && (rejectReason?.trim().isNotEmpty ?? false)) {
+        body['reason'] = rejectReason!.trim();
+      }
       var res = await api.updateLeaveStatus(body);
       if (res.status == 200) {
         ShowMessage.showSnackBar('Success Server Res', res.message.toString());

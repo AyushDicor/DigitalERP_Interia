@@ -315,6 +315,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
+import 'package:newdigitalerp/homeview_new_controller.dart';
+import 'package:newdigitalerp/repo/recent_activity_repo.dart';
 import 'package:newdigitalerp/response/dashboard_details_response.dart';
 import 'package:newdigitalerp/response/dashboard_graphs_response.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/pendency_response.dart';
@@ -326,14 +328,13 @@ class DashboardController extends AppBaseController {
   static DashboardController get to => Get.find<DashboardController>();
 
   RxBool isLoading = false.obs;
-  bool isManager = false;
-  String? executiveId;
 
-  String? earnPoint = '0';
-  String? usedPoint = '0';
-  String? balance  = '0';
+  // Everything below is real API data. There is deliberately no dummy/fallback
+  // state here: a previous _loadDummyData() seeded invented executives and
+  // point balances on every load, which would have rendered as genuine ERP
+  // figures the moment anything bound to them.
 
-  // Pendency dashboard counts (real, from API).
+  // Pendency dashboard counts.
   PendencyData pendency = PendencyData();
 
   // Home-dashboard chart data (order trend / doc mix / by-party / recent).
@@ -341,27 +342,63 @@ class DashboardController extends AppBaseController {
   bool graphsLoading = false;
 
   List<DashboardDetailsData>? dashboardDetailsData = [];
-  List<ExecutiveDropdownData>? dropdownList = [];
-  List<GetCartListData> onlineCartList = [];
 
-  final selectedDropdownNotifier =
-  ValueNotifier<ExecutiveDropdownData?>(null);
+  /// Recent documents feed — see [fetchActivity].
+  List<RecentActivityItem> recentActivity = [];
+  bool activityLoading = false;
 
-  ExecutiveDropdownData? get selectedDropdownValue =>
-      selectedDropdownNotifier.value;
-
-  void setSelectDropdownValue(ExecutiveDropdownData value) {
-    selectedDropdownNotifier.value = value;
-    update();
-  }
+  /// Pending approvals counted the way the Approval Hub counts them. Null until
+  /// loaded, in which case the tile falls back to [pendency].pendingApprovals.
+  ///
+  /// Why this exists: /dashboardnew/dashboardpendency counts
+  /// `Approval_Master.Status='Pending'` with no date filter, while
+  /// /GetApprovalList (which the hub lists and counts) uses the *effective*
+  /// status — the latest Approval_Trans step — because Approval_Master.Status
+  /// is not reliably updated after an approve/reject. The two therefore
+  /// disagreed on screen (359 vs 377 for branch 4). The hub's definition is the
+  /// actionable one — it is exactly the list the user can open — so the tile
+  /// now mirrors it instead of showing a second, stale-status number.
+  int? approvalPending;
 
   @override
   void onInit() {
-    _loadDummyData();
     fetchPendency();
+    fetchApprovalPending();
     fetchActivity();
     fetchGraphs();
     super.onInit();
+  }
+
+  /// Same request the Approval Hub fires on open (status Pending, last 30 days,
+  /// same branch) so both screens can never show different totals.
+  Future<void> fetchApprovalPending() async {
+    // Skip the call entirely for users whose menu has no Approval module —
+    // their dashboard doesn't show the tile.
+    final menu = Get.isRegistered<HomeViewNewController>()
+        ? Get.find<HomeViewNewController>()
+        : null;
+    if (menu != null && !menu.hasMenu(2384)) return;
+
+    try {
+      String fmt(DateTime d) =>
+          '${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year}';
+      final now = DateTime.now();
+      final u = homeController.currentUserData;
+
+      final res = await api.getApprovalListData(<String, dynamic>{
+        'userid': u?.userid?.toString() ?? '',
+        'compid': u?.compId?.toString() ?? '',
+        'branchid': u?.branchId?.toString() ?? '',
+        'documentname': '',
+        'status': 'Pending',
+        'fromdate': fmt(now.subtract(const Duration(days: 30))),
+        'todate': fmt(now),
+      });
+      if (res.status == 200) {
+        approvalPending = (res.data ?? []).length;
+        update();
+      }
+    } catch (_) {/* tile falls back to the pendency count */}
   }
 
   Future<void> fetchGraphs() async {
@@ -395,54 +432,29 @@ class DashboardController extends AppBaseController {
     } catch (_) {/* keep zeros on failure */}
   }
 
-  // Recent-activity feed for the Action Center (Activitylogmaster via dashboardDetailsnew).
+  /// Recent documents (last [RecentActivityRepo.windowDays] days) from the
+  /// modules this user's menu grants — approvals, tasks, visits, orders, MRN,
+  /// GRN, indents. Replaces the old Activitylogmaster feed, which returns an
+  /// empty list for this company because no proc writes to that table.
   Future<void> fetchActivity() async {
-    try {
-      final body = <String, String>{
-        'userid': homeController.currentUserData?.userid.toString() ?? '',
-        'compid': homeController.currentUserData?.compId.toString() ?? '',
-        'branchid': homeController.currentUserData?.branchId.toString() ?? '',
-      };
-      final res = await api.getDashboardDetails(body);
-      if (res.status == 200 && res.data != null) {
-        dashboardDetailsData = res.data;
-        update();
-      }
-    } catch (_) {/* keep empty on failure */}
-  }
-
-  void _loadDummyData() {
-    isManager = !(homeController.isCustomer ?? true);
-    executiveId = homeController.currentUserData?.accountCode.toString() ?? '1';
-
-    // Dummy executive dropdown
-    dropdownList = [
-      ExecutiveDropdownData()
-        ..executiveId = 101
-        ..executiveName = 'Rahul Sharma',
-      ExecutiveDropdownData()
-        ..executiveId = 102
-        ..executiveName = 'Priya Mehta',
-      ExecutiveDropdownData()
-        ..executiveId = 103
-        ..executiveName = 'Amit Verma',
-    ];
-
-    selectedDropdownNotifier.value = dropdownList!.first;
-
-    // Dummy dashboard stats
-    earnPoint = '1250';
-    usedPoint = '430';
-    balance   = '820';
-
+    final menu = Get.isRegistered<HomeViewNewController>()
+        ? Get.find<HomeViewNewController>()
+        : null;
+    activityLoading = recentActivity.isEmpty;
     update();
-  }
-
-
-
-  @override
-  void onClose() {
-    selectedDropdownNotifier.dispose();
-    super.onClose();
+    try {
+      final u = homeController.currentUserData;
+      recentActivity = await RecentActivityRepo.load(
+        compid: u?.compId?.toString() ?? '',
+        branchid: u?.branchId?.toString() ?? '',
+        userid: u?.userid?.toString() ?? '',
+        // No menu loaded yet → show everything rather than an empty feed;
+        // hasMenu already treats an unloaded menu as "granted".
+        hasMenu: (id) => menu?.hasMenu(id) ?? true,
+      );
+    } catch (_) {/* keep whatever was already there */} finally {
+      activityLoading = false;
+      update();
+    }
   }
 }

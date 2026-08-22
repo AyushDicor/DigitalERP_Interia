@@ -151,6 +151,17 @@ class TaskInfo {
   final String createdby;
   final String client;
   final int leadid;
+  // taskmaster already carries these; /api/task/detail returns both.
+  final String attachmentPath;
+  final String attachmentUrl;
+
+  /// The value worth showing — prefer the ready-to-open URL, fall back to the
+  /// stored path when it is itself a URL.
+  String get attachment {
+    if (attachmentUrl.isNotEmpty) return attachmentUrl;
+    if (attachmentPath.startsWith('http')) return attachmentPath;
+    return '';
+  }
 
   TaskInfo({
     required this.taskid,
@@ -167,6 +178,8 @@ class TaskInfo {
     required this.createdby,
     required this.client,
     required this.leadid,
+    this.attachmentPath = '',
+    this.attachmentUrl = '',
   });
 
   factory TaskInfo.fromJson(Map j) => TaskInfo(
@@ -184,6 +197,10 @@ class TaskInfo {
         createdby: _str(_pick(j, ['CreatedByName', 'createdby'])),
         client: _str(_pick(j, ['ClientReference', 'ClientName', 'client'])),
         leadid: _int(_pick(j, ['LeadId', 'leadid'])),
+        attachmentPath:
+            _str(_pick(j, ['AttachmentPath', 'attachmentpath', 'Files'])),
+        attachmentUrl:
+            _str(_pick(j, ['AttachmentUrl', 'attachmenturl', 'FileUrl'])),
       );
 }
 

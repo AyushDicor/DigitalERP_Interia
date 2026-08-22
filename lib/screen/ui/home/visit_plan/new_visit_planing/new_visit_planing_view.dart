@@ -634,21 +634,27 @@ class NewVisitPlaningView extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: newTextSecondary),
         const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 11,
-                    color: newTextSecondary,
-                    fontWeight: FontWeight.w400)),
-            const SizedBox(height: 1),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: newTextPrimary)),
-          ],
+        // Expanded, or a long customer name ("All India Institute of Medical
+        // Sciences (AIIMS), Aiims, New Delhi") overflows the card.
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: newTextSecondary,
+                      fontWeight: FontWeight.w400)),
+              const SizedBox(height: 1),
+              Text(value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: newTextPrimary)),
+            ],
+          ),
         ),
       ],
     );

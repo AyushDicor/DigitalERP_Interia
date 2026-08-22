@@ -64,8 +64,11 @@ import '../screen/ui/home/mis_module/pending_shipping/pending_shipping_view.dart
 import '../screen/ui/home/mis_module/print_report/print_report_view.dart';
 import '../screen/ui/home/mis_module/stock_report/stock_report_view.dart';
 import '../screen/ui/home/order/order_view.dart';
-import '../screen/ui/home/task management/create_task/create_task_screen.dart';
-import '../screen/ui/home/task management/task_list_view.dart';
+// Task FAB entries point to the NEW task module (task_module/), which is the one
+// backed by the API's /api/task/* endpoints. The old "task management/" screens
+// called endpoints that don't exist (TasksByRole/CreateDirectTask/...) and 404'd.
+import '../screen/ui/home/task_module/task_list_screen.dart';
+import '../screen/ui/home/task_module/task_create_screen.dart';
 import '../shipMangement/shipping_details_view.dart';
 import '../stock _reconcillation/stock_reconciliation.dart';
 
@@ -81,8 +84,8 @@ final Map<int, Widget Function()> menuRouteMap = {
   2410: () => ShippingDetailsView(),
   2389: () => ApprovalHubDashboard(),
   2388: () => ManagerLeaveHistoryView(),
-  2405: () => TaskListView(),
-  2406: () => CreateTaskScreen(),
+  2405: () => const TaskListScreen(),
+  2406: () => const TaskCreateScreen(),
   2401: () => DownloadDocumentsView(),
   2402: () => OrderFollowupView(),
   2403: () => PaymentFollowupView(),

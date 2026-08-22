@@ -96,6 +96,10 @@ class TaskCreateScreen extends StatelessWidget {
 
               _label('Tags'),
               _input(ctrl.tagsCtrl, 'e.g. Work, Urgent (optional)'),
+              const SizedBox(height: 16),
+
+              _label('Attachment'),
+              _attachmentField(ctrl),
               const SizedBox(height: 28),
 
               SizedBox(
@@ -163,6 +167,67 @@ class TaskCreateScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             borderSide: const BorderSide(color: _primary)),
       ),
+    );
+  }
+
+  /// Files are only queued here — they upload once the task is saved, because
+  /// the attachment store keys them by the new task's id.
+  Widget _attachmentField(TaskModuleController ctrl) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...ctrl.pendingAttachments.asMap().entries.map((e) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(children: [
+                const Icon(Icons.insert_drive_file_outlined,
+                    size: 18, color: _primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    e.value.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600, color: _text),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => ctrl.removePendingAttachment(e.key),
+                  icon: const Icon(Icons.close_rounded, size: 18, color: _sub),
+                  tooltip: 'Remove',
+                  visualDensity: VisualDensity.compact,
+                ),
+              ]),
+            )),
+        InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: ctrl.pickPendingAttachments,
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              const Icon(Icons.attach_file_rounded, size: 18, color: _sub),
+              const SizedBox(width: 10),
+              Text(
+                ctrl.pendingAttachments.isEmpty
+                    ? 'Attach a file (optional)'
+                    : 'Add another file',
+                style: const TextStyle(fontSize: 13.5, color: _sub),
+              ),
+            ]),
+          ),
+        ),
+      ],
     );
   }
 

@@ -97,6 +97,11 @@ class ApiMethods {
   String taskFollowupV2  = 'task/addfollowup';
   String taskStatusV2    = 'task/updatestatus';
 
+  /// push notifications — the API does not expose this yet, see
+  /// docs/PUSH_NOTIFICATIONS_BACKEND_SPEC.md. Guarded by
+  /// TaskNotificationService.backendSupportsPush.
+  String registerPushToken = 'notification/registertoken';
+
   /// change company
   String companylist = 'companylist/getcompany';
   String branchlist = 'branchlist/getbranch';
@@ -173,10 +178,10 @@ class ApiMethods {
 
   ///Visit Plan
   /// -VisitPlan Screen
-  String allVisitList = 'allvisitlistwithbranch/visitlistwithbranch';
+  String allVisitList = 'visit/list';
 
   /// -Visitplan Detail Screen
-  String visitPlanDetail   = 'Visitplandetail/visitlist';
+  String visitPlanDetail   = 'visit/detail';
   String visitCheckIn      = 'Visitcheckin/Visitcheckindetail';
   String visitPlanCheckout = 'visitplancheckout/Visitcheckoutdetail';
 

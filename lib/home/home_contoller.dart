@@ -243,6 +243,7 @@ import 'package:newdigitalerp/screen/auth/login/login_model.dart';
 import 'package:newdigitalerp/homeview_new_controller.dart';
 import 'package:newdigitalerp/response/bottom_tab_item.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:newdigitalerp/services/notification/task_notification_service.dart';
 import 'package:newdigitalerp/utils/shared_pre.dart';
 
 // ── Static dummy user — no API, no SharedPreferences needed ──────────────────
@@ -307,15 +308,19 @@ class HomeController extends AppBaseController {
 
   /// Request notification permission and fetch the FCM token. Fully guarded so a
   /// failure (e.g. no Play Services / iOS without APNs) can never break startup.
-  Future<void> _initMessaging() async {
-    try {
-      await FirebaseMessaging.instance.requestPermission();
-      final token = await FirebaseMessaging.instance.getToken();
-      await updateToken(token);
-      FirebaseMessaging.instance.onTokenRefresh.listen(updateToken);
-    } catch (e) {
-      debugPrint('FCM init skipped: $e');
-    }
+  /// Everything FCM — permission, token, topic, listeners — lives in the
+  /// service. This controller only kicks it off, and never during its own
+  /// onInit: the service reads the session from storage, so starting it a
+  /// frame later avoids re-entering this controller while it is still being
+  /// constructed (which previously recreated it in a loop).
+  void _initMessaging() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await TaskNotificationService.instance.start();
+      } catch (e) {
+        debugPrint('Task notifications skipped: $e');
+      }
+    });
   }
 
   void menulist() {}
@@ -329,11 +334,10 @@ class HomeController extends AppBaseController {
   void sendLocations() {}
   void collectLocations() {}
   Future<void> saveLocationAPI() async {}
-  Future<void> updateToken(String? token) async {
-    if (token == null || token.isEmpty) return;
-    await SharedPre.setValue('fcmToken', token);
-    debugPrint('FCM token: $token');
-  }
+  /// Kept for older callers. The token is now fetched and refreshed inside
+  /// TaskNotificationService, so this just forwards.
+  Future<void> updateToken(String? token) async =>
+      TaskNotificationService.instance.saveToken(token);
   Future<void> loadUserData() async {
     final saved = SharedPre.getObjs(SharedPre.userData);
     if (saved != null && saved.isNotEmpty) {
@@ -341,6 +345,9 @@ class HomeController extends AppBaseController {
       isCustomer = currentUserData?.usertype == 'Customer';
       name = currentUserData?.name;
       update();
+      // A user just became current (login / account switch) — begin watching
+      // their assigned tasks.
+      TaskNotificationService.instance.start();
       // Reload the menu for the now-logged-in user.
       if (Get.isRegistered<HomeViewNewController>()) {
         Get.find<HomeViewNewController>().getNewMenuList(0);

@@ -39,12 +39,10 @@ class _ApprovalHubDetailState extends State<ApprovalHubDetail> {
         if (item == null)
           return const Scaffold(body: Center(child: Text('No item selected')));
         final color = ctrl.catColor(item.documentname);
-        final lightColor = ctrl.catLightColor(item.documentname);
-        final emoji = ctrl.catEmoji(item.documentname);
         return PopScope(
           canPop: true, // temporarily block ALL back presses to test
           child: Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: const Color(0xFFF7F8FC),
             body: SafeArea(
                 bottom: false,
                 child: Column(children: [
@@ -54,14 +52,16 @@ class _ApprovalHubDetailState extends State<ApprovalHubDetail> {
                       // ✅ always scrollable, no outer gate
                       padding: const EdgeInsets.fromLTRB(14, 12, 14, 100),
                       child: Column(children: [
+                        if (!ctrl.isLoadingDetail) ...[
+                          // these only show after load
+                          _DocumentInfoCard(ctrl: ctrl),
+                          _PartyCard(ctrl: ctrl),
+                        ],
                         _MasterCard(
                             // handles its own loading state
                             ctrl: ctrl,
-                            color: color,
-                            lightColor: lightColor,
-                            emoji: emoji),
+                            color: color),
                         if (!ctrl.isLoadingDetail) ...[
-                          // these only show after load
                           _ItemsCard(ctrl: ctrl),
                           _DocPreview(ctrl: ctrl),
                           _ChainCard(ctrl: ctrl),
@@ -87,10 +87,22 @@ class _AppBar extends StatelessWidget {
   final String docNo;
   const _AppBar({required this.ctrl, required this.docNo});
   @override
-  Widget build(BuildContext context) => Container(
-        color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
-        child: Row(children: [
+  Widget build(BuildContext context) {
+    final header = ctrl.detailHeader;
+    final item = ctrl.currentItem;
+
+    // Web ERP shows the party as the page title, falling back to the doc type.
+    final party = (header?.partyName ?? '').trim();
+    final docType = header?.approvalType ?? item?.documentname ?? '';
+    final title = party.isNotEmpty ? party : '$docType Approval';
+    final date = header?.documentDate ?? item?.documentDate ?? '';
+    final status = header?.status ?? item?.status ?? 'Pending';
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+      child: Column(children: [
+        Row(children: [
           GestureDetector(
               onTap: ctrl.isLoadingDetail // ← disable while loading
                   ? null
@@ -98,30 +110,60 @@ class _AppBar extends StatelessWidget {
               child: Container(
                   width: 38,
                   height: 38,
-                  // decoration: BoxDecoration(
-                  //     color: newSurfaceColor,
-                  //     borderRadius: BorderRadius.circular(10)),
                   alignment: Alignment.center,
                   child: const Icon(Icons.arrow_back_ios_new_rounded,
                       size: 18, color: newTextPrimary))),
-          const SizedBox(width: 10),
           Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                const Text('Approval Detail',
-                    style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: newTextPrimary)),
-                Text(docNo,
-                    style:
-                        const TextStyle(fontSize: 11, color: newTextSecondary)),
-              ])),
-              () {
-            final pdf = ctrl.detailHeader?.pdfUrl?.trim() ?? '';
-            if (pdf.isEmpty) return const SizedBox.shrink();
-            return GestureDetector(
+              child: Text(title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: newTextPrimary))),
+          const SizedBox(width: 8),
+          _printButton(context),
+        ]),
+
+        // Doc No  •  Date  •  Status — same meta line as the web page.
+        Padding(
+          padding: const EdgeInsets.only(left: 46, right: 6, top: 4),
+          child: Row(children: [
+            Expanded(
+              child: Wrap(
+                spacing: 14,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _Meta(Icons.description_outlined, 'Doc No: ', docNo),
+                  if (date.isNotEmpty)
+                    _Meta(Icons.calendar_month_outlined, '', date),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: ctrl.statusBadgeBg(status),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(status,
+                  style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: ctrl.statusBadgeFg(status))),
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _printButton(BuildContext context) {
+    final pdf = ctrl.detailHeader?.pdfUrl?.trim() ?? '';
+    if (pdf.isEmpty) return const SizedBox.shrink();
+    return GestureDetector(
               onTap: () async {
                 final pdf = ctrl.detailHeader?.pdfUrl?.trim() ?? '';
                 if (pdf.isEmpty) return;
@@ -228,48 +270,56 @@ class _AppBar extends StatelessWidget {
                 }
               },
               child: Container(
-                width: 38,
-                height: 38,
-                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: newRedColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(color: newBorderColor),
                 ),
-                alignment: Alignment.center,
-                child: const Icon(Icons.picture_as_pdf_rounded,
-                    color: newRedColor, size: 20),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.print_rounded, size: 16, color: newTextPrimary),
+                  SizedBox(width: 6),
+                  Text('Print',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: newTextPrimary)),
+                ]),
               ),
             );
-          }(),
+  }
+}
 
-          // GestureDetector(
-          //   onTap: () => Get.to(const ApprovalHubAction()),
-          //   child: Container(
-          //     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          //     decoration: BoxDecoration(
-          //         color: newBlueColor, borderRadius: BorderRadius.circular(10)),
-          //     child: const Text('Action',
-          //         style: TextStyle(
-          //             fontSize: 12,
-          //             fontWeight: FontWeight.w800,
-          //             color: Colors.white)),
-          //   ),
-          // ),
-        ]),
-      );
+/// Small "icon + label + value" chip used on the header meta line.
+class _Meta extends StatelessWidget {
+  final IconData icon;
+  final String label, value;
+  const _Meta(this.icon, this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 13, color: newBlueColor),
+        const SizedBox(width: 5),
+        if (label.isNotEmpty)
+          Text(label,
+              style: const TextStyle(fontSize: 11, color: newTextSecondary)),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: newTextPrimary)),
+      ]);
 }
 
 //  Master detail card
 class _MasterCard extends StatelessWidget {
   final ApprovalHubController ctrl;
-  final Color color, lightColor;
-  final String emoji;
+  final Color color;
 
   const _MasterCard({
     required this.ctrl,
     required this.color,
-    required this.lightColor,
-    required this.emoji,
   });
 
   @override
@@ -287,7 +337,6 @@ class _MasterCard extends StatelessWidget {
         final amount = header?.amount ?? 0;
         final site = header?.siteName ?? item?.siteName ?? '';
         final dueDate = header?.dueDate ?? '';
-        final party = header?.partyName ?? '';
         final subType = header?.subType ?? item?.subType ?? '';
         final priority = header?.priority ?? '';
         final remarks = header?.remarks ?? item?.remarks ?? '';
@@ -304,65 +353,13 @@ class _MasterCard extends StatelessWidget {
             ? header!.requestType!
             : (isPaymentRequest ? subType : '');
         final jobType = header?.jobType ?? '';
-        final partyName = header?.partyName ?? '';
 
-        return _Card(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SecHead('Approval Details'),
-
-              // header row (emoji + title + status badge) — unchanged
-              Row(children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                      color: lightColor,
-                      borderRadius: BorderRadius.circular(11)),
-                  alignment: Alignment.center,
-                  child: Text(emoji, style: const TextStyle(fontSize: 20)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${header?.approvalType ?? item?.documentname ?? ''} Approval',
-                          style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: newTextPrimary),
-                        ),
-                        Text(
-                          header?.documentNo ?? item?.documentno ?? '',
-                          style: const TextStyle(
-                              fontSize: 11, color: newTextSecondary),
-                        ),
-                      ]),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: ctrl.statusBadgeBg(header?.status ?? item?.status),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    header?.status ?? item?.status ?? 'Pending',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: ctrl.statusBadgeFg(header?.status ?? item?.status),
-                    ),
-                  ),
-                ),
-              ]),
-
-              const SizedBox(height: 12),
-
-              if (ctrl.isLoadingDetail)
+        if (ctrl.isLoadingDetail) {
+          return _Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SecHead('Approval Details', icon: Icons.verified_outlined),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Row(
@@ -379,61 +376,34 @@ class _MasterCard extends StatelessWidget {
                               TextStyle(fontSize: 12, color: newTextSecondary)),
                     ],
                   ),
-                )
-              else ...[
-                // Row 1: Doc No + Date
-                if (docNo.isNotEmpty || date.isNotEmpty)
-                  _PairedRow(
-                    left: docNo.isNotEmpty ? _IT('Doc No', docNo) : null,
-                    right: date.isNotEmpty ? _IT('Date', date) : null,
-                  ),
-
-                // Row 2: Amount + Site
-                if (amount > 0 || site.isNotEmpty)
-                  _PairedRow(
-                    left: amount > 0 ? _IT('Amount', '₹${inrNum(amount)}', vc: color) : null,
-                    right: site.isNotEmpty ? _IT('Site', site) : null,
-                  ),
-
-                // Row 3: Requested By + Request Type (Payment) or Job Type (WO/PO/Estimate)
-                if (requestedBy.isNotEmpty ||
-                    (isPaymentRequest && requestType.isNotEmpty) ||
-                    ((isWorkOrder || isPurchaseOrder || isEstimate) && jobType.isNotEmpty))
-                  _PairedRow(
-                    left: requestedBy.isNotEmpty ? _IT('Requested By', requestedBy) : null,
-                    right: isPaymentRequest && requestType.isNotEmpty
-                        ? _IT('Request Type', requestType)
-                        : (isWorkOrder || isPurchaseOrder || isEstimate) && jobType.isNotEmpty
-                        ? _IT('Job Type', jobType)
-                        : null,
-                  ),
-
-                // Row 4: Due Date + Party Name
-                if (dueDate.isNotEmpty || party.isNotEmpty)
-                  _PairedRow(
-                    left: dueDate.isNotEmpty
-                        ? _IT('Due By', dueDate, vc: newRedColor)
-                        : null,
-                    right: party.isNotEmpty ? _IT('Party', party) : null,
-                  ),
-
-                // Row 5: Sub Type (Party Name for WO/PO/Estimate) + Priority
-                if ((subType.isNotEmpty && !isPaymentRequest) || priority.isNotEmpty)
-                  _PairedRow(
-                    left: subType.isNotEmpty && !isPaymentRequest
-                        ? _IT(
-                      (isWorkOrder || isPurchaseOrder || isEstimate)
-                          ? 'Party Name'
-                          : 'Sub Type',
-                      subType,
-                    )
-                        : null,
-                    right: priority.isNotEmpty ? _IT('Priority', priority) : null,
-                  ),
-
-                // Row 6: Remarks (full width)
-                if (remarks.isNotEmpty) _FullRow(_IT('Remarks', remarks)),
+                ),
               ],
+            ),
+          );
+        }
+
+        return _Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SecHead('Approval Details', icon: Icons.verified_outlined),
+              _FieldGrid([
+                _IT('Amount', amount > 0 ? '₹${inrNum(amount)}' : '', vc: color),
+                _IT('Document No', docNo),
+                _IT('Date', date),
+                _IT('Requested By', requestedBy),
+                _IT('Status', header?.status ?? item?.status ?? ''),
+                if (!isPaymentRequest) _IT('Sub Type', subType),
+                if (isPaymentRequest) _IT('Request Type', requestType),
+                if ((isWorkOrder || isPurchaseOrder || isEstimate) &&
+                    jobType.isNotEmpty)
+                  _IT('Job Type', jobType),
+                if (dueDate.isNotEmpty)
+                  _IT('Due By', dueDate, vc: newRedColor),
+                if (site.isNotEmpty) _IT('Site', site),
+                if (priority.isNotEmpty) _IT('Priority', priority),
+              ]),
+              _FullRow(_IT('Remarks', remarks, maxLines: 4)),
             ],
           ),
         );
@@ -449,12 +419,12 @@ class _PairedRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: 16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (left != null) Expanded(child: _InfoTile(left!)),
-            if (left != null && right != null) const SizedBox(width: 8),
+            if (left != null && right != null) const SizedBox(width: 14),
             if (right != null)
               Expanded(child: _InfoTile(right!))
             else if (left != null)
@@ -475,30 +445,128 @@ class _FullRow extends StatelessWidget {
       );
 }
 
+/// Label-over-value grid, two fields per row — mirrors the web ERP's detail
+/// sections. Empty values render as "-" (same as the web page) rather than
+/// disappearing, so the field positions stay stable.
+class _FieldGrid extends StatelessWidget {
+  final List<_IT> tiles;
+  const _FieldGrid(this.tiles);
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < tiles.length; i += 2) {
+      rows.add(_PairedRow(
+        left: tiles[i],
+        right: i + 1 < tiles.length ? tiles[i + 1] : null,
+      ));
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
+  }
+}
+
+/// Document header details sent by the backend (branch, series, dates, terms).
+class _DocumentInfoCard extends StatelessWidget {
+  final ApprovalHubController ctrl;
+  const _DocumentInfoCard({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = ctrl.detailHeader;
+    if (h == null) return const SizedBox.shrink();
+
+    // Same field set and order as the web ERP's "Document Details" block.
+    return _Card(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _SecHead('Document Details', icon: Icons.info_outline_rounded),
+        _FieldGrid([
+          _IT('Document Name', h.documentName ?? h.approvalType ?? ''),
+          _IT('Branch', h.branchName ?? ''),
+          _IT('Entry Type', h.entryType ?? ''),
+          _IT('Series Type', h.seriesType ?? ''),
+          _IT('Document No', h.documentNo ?? ''),
+          _IT('Date', h.documentDate ?? ''),
+          _IT('Receipt Date', h.receiptDate ?? ''),
+          _IT('Delivery Date', h.deliveryDate ?? '', vc: newGreenColor),
+          _IT('Customer Order No', h.customerOrderNo ?? ''),
+          _IT('Delivery Type', h.deliveryType ?? ''),
+          _IT('Transport', h.transport ?? ''),
+          _IT('Payment Terms', h.paymentTerms ?? ''),
+        ]),
+        _FullRow(_IT('Remark', h.headerRemark ?? '', maxLines: 4)),
+      ]),
+    );
+  }
+}
+
+/// Party / customer block — GST, contact and the bill-to / ship-to addresses.
+class _PartyCard extends StatelessWidget {
+  final ApprovalHubController ctrl;
+  const _PartyCard({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = ctrl.detailHeader;
+    if (h == null) return const SizedBox.shrink();
+
+    final billTo = h.billToAddress ?? '';
+    final shipTo = h.shipToAddress ?? '';
+
+    // Same field set and order as the web ERP's "Party Details" block.
+    return _Card(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _SecHead('Party Details', icon: Icons.person_outline_rounded),
+        _FieldGrid([
+          _IT('Party Name', h.partyName ?? ''),
+          _IT('GST No', h.gstNo ?? ''),
+          _IT('Mobile No', h.mobileNo ?? ''),
+          _IT('Contact Person', h.contactPerson ?? ''),
+        ]),
+        _PairedRow(
+          left: _IT('Bill To Address', billTo, maxLines: 6),
+          right: _IT('Ship To Address', shipTo, maxLines: 6),
+        ),
+      ]),
+    );
+  }
+}
+
 class _DocPreview extends StatelessWidget {
   final ApprovalHubController ctrl;
   const _DocPreview({required this.ctrl});
 
   @override
   Widget build(BuildContext context) {
-    final attachFile = ctrl.detailHeader?.attachFile?.trim() ?? '';
+    final files = <_DocFile>[];
+    void add(_DocFile f) {
+      if (f.url.isEmpty) return;
+      if (files.any((e) => e.url == f.url)) return;
+      files.add(f);
+    }
 
-    // ✅ Split comma-separated files into a list
-    final fileUrls = attachFile
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
+    // The printed ERP document itself (pdfurl) — always first when available.
+    final printUrl = ctrl.detailHeader?.pdfUrl?.trim() ?? '';
+    final docNo = ctrl.detailHeader?.documentNo ?? ctrl.currentItem?.documentno ?? '';
+    if (printUrl.isNotEmpty) {
+      add(_DocFile(
+        docNo.isNotEmpty ? '$docNo.pdf' : 'Document.pdf',
+        printUrl,
+        label: 'Printed Document',
+        isPdf: true,
+      ));
+    }
 
-    // Also check single docUrl from print API
-    final docUrl = ctrl.currentDocUrl?.trim() ?? '';
-    if (docUrl.isNotEmpty && !fileUrls.contains(docUrl)) {
-      fileUrls.insert(0, docUrl);
+    // Single docUrl from the print API (legacy path).
+    add(_DocFile.fromUrl(ctrl.currentDocUrl.trim(), label: 'Document'));
+
+    // Files attached to the approval header (comma separated).
+    for (final u in (ctrl.detailHeader?.attachFile ?? '').split(',')) {
+      add(_DocFile.fromUrl(u.trim(), label: 'Attachment'));
     }
 
     // ✅ Presigned URLs of the underlying document's file(s) (view-only, from backend).
     for (final u in ctrl.documentAttachments) {
-      if (!fileUrls.contains(u)) fileUrls.add(u);
+      add(_DocFile.fromUrl(u, label: 'Attachment'));
     }
 
     return Container(
@@ -508,7 +576,7 @@ class _DocPreview extends StatelessWidget {
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: fileUrls.isEmpty
+      child: files.isEmpty
           ? // ── No files ──────────────────────────────────────────────
           const Column(
               children: [
@@ -533,9 +601,9 @@ class _DocPreview extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  fileUrls.length == 1
-                      ? 'Attached Document'
-                      : '${fileUrls.length} Attached Documents',
+                  files.length == 1
+                      ? 'Document'
+                      : '${files.length} Documents',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -544,13 +612,10 @@ class _DocPreview extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                ...fileUrls.asMap().entries.map((e) {
-                  final index = e.key;
-                  final url = e.value;
-                  // Strip any presigned query string so the name reads cleanly.
-                  final fileName =
-                      url.split('?').first.split('/').last.split('\\').last;
-                  final isPdf = fileName.toLowerCase().endsWith('.pdf');
+                ...files.map((f) {
+                  final url = f.url;
+                  final fileName = f.name;
+                  final isPdf = f.isPdf;
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
@@ -585,7 +650,7 @@ class _DocPreview extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'File ${index + 1}',
+                              f.label,
                               style: const TextStyle(
                                   fontSize: 9,
                                   color: Colors.white38,
@@ -644,6 +709,30 @@ class _DocPreview extends StatelessWidget {
   }
 }
 
+/// One viewable file on the detail screen — the printed ERP document (pdfurl)
+/// or a file attached to the underlying document.
+class _DocFile {
+  final String name;
+  final String url;
+  final String label;
+  final bool isPdf;
+  const _DocFile(this.name, this.url,
+      {this.label = 'Document', this.isPdf = false});
+
+  /// Builds an entry from a bare URL, deriving the file name from the path
+  /// (presigned query strings are stripped so the name reads cleanly).
+  factory _DocFile.fromUrl(String url, {String label = 'Document'}) {
+    final clean = url.trim();
+    final name = clean.split('?').first.split('/').last.split('\\').last;
+    return _DocFile(
+      name.isEmpty ? 'Document' : name,
+      clean,
+      label: label,
+      isPdf: name.toLowerCase().endsWith('.pdf'),
+    );
+  }
+}
+
 class _DocBtn extends StatelessWidget {
   final String label;
   final Color bg, fg;
@@ -668,20 +757,47 @@ class _ItemsCard extends StatelessWidget {
   final ApprovalHubController ctrl;
   const _ItemsCard({required this.ctrl});
 
+  /// 30 → '30', 30.5 → '30.5'
+  static String _qty(double v) => v.toStringAsFixed(v % 1 == 0 ? 0 : 2);
+
   @override
   Widget build(BuildContext context) {
     final items = ctrl.itemsList;
     if (items.isEmpty) return const SizedBox.shrink();
+
+    final totalQty = items.fold<double>(0, (s, e) => s + e.quantity);
+    final totalTaxable = items.fold<double>(0, (s, e) => s + e.taxableAmount);
+    final totalTax = items.fold<double>(0, (s, e) => s + e.taxAmount);
+    final grandTotal = totalTaxable + totalTax;
+
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _SecHead('Items (${items.length})'),
+        _SecHead('Items (${items.length})', icon: Icons.list_alt_rounded),
         ...List.generate(items.length, (i) {
           final it = items[i];
-          final name = it.description.isNotEmpty ? it.description : it.expenseLedger;
+          final name = it.itemName.isNotEmpty
+              ? it.itemName
+              : (it.description.isNotEmpty ? it.description : it.expenseLedger);
+
+          // "30 PCS × ₹38.00 · GST 5%" — each part only if the API sent it.
+          final meta = <String>[
+            if (it.quantity > 0)
+              '${_qty(it.quantity)}${it.unit.isNotEmpty ? ' ${it.unit}' : ''}'
+                  '${it.rate > 0 ? ' × ₹${inrNum(it.rate, decimals: 2)}' : ''}',
+            if (it.size.isNotEmpty) 'Size: ${it.size}',
+            if (it.taxPercent > 0) 'GST ${_qty(it.taxPercent)}%',
+          ].join('  ·  ');
+
           return Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFEEF0F4))),
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: i == items.length - 1
+                      ? Colors.transparent
+                      : const Color(0xFFEEF0F4),
+                ),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,29 +817,89 @@ class _ItemsCard extends StatelessWidget {
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: newTextPrimary)),
-                      if (it.quantity > 0)
+                      if (meta.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                              'Qty: ${it.quantity.toStringAsFixed(it.quantity % 1 == 0 ? 0 : 2)}',
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Text(meta,
                               style: const TextStyle(
                                   fontSize: 11, color: newTextSecondary)),
                         ),
                     ],
                   ),
                 ),
-                Text('₹${inrNum(it.amount, decimals: 0)}',
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: newBlueColor)),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('₹${inrNum(it.taxableAmount, decimals: 0)}',
+                        style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: newBlueColor)),
+                    if (it.taxAmount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text('+₹${inrNum(it.taxAmount, decimals: 0)} tax',
+                            style: const TextStyle(
+                                fontSize: 10, color: newTextSecondary)),
+                      ),
+                  ],
+                ),
               ],
             ),
           );
         }),
+
+        // Totals strip — taxable + GST + grand total for the whole document.
+        Container(
+          margin: const EdgeInsets.only(top: 10),
+          padding: const EdgeInsets.all(11),
+          decoration: BoxDecoration(
+            color: newSurfaceColor,
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: newBorderColor),
+          ),
+          child: Column(children: [
+            _TotalRow('Total Qty', _qty(totalQty)),
+            _TotalRow('Taxable Amount', '₹${inrNum(totalTaxable, decimals: 2)}'),
+            if (totalTax > 0)
+              _TotalRow('GST', '₹${inrNum(totalTax, decimals: 2)}'),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: Divider(height: 1, color: newBorderColor),
+            ),
+            _TotalRow('Grand Total', '₹${inrNum(grandTotal, decimals: 2)}',
+                bold: true),
+          ]),
+        ),
       ]),
     );
   }
+}
+
+class _TotalRow extends StatelessWidget {
+  final String label, value;
+  final bool bold;
+  const _TotalRow(this.label, this.value, {this.bold = false});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(children: [
+          Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    fontSize: bold ? 12 : 11,
+                    fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                    color: bold ? newTextPrimary : newTextSecondary)),
+          ),
+          Text(value,
+              style: TextStyle(
+                  fontSize: bold ? 14 : 12,
+                  fontWeight: bold ? FontWeight.w800 : FontWeight.w700,
+                  color: bold ? newBlueColor : newTextPrimary)),
+        ]),
+      );
 }
 
 //  Approval chain
@@ -749,7 +925,7 @@ class _ChainCard extends StatelessWidget {
     final chain = ctrl.approvalChain;
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _SecHead('Approval Chain'),
+        _SecHead('Approval Chain', icon: Icons.timeline_rounded),
         _TlRow(
           dotBg: newGreenLightColor,
           dotFg: newGreenColor,
@@ -867,7 +1043,7 @@ class _RelatedCard extends StatelessWidget {
     if (docs.isEmpty) return const SizedBox();
     return _Card(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _SecHead('Related Documents'),
+        _SecHead('Related Documents', icon: Icons.link_rounded),
         ...docs.map((d) => Container(
               margin: const EdgeInsets.only(bottom: 7),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
@@ -1026,70 +1202,71 @@ class _Card extends StatelessWidget {
       );
 }
 
+/// Section heading: blue icon + uppercase blue title + hairline rule,
+/// matching the web ERP's "DOCUMENT DETAILS" / "PARTY DETAILS" headers.
 class _SecHead extends StatelessWidget {
   final String text;
-  const _SecHead(this.text);
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Text(text,
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: newTextSecondary,
-                letterSpacing: .6)),
-      );
-}
-
-class _InfoGrid extends StatelessWidget {
-  final List<_IT> tiles;
-  const _InfoGrid({required this.tiles});
+  final IconData icon;
+  const _SecHead(this.text, {this.icon = Icons.info_outline_rounded});
 
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: tiles
-            .map((t) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _InfoTile(t),
-                ))
-            .toList(),
+        children: [
+          Row(children: [
+            Icon(icon, size: 15, color: newBlueColor),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(text.toUpperCase(),
+                  style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: newBlueColor,
+                      letterSpacing: .8)),
+            ),
+          ]),
+          const Padding(
+            padding: EdgeInsets.only(top: 10, bottom: 13),
+            child: Divider(height: 1, color: newBorderColor),
+          ),
+        ],
       );
 }
 
+/// One "LABEL over value" field. Plain (no box), like the web ERP.
 class _InfoTile extends StatelessWidget {
   final _IT t;
   const _InfoTile(this.t);
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-            color: newSurfaceColor,
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: newBorderColor)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(t.label,
-              style: const TextStyle(
-                  fontSize: 10,
-                  color: newTextSecondary,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 3),
-          Text(t.value,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: t.vc ?? newTextPrimary),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis),
-        ]),
-      );
+  Widget build(BuildContext context) {
+    final isEmpty = t.value.trim().isEmpty;
+    return SizedBox(
+      width: double.infinity,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(t.label.toUpperCase(),
+            style: const TextStyle(
+                fontSize: 9.5,
+                color: newTextHint,
+                fontWeight: FontWeight.w700,
+                letterSpacing: .6)),
+        const SizedBox(height: 4),
+        Text(isEmpty ? '-' : t.value,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+                color: isEmpty ? newTextHint : (t.vc ?? newTextPrimary)),
+            maxLines: t.maxLines,
+            overflow: TextOverflow.ellipsis),
+      ]),
+    );
+  }
 }
 
 class _IT {
   final String label, value;
   final Color? vc;
-  final bool full;
-  const _IT(this.label, this.value, {this.vc, this.full = false});
+  final int maxLines;
+  const _IT(this.label, this.value, {this.vc, this.maxLines = 2});
 }

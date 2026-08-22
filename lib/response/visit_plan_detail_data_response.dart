@@ -57,16 +57,48 @@ class VisitPlanDetailsDataList {
   String? checkstatus;
   bool ? isCheckIn;
 
+  // ── Visit details (web-ERP parity). Populated when the detail endpoint
+  // returns them; blank otherwise. Keys are matched loosely so either the
+  // PascalCase columns or lowercase params work.
+  String? purposeType;
+  String? purpose;
+  String? location;
+  String? contactPerson;
+  String? contactNo;
+  String? travelMode;
+  String? outcome;
+  String? checkInTime;
+  String? checkOutTime;
+  String? visitNo;
+
+  static String? _pick(Map<String, dynamic> j, List<String> keys) {
+    for (final k in keys) {
+      final v = j[k];
+      if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+    }
+    return null;
+  }
+
   factory VisitPlanDetailsDataList.fromJson(Map<String, dynamic> json) => VisitPlanDetailsDataList(
-    customername: json["Customername"],
-    partyid: json["partyid"],
-    visitdate: json["visitdate"],
+    customername: _pick(json, ["Customername", "VisitTo", "customername"]),
+    partyid: json["partyid"] ?? json["PartyId"],
+    visitdate: _pick(json, ["visitdate", "VisitDateText", "VisitDate"]),
     visittime: json["visittime"],
-    visitstatus: json["visitstatus"],
-    distance: json["Distance"],
+    visitstatus: _pick(json, ["visitstatus", "Status"]),
+    distance: (json["Distance"] ?? json["DistanceKm"])?.toString(),   // API can send a number
     checkstatus: json["checkstatus"],
-    isCheckIn: true
-  );
+    isCheckIn: true,
+  )
+    ..purposeType = _pick(json, ["PurposeType", "purposetype"])
+    ..purpose = _pick(json, ["Purpose", "purpose"])
+    ..location = _pick(json, ["Location", "location"])
+    ..contactPerson = _pick(json, ["ContactPerson", "contactperson"])
+    ..contactNo = _pick(json, ["ContactNo", "contactno"])
+    ..travelMode = _pick(json, ["TravelMode", "travelmode"])
+    ..outcome = _pick(json, ["Outcome", "outcome"])
+    ..checkInTime = _pick(json, ["CheckInText", "CheckInTime", "checkintime"])
+    ..checkOutTime = _pick(json, ["CheckOutText", "CheckOutTime", "checkouttime"])
+    ..visitNo = _pick(json, ["VisitNo", "visitno"]);
 
   Map<String, dynamic> toJson() => {
     "Customername": customername,

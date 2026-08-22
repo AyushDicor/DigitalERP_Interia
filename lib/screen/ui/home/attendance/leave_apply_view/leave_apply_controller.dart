@@ -33,6 +33,25 @@ class LeaveApplyController extends AppBaseController {
   String fromDate = AppString.dateTimeEmpty;
   String toDate = AppString.dateTimeEmpty;
 
+  /// Leave types, matching the web ERP's "LEAVE TYPE" dropdown exactly.
+  /// There is no dropdown endpoint for these (unlike /api/visit/dropdowns), so
+  /// they are listed here; if the backend ever adds one, load it instead.
+  static const List<String> leaveTypes = [
+    'Casual Leave',
+    'Earned Leave',
+    'Loss of Pay',
+    'Sick Leave',
+  ];
+
+  /// Sent as `leavetype` on apply. Required by the API — the app previously
+  /// omitted it entirely, so leaves were saved with no type at all.
+  String leaveType = '';
+
+  void setLeaveType(String? v) {
+    leaveType = v ?? '';
+    update();
+  }
+
 
   List<DashboardDetailsData>? dashboardDetailsData = [];
   List<ExecutiveDropdownData>? executiveList = [];
@@ -87,10 +106,12 @@ class LeaveApplyController extends AppBaseController {
             : formatDate(toDate, AppString.ddMMyyyy, AppString.yyyyMMdd);
         body[RequestKeys.reason] = reasonController.text;
         body["forward"] = responsibleController.text;
+        body["leavetype"] = leaveType;
 
         var res = await api.applyLeave(body);
         if (res.status == 200) {
           setSegmentValue(0);
+          leaveType = '';
           reasonController.clear();
           responsibleController.clear();
           fromDate = AppString.dateTimeEmpty;
@@ -113,6 +134,11 @@ class LeaveApplyController extends AppBaseController {
   }
 
   bool _validate() {
+    // Required on the web form too (LEAVE TYPE *).
+    if (leaveType.isEmpty) {
+      ShowMessage.showSnackBar('Field Empty', 'Please select a leave type');
+      return false;
+    }
     if (selectedSegmentVal == 0 && fromDate == AppString.dateTimeEmpty) {
       ShowMessage.showSnackBar('Field Empty', AppString.pleaseSelectDate);
       return false;} else if (selectedSegmentVal == 1) {

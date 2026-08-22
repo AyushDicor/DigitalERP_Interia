@@ -17,6 +17,9 @@ class AppRoutes {
   static const executiveApprovedOrLeaveView = '/executive-approve-or-rejected-leaves-view';
   static const stockTakingView              = '/stock-taking-view';
   static const newVisitPlaning              = '/new-visit-planing';
+  /// Visit entry (web-ERP parity: full field set + attachments + followups).
+  static const newVisitForm                 = '/visit-entry/new';
+  static const visitEntryDetail             = '/visit-entry/detail';
   static const preview                      = '/preview';
   static const orderDetail                  = '/order-detail';
   static const imageDetail                  = '/image-detail';
@@ -90,6 +93,8 @@ class AppRoutes {
   static const misOrderReport = '/mis-order-report';
   static const misStockReport = '/mis-stock-report';
   static const misStockEnquiry = '/mis-stock-enquiry';
+  /// Generic server-driven MIS report (/api/mis/*).
+  static const misDynamicReport = '/mis-dynamic-report';
 
   //MRN Module
   static const mrnScreen = '/mrn';

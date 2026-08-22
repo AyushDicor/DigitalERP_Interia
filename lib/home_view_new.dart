@@ -975,11 +975,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/Menu_new_list_responce.dart';
 import 'package:newdigitalerp/homeview_new_controller.dart';
-import 'package:newdigitalerp/new_menu_defalut_screen.dart';
+import 'package:newdigitalerp/screen/ui/home/quick_links/quick_links_sheet.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/app_profile_image.dart';
-
-import 'app_routes/app_routes.dart';
 
 class HomeViewNew extends StatefulWidget {
   const HomeViewNew({Key? key}) : super(key: key);
@@ -1169,169 +1167,9 @@ class _HomeViewNewState extends State<HomeViewNew> with WidgetsBindingObserver {
     );
   }
 
-  void _openQuickLinksSheet(HomeViewNewController ctrl) {
-    showModalBottomSheet(
-      context: Get.context!,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        height: Get.height * 0.88,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              height: 4,
-              width: 44,
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            const SizedBox(height: 14),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                        color: newBlueLightColor,
-                        borderRadius: BorderRadius.circular(10)),
-                    child: const Icon(Icons.grid_view_rounded,
-                        color: newBlueColor, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text('Quick Links',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: newTextPrimary)),
-                  ),
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      height: 36,
-                      width: 36,
-                      decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(10)),
-                      child: Icon(Icons.close_rounded,
-                          size: 18, color: Colors.grey.shade600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            Divider(height: 1, color: Colors.grey.shade100),
-            Expanded(
-              child: ctrl.isListLoading
-                  ? const Center(
-                  child: CircularProgressIndicator(color: newBlueColor))
-                  : ctrl.menuListData.isEmpty
-                  ? Center(
-                  child: Text('No menu items found',
-                      style: TextStyle(color: Colors.grey.shade500)))
-                  : GridView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
-                itemCount: ctrl.menuListData.length,
-                gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.0,
-                ),
-                itemBuilder: (_, i) =>
-                    _menuTile(ctrl.menuListData[i], ctrl),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _menuTile(MenuNewData data, HomeViewNewController ctrl) {
-    return GestureDetector(
-      onTap: () {
-        Get.back(); // close sheet
-
-        // ✅ Intercept known menu IDs before the child==1 check
-        final route = _getDirectRoute(data.menuid);
-        if (route != null) {
-          Get.toNamed(route);
-          return;
-        }
-
-        if (data.child == 1) {
-          Get.to(() => MenuDefaultScreen(
-            menuID: data.menuid!,
-            title: data.menuname ?? 'Menu',
-          ));
-        } else {
-          Get.toNamed(HomeViewNewController.getRouteNameById(data.menuid));
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: newBorderColor),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration:  BoxDecoration(
-                  color: newBlueLightColor,
-                  borderRadius: BorderRadius.circular(10)),
-              child:
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Image.asset(
-                  ctrl.imageList()[data.menuname] ?? '',
-                  errorBuilder: (_, __, ___) => const Icon(
-                      Icons.grid_view_rounded,
-                      color: newBlueColor,
-                      size: 24),
-                ),
-              ),
-              // Icon(_menuIcon(data),
-              //     color: _menuColor(data), size: 24),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: Text(
-                data.menuname ?? '',
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: newTextPrimary),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  /// The sheet itself now lives in quick_links_sheet.dart so the bottom nav's
+  /// More tab and this screen open exactly the same menu.
+  void _openQuickLinksSheet(HomeViewNewController ctrl) => openQuickLinksSheet();
 
   // Proper per-module icon + accent colour for the menu tiles (Quick Links grid).
   // Keyed by menuid first, then menu name, with a sensible fallback.
@@ -1380,16 +1218,4 @@ class _HomeViewNewState extends State<HomeViewNew> with WidgetsBindingObserver {
     return palette[n % palette.length];
   }
 
-  String? _getDirectRoute(int? menuId) {
-    const directRoutes = {
-      126: AppRoutes.dashboard, // Dashboard -> pendency dashboard (stats + attendance)
-      127: AppRoutes.reportsHub, // MIS -> Reports hub (Sales Report + future reports)
-      2384: AppRoutes.approvalHub,
-      2385: AppRoutes.taskManagement, // Task -> Task Management module
-      2754: AppRoutes.mrnScreen,
-      2701: AppRoutes.reimbursement,
-      2586: AppRoutes.paymentRequestListScreen,
-    };
-    return menuId != null ? directRoutes[menuId] : null;
-  }
 }

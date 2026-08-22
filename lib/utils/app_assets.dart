@@ -119,5 +119,5 @@ class AppAssets {
   static const String seeDirection = 'assets/images/see_direction.png';
   static const String filterIcon = 'assets/images/filter_icon.png';
   static const String pointIcon = 'assets/icons/poins_icon.png';
-  static const String excelIcon = 'assets/images/excel.png';
+  static const String excelIcon = 'assets/images/excel_icon.png';
 }

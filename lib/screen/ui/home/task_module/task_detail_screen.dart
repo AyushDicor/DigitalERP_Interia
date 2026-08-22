@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:newdigitalerp/repo/attachment_repo.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'task_controller.dart';
 import 'task_models.dart';
@@ -91,6 +93,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _headerCard(d),
+                      const SizedBox(height: 12),
+                      _attachmentsCard(ctrl, d),
                       const SizedBox(height: 14),
                       _statusActions(ctrl, d),
                       const SizedBox(height: 14),
@@ -137,6 +141,161 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ],
       ),
     );
+  }
+
+  /// Files stored against this task, from /api/attachment/list. The download
+  /// URLs are presigned and expire after an hour, so they are re-fetched each
+  /// time the screen opens rather than cached.
+  Widget _attachmentsCard(TaskModuleController ctrl, TaskInfo d) {
+    final items = ctrl.attachments;
+
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.attach_file_rounded, size: 17, color: _sub),
+            const SizedBox(width: 8),
+            Text(
+              items.isEmpty ? 'Attachments' : 'Attachments (${items.length})',
+              style: const TextStyle(
+                  fontSize: 14, fontWeight: FontWeight.bold, color: _text),
+            ),
+            const Spacer(),
+            if (ctrl.uploadingAttachment)
+              const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+            else
+              TextButton.icon(
+                onPressed: () => ctrl.addAttachmentToTask(d.taskid),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Add'),
+                style: TextButton.styleFrom(
+                    foregroundColor: _primary,
+                    visualDensity: VisualDensity.compact),
+              ),
+          ]),
+          const SizedBox(height: 4),
+
+          if (ctrl.loadingAttachments)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Text('Loading files…',
+                  style: TextStyle(fontSize: 12.5, color: _sub)),
+            )
+          else if (items.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: Text('No files attached',
+                  style: TextStyle(fontSize: 12.5, color: _sub)),
+            )
+          else
+            ...items.map((a) => _attachmentTile(ctrl, a, d.taskid)),
+        ],
+      ),
+    );
+  }
+
+  Widget _attachmentTile(
+      TaskModuleController ctrl, AttachmentItem a, int taskId) {
+    final meta = [
+      if (a.sizeLabel.isNotEmpty) a.sizeLabel,
+      if (a.uploadedBy.isNotEmpty) a.uploadedBy,
+      if (a.uploadedDate.isNotEmpty) a.uploadedDate,
+    ].join(' · ');
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () async {
+          if (a.url.isEmpty) return;
+          final uri = Uri.tryParse(a.url);
+          if (uri == null) return;
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        },
+        child: Row(children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: (a.isPdf
+                      ? const Color(0xFFDC2626)
+                      : a.isImage
+                          ? const Color(0xFF16A34A)
+                          : _primary)
+                  .withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              a.isPdf
+                  ? Icons.picture_as_pdf_rounded
+                  : a.isImage
+                      ? Icons.image_outlined
+                      : Icons.insert_drive_file_outlined,
+              size: 19,
+              color: a.isPdf
+                  ? const Color(0xFFDC2626)
+                  : a.isImage
+                      ? const Color(0xFF16A34A)
+                      : _primary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(a.fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _text)),
+                if (meta.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11, color: _sub)),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => _confirmDelete(ctrl, a, taskId),
+            icon: const Icon(Icons.delete_outline_rounded,
+                size: 19, color: _sub),
+            tooltip: 'Remove',
+            visualDensity: VisualDensity.compact,
+          ),
+        ]),
+      ),
+    );
+  }
+
+  void _confirmDelete(
+      TaskModuleController ctrl, AttachmentItem a, int taskId) {
+    Get.dialog(AlertDialog(
+      title: const Text('Remove file?'),
+      content: Text('${a.fileName} will be deleted from this task.'),
+      actions: [
+        TextButton(onPressed: Get.back, child: const Text('Cancel')),
+        TextButton(
+          onPressed: () {
+            Get.back();
+            ctrl.deleteAttachment(a.id, taskId);
+          },
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFFDC2626)),
+          child: const Text('Remove'),
+        ),
+      ],
+    ));
   }
 
   Widget _card({required Widget child}) => Container(

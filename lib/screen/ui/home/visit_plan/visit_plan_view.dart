@@ -189,6 +189,7 @@
 //   }
 // }
 
+
 import 'package:newdigitalerp/screen/base/base_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/visit_plan/visit_plan_controller.dart';
 import 'package:newdigitalerp/utils/all_screens_dialog_box/visit_plan_flter/visit_plan_filter_view.dart';
@@ -376,21 +377,29 @@ class VisitPlanView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Visit Area',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: newTextSecondary,
-                              fontWeight: FontWeight.w400),
-                        ),
-                        const SizedBox(height: 2),
                         Text(
-                          item.vistarea ?? 'N/A',
+                          // /api/visit/list gives VisitTo (who/what was
+                          // visited); older rows only had the area.
+                          item.party?.isNotEmpty == true
+                              ? item.party!
+                              : (item.vistarea ?? 'N/A'),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: newTextPrimary),
                         ),
+                        if ((item.visitNo ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            item.visitNo!,
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: newTextSecondary,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -428,14 +437,17 @@ class VisitPlanView extends StatelessWidget {
                         _infoItem(Icons.calendar_today_outlined, 'Date',
                             item.visitdate ?? 'N/A'),
                         const SizedBox(height: 12),
-                        _infoItem(Icons.business_outlined, 'Party Name',
-                            item.party ?? 'N/A'),
+                        _infoItem(Icons.place_outlined, 'Location',
+                            item.vistarea ?? 'N/A'),
+                        const SizedBox(height: 12),
+                        _infoItem(Icons.person_outline_rounded, 'Visited By',
+                            item.executive ?? 'N/A'),
                       ],
                     ),
                   ),
                   Container(
                     width: 1,
-                    height: 70,
+                    height: 96,
                     color: const Color(0xFFEFF2F7),
                     margin: const EdgeInsets.symmetric(horizontal: 12),
                   ),
@@ -443,11 +455,14 @@ class VisitPlanView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        _infoItem(Icons.flag_outlined, 'Purpose',
+                            item.purposeType ?? 'N/A'),
+                        const SizedBox(height: 12),
+                        _infoItem(Icons.badge_outlined, 'Contact Person',
+                            item.contactPerson ?? 'N/A'),
+                        const SizedBox(height: 12),
                         _infoItem(Icons.access_time_outlined, 'Timing',
                             item.visittime ?? 'N/A'),
-                        const SizedBox(height: 12),
-                        _infoItem(Icons.person_outline_rounded, 'Executive',
-                            item.executive ?? 'N/A'),
                       ],
                     ),
                   ),

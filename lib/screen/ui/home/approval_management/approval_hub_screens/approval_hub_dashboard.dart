@@ -45,7 +45,7 @@ class ApprovalHubDashboard extends StatelessWidget {
                             // (leave-approval access). Opens the dedicated approve/reject
                             // screen backed by the real leave table.
                             if (ctrl.canApproveLeave) ...[
-                              _LeaveApprovalCard(),
+                              _LeaveApprovalCard(ctrl: ctrl),
                               const SizedBox(height: 14),
                             ],
                             if (_hasOverdue(ctrl)) _OverdueBanner(),
@@ -224,54 +224,131 @@ class _OverdueBanner extends StatelessWidget {
 
 //  Section heading
 // Gated Leave Requests entry — opens the real approve/reject screen.
+//
+// When applications are waiting the card announces itself: a count badge on the
+// icon, an amber border and tint, and a "N waiting for your approval" line, so
+// an approver can't walk past it. With nothing pending it stays a plain card.
 class _LeaveApprovalCard extends StatelessWidget {
+  final ApprovalHubController ctrl;
+  const _LeaveApprovalCard({required this.ctrl});
+
+  static const _amber = Color(0xFFF97316);
+
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: () => Get.to(() => ManagerLeaveHistoryView()),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE8ECF0)),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3)),
+  Widget build(BuildContext context) {
+    final pending = ctrl.pendingLeaveCount;
+    final waiting = pending > 0;
+
+    return GestureDetector(
+      onTap: () async {
+        await Get.to(() => ManagerLeaveHistoryView());
+        // Coming back after approving/rejecting — refresh the badge.
+        ctrl.loadPendingLeaveCount();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: waiting ? const Color(0xFFFFF8F1) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: waiting
+                  ? _amber.withValues(alpha: 0.45)
+                  : const Color(0xFFE8ECF0),
+              width: waiting ? 1.2 : 1),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Row(children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _amber.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: const Text('🏖', style: TextStyle(fontSize: 22)),
+              ),
+              if (waiting)
+                Positioned(
+                  top: -5,
+                  right: -6,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 20),
+                    height: 20,
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    decoration: BoxDecoration(
+                      color: newRedColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 1.6),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      pending > 99 ? '99+' : '$pending',
+                      style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white),
+                    ),
+                  ),
+                ),
             ],
           ),
-          child: Row(children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF97316).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              alignment: Alignment.center,
-              child: const Text('🏖', style: TextStyle(fontSize: 22)),
-            ),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Leave Requests',
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    const Text('Leave Requests',
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: newTextPrimary)),
-                    SizedBox(height: 3),
-                    Text('Approve or reject pending leave applications',
-                        style:
-                            TextStyle(fontSize: 12, color: newTextSecondary)),
+                    if (waiting) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: newRedColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text('ACTION NEEDED',
+                            style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.3,
+                                color: newRedColor)),
+                      ),
+                    ],
                   ]),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: newTextSecondary),
-          ]),
-        ),
-      );
+                  const SizedBox(height: 3),
+                  Text(
+                    waiting
+                        ? '$pending ${pending == 1 ? 'request is' : 'requests are'} waiting for your approval'
+                        : 'Approve or reject pending leave applications',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: waiting ? FontWeight.w600 : FontWeight.w400,
+                        color: waiting
+                            ? const Color(0xFF9A3412)
+                            : newTextSecondary),
+                  ),
+                ]),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: newTextSecondary),
+        ]),
+      ),
+    );
+  }
 }
 
 class _SectionHead extends StatelessWidget {

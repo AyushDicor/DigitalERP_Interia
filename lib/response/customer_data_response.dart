@@ -53,14 +53,25 @@ class VisitCustomerListData {
   String? distance;
   bool? isChecked;
 
+  // Parsed defensively: the API sends "Distance": 0.00 (a number), and a plain
+  // cast to String? threw `type 'double' is not a subtype of type 'String?'`.
+  // One bad row aborted the whole list, so the screen showed "No Customers
+  // Found" even though hundreds of customers had been returned.
   factory VisitCustomerListData.fromJson(Map<String, dynamic> json) => VisitCustomerListData(
-    customername: json["Customername"],
-    partyid: json["partyid"],
-    area: json["area"],
-    areaid: json["areaid"],
-    distance: json["Distance"],
+    customername: json["Customername"]?.toString(),
+    partyid: _asInt(json["partyid"]),
+    area: json["area"]?.toString(),
+    areaid: _asInt(json["areaid"]),
+    distance: json["Distance"]?.toString(),
     isChecked: false
   );
+
+  static int? _asInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString());
+  }
 
   Map<String, dynamic> toJson() => {
     "Customername": customername,

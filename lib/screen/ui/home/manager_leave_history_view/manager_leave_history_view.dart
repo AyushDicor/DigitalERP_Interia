@@ -729,6 +729,7 @@ class ManagerLeaveHistoryView extends StatelessWidget {
 
   void _showConfirmDialog(BuildContext context,
       ManagerLeaveHistoryController controller, bool isApprove, String id) {
+    final reasonCtrl = TextEditingController();
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -739,9 +740,34 @@ class ManagerLeaveHistoryView extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: newTextPrimary)),
-        content: Text(
-            'Would you like to ${isApprove ? 'approve' : 'reject'} this leave?',
-            style: const TextStyle(fontSize: 13, color: newTextSecondary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                'Would you like to ${isApprove ? 'approve' : 'reject'} this leave?',
+                style:
+                    const TextStyle(fontSize: 13, color: newTextSecondary)),
+            // Capture the rejection reason so it shows up in the leave history.
+            if (!isApprove) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                maxLines: 2,
+                style: const TextStyle(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'Reason for rejection',
+                  hintStyle: const TextStyle(
+                      fontSize: 12, color: newTextSecondary),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 8),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -751,7 +777,10 @@ class ManagerLeaveHistoryView extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              controller.leaveStatusUpdate(id: id, isApproved: isApprove);
+              controller.leaveStatusUpdate(
+                  id: id,
+                  isApproved: isApprove,
+                  rejectReason: isApprove ? null : reasonCtrl.text.trim());
             },
             style: ElevatedButton.styleFrom(
               backgroundColor:

@@ -68,6 +68,7 @@ import '../screen/ui/home/indent/indent_screens/indent_list_screen.dart';
 import '../screen/ui/home/issue item/issue_item_screens/issue_item_list_screen.dart';
 import '../screen/ui/home/mis_module/attendance_report/attendance_report_view.dart';
 import '../screen/ui/home/mis_module/mis_module_view.dart';
+import '../screen/ui/home/mis_module/dynamic_report/mis_report_view.dart';
 import '../screen/ui/home/mis_module/mis_order/mis_order_view.dart';
 import '../screen/ui/home/mis_module/mis_outstanding/mis_outstanding_view.dart';
 import '../screen/ui/home/mis_module/pending_shipping/pending_shipping_view.dart';
@@ -88,6 +89,8 @@ import '../screen/ui/home/payment_request/payment request list/payment_request_l
 import '../screen/ui/home/payment_request/payment_request_screen.dart';
 import '../screen/ui/home/reimbursements/reimbursement_screen.dart';
 import '../screen/ui/home/visit_plan/new_visit_planing/new_visit_planing_view.dart';
+
+import '../screen/ui/home/visit_plan/visit_entry/visit_entry_detail_screen.dart';
 import '../screen/ui/home/visit_plan/new_visit_planing/preview/preview_view.dart';
 import '../screen/ui/home/visit_plan/visit_plan_detail/stock_taking_view/stock_taking_view.dart';
 import '../screen/ui/home/visit_plan/visit_plan_detail/visit_plan_detail_view.dart';
@@ -170,6 +173,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.newVisitPlaning,
       page: () => const NewVisitPlaningView(),
+    ),
+    GetPage(
+      name: AppRoutes.visitEntryDetail,
+      page: () => const VisitEntryDetailScreen(),
     ),
     GetPage(
       name: AppRoutes.preview,
@@ -346,6 +353,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.misStockReport,
       page: () => const StockReportView(),
+    ),
+    GetPage(
+      name: AppRoutes.misDynamicReport,
+      page: () => const MisReportView(),
     ),
     GetPage(
       name: AppRoutes.misStockEnquiry,
