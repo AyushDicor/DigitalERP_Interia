@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "newdigitalerp" "\0"
+            VALUE "CompanyName", "Dicor" "\0"
+            VALUE "FileDescription", "Dicor ERP" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "newdigitalerp" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "newdigitalerp.exe" "\0"
-            VALUE "ProductName", "newdigitalerp" "\0"
+            VALUE "InternalName", "Dicor ERP" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Dicor. All rights reserved." "\0"
+            VALUE "OriginalFilename", "dicorerp.exe" "\0"
+            VALUE "ProductName", "Dicor ERP" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "874379693214",
-    "project_id": "digitalerp-ribbel",
-    "storage_bucket": "digitalerp-ribbel.firebasestorage.app"
+    "project_number": "930383834678",
+    "project_id": "digitalerp-dicor",
+    "storage_bucket": "digitalerp-dicor.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:874379693214:android:5318949458903892db7f8f",
+        "mobilesdk_app_id": "1:930383834678:android:1f0cc1b77368125a08f297",
         "android_client_info": {
-          "package_name": "com.ribbel.app"
+          "package_name": "com.newdicorerp.app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCrWQSniaaORf_OIYhQ2Y-W60xMwJEvTWg"
+          "current_key": "AIzaSyANZSJo2YjED3Nke4pzioAJPEBQkb2xeyA"
         }
       ],
       "services": {

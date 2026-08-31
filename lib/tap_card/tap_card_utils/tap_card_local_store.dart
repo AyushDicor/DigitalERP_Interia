@@ -1,7 +1,7 @@
 // Offline-first storage for the Tap Card module, ported from TapCard's
 // LocalStorageService + the sync-queue half of its ContactProvider.
 //
-// Why this module has one when no other ribbel module does: cards get captured
+// Why this module has one when no other module does: cards get captured
 // in the field — at a stall, in a lobby, in a basement — where the ERP modules
 // are simply not used. Losing a scanned card because there was no signal is the
 // one failure this module can't afford, so writes land on disk first and are

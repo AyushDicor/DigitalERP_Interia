@@ -51,7 +51,7 @@ user B's phone  ◄────────────────────�
 Google switched off the old "FCM server key" in 2024. Sending now uses the
 **FCM HTTP v1 API**, which authenticates with a service account.
 
-1. Firebase Console → project **digitalerp-ribbel** → ⚙ Project settings → **Service accounts**
+1. Firebase Console → project **digitalerp-dicor** → ⚙ Project settings → **Service accounts**
 2. **Generate new private key** → downloads a JSON file
 3. Put it on the API server, e.g. `App_Data/fcm-service-account.json` — keep it out of source control, it is a credential
 4. Confirm **Firebase Cloud Messaging API (V1)** is *Enabled* in Cloud Console → APIs
@@ -61,7 +61,7 @@ Google switched off the old "FCM server key" in 2024. Sending now uses the
 
 ```json
 "Firebase": {
-  "ProjectId": "digitalerp-ribbel",
+  "ProjectId": "digitalerp-dicor",
   "ServiceAccountPath": "App_Data/fcm-service-account.json"
 }
 ```

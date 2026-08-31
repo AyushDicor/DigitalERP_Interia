@@ -1,5 +1,5 @@
 // Tap Card — list page. Stat header + search + category chips + A–Z grouped
-// card rows, matching the other ribbel list screens. The FAB offers a choice
+// card rows, matching the other list screens in the app. The FAB offers a choice
 // between scanning a physical card and typing one in.
 
 import 'package:flutter/material.dart';

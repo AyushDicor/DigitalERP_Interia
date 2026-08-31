@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/screen/auth/splash/splash_controller.dart';
+import 'package:newdigitalerp/utils/app_assets.dart';
 
 class SplashView extends StatelessWidget {
   const SplashView({Key? key}) : super(key: key);
@@ -18,7 +19,7 @@ class SplashView extends StatelessWidget {
             children: [
               //  Stacked layers logo
               Image.asset(
-                'assets/images/ribbel.png',
+                AppAssets.appLogo,
                 width: 100,
                 height: 100,
               ),
@@ -26,7 +27,7 @@ class SplashView extends StatelessWidget {
 
 
               const Text(
-                'Ribbel Life',
+                'Dicor ERP',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,

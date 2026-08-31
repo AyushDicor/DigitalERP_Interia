@@ -1,6 +1,6 @@
 {
-    "name": "newdigitalerp",
-    "short_name": "newdigitalerp",
+    "name": "Dicor ERP",
+    "short_name": "Dicor ERP",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

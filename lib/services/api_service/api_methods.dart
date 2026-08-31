@@ -168,6 +168,8 @@ class ApiMethods {
   String approvalList         = 'GetApprovalList';
   String approvaldetails      = 'GetApprovalDetail';
   String approvalupdatestatus = 'SubmitApproval';
+  /// Approve / reject / hold many documents in one call.
+  String approvalbulkstatus   = 'SubmitApprovalBulk';
 
   /// Approval Filter Screen
   String documentname   = 'Document/Documentdrpdon';

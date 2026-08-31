@@ -1841,6 +1841,18 @@ class ApprovalHubController extends AppBaseController {
     } catch (_) {/* the card still works without a badge */}
   }
 
+  /// One entry per approval. Keyed on the approval id (navigateId), falling
+  /// back to documentId + type for rows that arrive without one.
+  static List<ApprovalListData> _dedupe(List<ApprovalListData> rows) {
+    final seen = <String>{};
+    return rows.where((a) {
+      final key = (a.navigateId ?? 0) > 0
+          ? 'n${a.navigateId}'
+          : 'd${a.documentId}_${a.approvalTypeCode ?? a.approvalType ?? ''}';
+      return seen.add(key);
+    }).toList();
+  }
+
   /// Real dashboard loader — fetches approvals from the API and builds categories.
   Future<void> _loadDashboard() async {
     setBusy(true);
@@ -1860,11 +1872,13 @@ class ApprovalHubController extends AppBaseController {
       };
 
       final res = await api.getApprovalListData(body);
-      if (res.status == 200) {
-        allApprovals = res.data ?? [];
-      } else {
-        allApprovals = [];
-      }
+      // GetApprovalList returns ONE ROW PER DOCUMENT LINE — a PO with three
+      // items comes back three times with the same NavigateId. Undeduplicated
+      // that showed the same document as several cards and inflated every
+      // count (419 rows for 359 real approvals on 26-08-2026). Keep the first
+      // row per approval id; the card shows header data, which is identical
+      // across a document's rows.
+      allApprovals = res.status == 200 ? _dedupe(res.data ?? []) : [];
 
       // Build categories from approval types (same grouping as before).
       final keys = allApprovals
@@ -2112,21 +2126,72 @@ class ApprovalHubController extends AppBaseController {
     }
   }
 
-  /// TODO: replace with real bulk API call
+  /// Approve / reject / hold every selected document in ONE call
+  /// (POST /api/SubmitApprovalBulk). The server actions each id independently
+  /// and returns { total, succeeded, failed, results[] }.
+  ///
+  /// The ids sent are the same ones the single-document submit uses as
+  /// `approvalid` — navigateId, falling back to documentId. Selection is keyed
+  /// on documentId, so the mapping goes through [selectedItems] rather than
+  /// [selectedIds] directly.
   Future<void> submitBulkAction(ApprovalAction action, String remark) async {
-    setBusy(true);
-    await Future.delayed(const Duration(milliseconds: 500));
-
     final toProcess = List<ApprovalListData>.from(selectedItems);
-    for (final item in toProcess) { _removeItem(item); }
-    selectedIds.clear();
+    final ids = toProcess
+        .map((a) => a.navigateId ?? a.documentId ?? 0)
+        .where((id) => id > 0)
+        .toSet() // the same document can appear under two approval types
+        .toList();
 
-    setBusy(false);
-    update();
-    ShowMessage.showSnackBar(
-      '${action.label} Complete',
-      '${toProcess.length} of ${toProcess.length} items processed (Demo)',
-    );
+    if (ids.isEmpty) {
+      ShowMessage.showSnackBar('Nothing to submit', 'No documents selected');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      final res = await api.submitApprovalBulkApi(<String, dynamic>{
+        'compid': homeController.currentUserData?.compId ?? 0,
+        'userid': homeController.currentUserData?.userid ?? 0,
+        'status': action.label, // Approved / Reject / Hold / …
+        'remarks': remark.trim(),
+        'ids': ids,
+      });
+
+      if (res.status != 200) {
+        ShowMessage.showSnackBar('Failed', res.message ?? 'Bulk action failed');
+        return;
+      }
+
+      final data = res.data;
+      final int succeeded =
+          int.tryParse('${(data is Map) ? data['succeeded'] : ''}') ??
+              ids.length;
+      final int failed =
+          int.tryParse('${(data is Map) ? data['failed'] : ''}') ?? 0;
+
+      selectedIds.clear();
+
+      Get.snackbar(
+        '${action.title} ${failed == 0 ? '✓' : ''}',
+        failed == 0
+            ? '$succeeded of ${ids.length} documents ${action.label.toLowerCase()}'
+            : '$succeeded succeeded, $failed failed',
+        backgroundColor: failed == 0 ? action.bgColor : newRedLightColor,
+        colorText: failed == 0 ? action.color : newRedColor,
+        duration: const Duration(seconds: 4),
+        snackPosition: SnackPosition.TOP,
+      );
+
+      // Re-read from the server instead of just dropping the rows locally: the
+      // API reports per-id success even for an id that no longer exists, so the
+      // list is the only honest source of what is actually still pending.
+      await _loadDashboard();
+    } catch (e) {
+      ShowMessage.showSnackBar('Failed', '$e');
+    } finally {
+      setBusy(false);
+      update();
+    }
   }
 
   // ─────────────────────────────────────────────

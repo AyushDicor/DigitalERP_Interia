@@ -395,7 +395,13 @@ class DashboardController extends AppBaseController {
         'todate': fmt(now),
       });
       if (res.status == 200) {
-        approvalPending = (res.data ?? []).length;
+        // The endpoint returns one row per document LINE, so count distinct
+        // approvals — exactly what the hub lists after de-duplication.
+        approvalPending = (res.data ?? [])
+            .map((a) => a.navigateId ?? a.documentId ?? 0)
+            .where((id) => id > 0)
+            .toSet()
+            .length;
         update();
       }
     } catch (_) {/* tile falls back to the pendency count */}

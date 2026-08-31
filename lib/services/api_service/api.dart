@@ -2072,6 +2072,42 @@ class Api {
     }
   }
 
+  /// Bulk approve / reject / hold. Body: { compid, userid, status, remarks,
+  /// ids: [12, 15, 18] }. Each id is actioned independently server-side and the
+  /// response carries { total, succeeded, failed, results[] } in `data`.
+  Future<UpdateApprovalstatusResponse> submitApprovalBulkApi(
+      Map<String, dynamic> body) async {
+    List<ConnectivityResult> connectivityResults =
+    await connectivity.checkConnectivity();
+
+    if (connectivityResults.contains(ConnectivityResult.wifi) ||
+        connectivityResults.contains(ConnectivityResult.mobile)) {
+      log('submitApprovalBulk REQ => ${jsonEncode(body)}');
+      String res = await _apiClient.postMethod(
+        method: _apiMethods.approvalbulkstatus,
+        body: jsonEncode(body),
+        header: {'Content-Type': 'application/json'},
+      );
+      log('submitApprovalBulk RES => $res');
+      if (res.isNotEmpty) {
+        try {
+          return updateApprovalstatusResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) {
+            print(e);
+          }
+          return UpdateApprovalstatusResponse(
+              status: 500, message: e.toString());
+        }
+      } else {
+        return UpdateApprovalstatusResponse(
+            status: 500, message: 'Something went wrong');
+      }
+    } else {
+      return UpdateApprovalstatusResponse(status: 500, message: 'No internet');
+    }
+  }
+
   Future<CommonResponse> updateOrderStatusApi(Map<String, String> body) async {
     List<ConnectivityResult> connectivityResults =
     await connectivity.checkConnectivity();

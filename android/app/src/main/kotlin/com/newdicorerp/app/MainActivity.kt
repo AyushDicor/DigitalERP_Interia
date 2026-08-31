@@ -1,4 +1,4 @@
-package com.ribbel.app
+package com.newdicorerp.app
 
 import io.flutter.embedding.android.FlutterActivity
 

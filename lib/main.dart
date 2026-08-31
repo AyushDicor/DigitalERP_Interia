@@ -46,7 +46,7 @@ import 'package:newdigitalerp/home/home_contoller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Connect to the Firebase project (DigitalERP Ribbel). Must run before any
+  // Connect to the Firebase project (DigitalERP Dicor). Must run before any
   // Firebase API (e.g. FCM) is used.
   // Firebase (FCM push) may not be configured for every platform (e.g. a web/desktop
   // test build has no DefaultFirebaseOptions). Don't let that crash the whole app —
@@ -78,7 +78,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Digital ERP',
+      title: 'Dicor ERP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6366F1)),

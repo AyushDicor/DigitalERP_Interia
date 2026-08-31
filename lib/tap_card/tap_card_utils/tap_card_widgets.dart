@@ -9,7 +9,7 @@ import 'package:newdigitalerp/utils/app_constant_new.dart';
 
 import '../tap_card_models.dart';
 
-// Local palette, declared per module the way the other ribbel list views do.
+// Local palette, declared per module the way the other list views in the app do.
 const Color kTapPrimary = purpleColor;
 const Color kTapBg = Color(0xFFF6F7FB);
 const Color kTapSurface = Colors.white;

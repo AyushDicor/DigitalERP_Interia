@@ -50,18 +50,18 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCrWQSniaaORf_OIYhQ2Y-W60xMwJEvTWg',
-    appId: '1:874379693214:android:5318949458903892db7f8f',
-    messagingSenderId: '874379693214',
-    projectId: 'digitalerp-ribbel',
-    storageBucket: 'digitalerp-ribbel.firebasestorage.app',
+    apiKey: 'AIzaSyANZSJo2YjED3Nke4pzioAJPEBQkb2xeyA',
+    appId: '1:930383834678:android:1f0cc1b77368125a08f297',
+    messagingSenderId: '930383834678',
+    projectId: 'digitalerp-dicor',
+    storageBucket: 'digitalerp-dicor.firebasestorage.app',
   );
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyACsBKivB4WywoR-alOs6hRHEC3HB1kqYk',
-    appId: '1:874379693214:ios:21ae52613234287ddb7f8f',
-    messagingSenderId: '874379693214',
-    projectId: 'digitalerp-ribbel',
-    storageBucket: 'digitalerp-ribbel.firebasestorage.app',
-    iosBundleId: 'com.ribbel.app',
+    apiKey: 'AIzaSyCE4ACTEarktKBkgDZR_V4wo5ltDYFm7AQ',
+    appId: '1:930383834678:ios:2a3cfe005d5b5c8708f297',
+    messagingSenderId: '930383834678',
+    projectId: 'digitalerp-dicor',
+    storageBucket: 'digitalerp-dicor.firebasestorage.app',
+    iosBundleId: 'com.newdicorerp.app',
   );
 }
