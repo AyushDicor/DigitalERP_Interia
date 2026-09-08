@@ -45,19 +45,45 @@ class PartyDropdownData {
   PartyDropdownData({
     this.partyid,
     this.partyname,
+    this.mobileno,
+    this.address,
+    this.location,
+    this.executive,
+    this.outstanding,
+    this.remarks,
   });
 
   int? partyid;
   String? partyname;
+  // Enriched fields from the widened agentparty/getagentpartyname endpoint.
+  // Absent on the legacy response shape → null; consumers must null-check.
+  String? mobileno;
+  String? address;
+  String? location; // "lat,lng"
+  String? executive;
+  String? outstanding;
+  String? remarks;
 
   factory PartyDropdownData.fromJson(Map<String, dynamic> json) => PartyDropdownData(
         partyid: json['partyid'],
         partyname: json['partyname'],
+        mobileno: json['mobileno']?.toString(),
+        address: json['address']?.toString(),
+        location: json['location']?.toString(),
+        executive: json['executive']?.toString(),
+        outstanding: json['outstanding']?.toString(),
+        remarks: json['remarks']?.toString(),
       );
 
   Map<String, dynamic> toJson() => {
         'partyid': partyid,
         'partyname': partyname,
+        'mobileno': mobileno,
+        'address': address,
+        'location': location,
+        'executive': executive,
+        'outstanding': outstanding,
+        'remarks': remarks,
       };
 
   @override

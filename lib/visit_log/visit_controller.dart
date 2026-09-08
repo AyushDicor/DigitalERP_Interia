@@ -332,10 +332,16 @@ class VisitController extends AppBaseController {
 
   // Party picker (optional) — flat searchable list, sets partyid + prefills the
   // "Visited" name (still editable). partyid 0 = free-typed, per the API.
+  // Sends branchid + executiveid too (executiveid=0 = no executive filter); the
+  // widened endpoint uses them, the legacy one ignores them.
   Future<void> loadParties() async {
     if (parties.isNotEmpty) return; // load once per form session
-    final res =
-        await api.getPartyDropdownList({'compid': _compid, 'userid': _userid});
+    final res = await api.getPartyDropdownList({
+      'compid': _compid,
+      'userid': _userid,
+      'branchid': _branchid,
+      'executiveid': '0',
+    });
     if (res.status == 200) parties = res.data ?? [];
     update();
   }
@@ -344,6 +350,30 @@ class VisitController extends AppBaseController {
     selectedPartyId = p.partyid ?? 0;
     selectedPartyName = (p.partyname ?? '').trim();
     if (selectedPartyName.isNotEmpty) visitToCtrl.text = selectedPartyName;
+    // Non-destructively prefill from the enriched party record (widened
+    // endpoint only; fields are null on the legacy shape). Never clobber what
+    // the user already typed.
+    final mob = (p.mobileno ?? '').trim();
+    if (mob.isNotEmpty && contactNoCtrl.text.trim().isEmpty) {
+      contactNoCtrl.text = mob;
+    }
+    final addr = (p.address ?? '').trim();
+    if (addr.isNotEmpty && locationCtrl.text.trim().isEmpty) {
+      locationCtrl.text = addr;
+    }
+    // location = "lat,lng" → seed GPS only when both are empty.
+    final loc = (p.location ?? '').trim();
+    if (loc.contains(',') &&
+        latCtrl.text.trim().isEmpty &&
+        lngCtrl.text.trim().isEmpty) {
+      final parts = loc.split(',');
+      final lat = double.tryParse(parts[0].trim());
+      final lng = double.tryParse(parts.length > 1 ? parts[1].trim() : '');
+      if (lat != null && lng != null) {
+        latCtrl.text = '$lat';
+        lngCtrl.text = '$lng';
+      }
+    }
     update();
   }
 
