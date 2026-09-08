@@ -11,6 +11,7 @@ import 'package:newdigitalerp/lead%20management/lead%20management%20controller/l
 import 'package:newdigitalerp/lead%20management/lead_detail_view.dart';
 import 'package:newdigitalerp/lead%20management/lead_entry_view.dart';
 import 'package:newdigitalerp/lead%20management/lead_filtter_view.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_constant_new.dart';
 import 'lead_list_response.dart';
 
@@ -710,7 +711,15 @@ class _LeadListCard extends StatelessWidget {
           _iconLine(Icons.badge_outlined,
               'Lead #${item.leadnumber ?? '-'}   •   ${item.contactperson ?? '-'}'),
           const SizedBox(height: 5),
-          _iconLine(Icons.phone_outlined, item.mobilenumber ?? '-'),
+          Row(children: [
+            Expanded(
+              child: _iconLine(Icons.phone_outlined, item.mobilenumber ?? '-'),
+            ),
+            if (_hasDialableNumber(item.mobilenumber)) ...[
+              const SizedBox(width: 8),
+              _callButton(item.mobilenumber!),
+            ],
+          ]),
           const SizedBox(height: 5),
           Row(children: [
             Expanded(
@@ -748,4 +757,43 @@ class _LeadListCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis)),
       ]);
+
+  // True when the lead has an actual dialable number (not blank / '-').
+  bool _hasDialableNumber(String? s) =>
+      (s ?? '').replaceAll(RegExp(r'[^0-9]'), '').isNotEmpty;
+
+  // Subtle call button — a soft green-tinted square that matches the card's
+  // chip/badge style (no loud fill or shadow). Its own tap consumes the
+  // gesture, so tapping it dials instead of opening the lead detail.
+  static const Color _kCall = Color(0xFF16A34A);
+  Widget _callButton(String rawNumber) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _dial(rawNumber),
+          borderRadius: BorderRadius.circular(9),
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: _kCall.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: _kCall.withValues(alpha: 0.20)),
+            ),
+            child: const Icon(Icons.call_outlined, color: _kCall, size: 16),
+          ),
+        ),
+      );
+
+  // Open the native dialer pre-filled with the number (same pattern as the
+  // order-followup screen). Keep only digits and a leading '+'.
+  Future<void> _dial(String raw) async {
+    final number = raw.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (number.isEmpty) return;
+    final uri = Uri(scheme: 'tel', path: number);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      Get.snackbar('Call', 'Could not open the dialer.');
+    }
+  }
 }

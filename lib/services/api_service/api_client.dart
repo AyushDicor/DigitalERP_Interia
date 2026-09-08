@@ -36,6 +36,43 @@ class ApiClient extends GetConnect {
     return {if (header != null) ...header, 'X-Api-Key': apiKey};
   }
 
+  /// POST a raw JSON body to the mobile API ([baseAppUrl]).
+  ///
+  /// The usual [postMethod] form-encodes fields, which cannot represent a
+  /// nested array — the Production saveentry call sends a `rows: [ ... ]` list,
+  /// so it must go as real JSON with an explicit Content-Type. Stages/batches
+  /// use this too, to match the backend's documented JSON contract exactly.
+  Future<String> postAppJson({
+    required String method,
+    required Map<String, dynamic> body,
+  }) async {
+    final url = '$baseAppUrl$method';
+    try {
+      log(url);
+      log(jsonEncode(body));
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json', 'X-Api-Key': apiKey},
+        body: jsonEncode(body),
+      );
+      log("RES -------------> ${response.statusCode}");
+      log("RES --------B-----> ${response.body}");
+      AliceInterceptor.getAlice.onHttpResponse(response);
+      if (response.statusCode != 200) {
+        return jsonEncode({
+          "success": false,
+          "message": "Server error (${response.statusCode})",
+          "status": response.statusCode,
+          "data": null,
+        });
+      }
+      return response.body;
+    } catch (e) {
+      log('______ postAppJson error ${e.toString()}');
+      return '';
+    }
+  }
+
   @override
   void onInit() {
     baseUrl = baseAppUrl;

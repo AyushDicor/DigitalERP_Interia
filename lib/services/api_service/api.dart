@@ -6,6 +6,8 @@ import 'package:newdigitalerp/catalouge/catalogue_list_response.dart';
 import 'package:newdigitalerp/lead%20management/lead_list_response.dart';
 import 'package:newdigitalerp/lead%20management/lead_form_models.dart';
 import 'package:newdigitalerp/tap_card/tap_card_models.dart';
+import 'package:newdigitalerp/production/production_models.dart';
+import 'package:newdigitalerp/visit_log/visit_models.dart';
 import 'package:newdigitalerp/performa_invoice/sale_order_models.dart';
 import 'package:newdigitalerp/performa_invoice/sale_order_form_models.dart';
 import 'package:newdigitalerp/purchase_order/purchase_order_models.dart';
@@ -484,6 +486,219 @@ class Api {
       }
     } else {
       return CommonResponse(status: 500, message: 'No internet');
+    }
+  }
+
+  // ── Production — Bulk Stage Entry (menu 1389) ──────────────────────────
+  // All three POST JSON to the mobile API. saveentry carries a nested rows[]
+  // array, so these go through postAppJson (raw JSON), not the form-encoded
+  // postMethod. On any transport failure they return a status-500 model so the
+  // UI can show a message instead of throwing.
+
+  Future<ProductionStagesResponse> getProductionStages(
+      Map<String, dynamic> body) async {
+    try {
+      final res = await _apiClient.postAppJson(
+          method: _apiMethods.productionStages, body: body);
+      if (res.isEmpty) {
+        return ProductionStagesResponse(
+            success: false, status: 500, message: 'No response', data: []);
+      }
+      return ProductionStagesResponse.fromJson(jsonDecode(res));
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return ProductionStagesResponse(
+          success: false, status: 500, message: e.toString(), data: []);
+    }
+  }
+
+  Future<ProductionBatchesResponse> getProductionBatches(
+      Map<String, dynamic> body) async {
+    try {
+      final res = await _apiClient.postAppJson(
+          method: _apiMethods.productionBatches, body: body);
+      if (res.isEmpty) {
+        return ProductionBatchesResponse(
+            success: false, status: 500, message: 'No response', data: null);
+      }
+      return ProductionBatchesResponse.fromJson(jsonDecode(res));
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return ProductionBatchesResponse(
+          success: false, status: 500, message: e.toString(), data: null);
+    }
+  }
+
+  Future<SaveEntryResult> saveProductionEntry(Map<String, dynamic> body) async {
+    try {
+      final res = await _apiClient.postAppJson(
+          method: _apiMethods.productionSaveEntry, body: body);
+      if (res.isEmpty) {
+        return SaveEntryResult(
+            success: false,
+            status: 500,
+            message: 'No response',
+            saved: 0,
+            failed: 0,
+            errors: []);
+      }
+      return SaveEntryResult.fromJson(jsonDecode(res));
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return SaveEntryResult(
+          success: false,
+          status: 500,
+          message: e.toString(),
+          saved: 0,
+          failed: 0,
+          errors: []);
+    }
+  }
+
+  // ── Visit module (web-ERP flow) ───────────────────────────────────────
+  // Reads/writes go through postMethod (form-urlencoded); the server also
+  // accepts JSON. The measurements grid is sent as a JSON string field.
+  // Attachments use AttachmentRepo (modulekey "Visit"), not these methods.
+
+  Future<List<VisitListItem>> getVisitList(Map<String, String> body) async {
+    try {
+      final res =
+          await _apiClient.postMethod(method: _apiMethods.visitLogList, body: body);
+      if (res.isEmpty) return [];
+      final j = jsonDecode(res);
+      if (j['success'] != true || j['data'] is! List) return [];
+      return (j['data'] as List)
+          .whereType<Map>()
+          .map((e) => VisitListItem.fromJson(e))
+          .toList();
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return [];
+    }
+  }
+
+  Future<List<PendingVisitItem>> getVisitPending(
+      Map<String, String> body) async {
+    try {
+      final res =
+          await _apiClient.postMethod(method: _apiMethods.visitPending, body: body);
+      if (res.isEmpty) return [];
+      final j = jsonDecode(res);
+      // rows nested under data.data
+      final inner = (j['data'] is Map) ? j['data']['data'] : null;
+      if (inner is! List) return [];
+      return inner
+          .whereType<Map>()
+          .map((e) => PendingVisitItem.fromJson(e))
+          .toList();
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return [];
+    }
+  }
+
+  Future<List<OpenLead>> getVisitOpenLeads(Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.visitOpenLeads, body: body);
+      if (res.isEmpty) return [];
+      final j = jsonDecode(res);
+      final inner = (j['data'] is Map) ? j['data']['data'] : null;
+      if (inner is! List) return [];
+      return inner.whereType<Map>().map((e) => OpenLead.fromJson(e)).toList();
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return [];
+    }
+  }
+
+  Future<VisitDropdowns> getVisitDropdowns(Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.visitDropdowns, body: body);
+      if (res.isEmpty) return VisitDropdowns.fallback;
+      final j = jsonDecode(res);
+      if (j['success'] == true && j['data'] is Map) {
+        return VisitDropdowns.fromJson(j['data']);
+      }
+      return VisitDropdowns.fallback;
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return VisitDropdowns.fallback;
+    }
+  }
+
+  Future<VisitDetail?> getVisitDetail(Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.visitDetailNew, body: body);
+      if (res.isEmpty) return null;
+      final j = jsonDecode(res);
+      if (j['success'] == true && j['data'] is Map) {
+        return VisitDetail.fromJson(j['data']);
+      }
+      return null;
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return null;
+    }
+  }
+
+  Future<SaveVisitResult> saveVisit(Map<String, String> body) async {
+    try {
+      final res =
+          await _apiClient.postMethod(method: _apiMethods.visitSave, body: body);
+      if (res.isEmpty) {
+        return SaveVisitResult(
+            success: false, status: 500, message: 'No response', id: 0, visitNo: '');
+      }
+      return SaveVisitResult.fromJson(jsonDecode(res));
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return SaveVisitResult(
+          success: false, status: 500, message: '$e', id: 0, visitNo: '');
+    }
+  }
+
+  Future<CommonResponse> deleteVisit(Map<String, String> body) async {
+    try {
+      final res =
+          await _apiClient.postMethod(method: _apiMethods.visitDelete, body: body);
+      if (res.isEmpty) return CommonResponse(status: 500, message: 'No response');
+      return commonResponseFromJson(res);
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return CommonResponse(status: 500, message: '$e');
+    }
+  }
+
+  Future<List<VisitFollowup>> getVisitFollowups(
+      Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.visitFollowups, body: body);
+      if (res.isEmpty) return [];
+      final j = jsonDecode(res);
+      if (j['success'] != true || j['data'] is! List) return [];
+      return (j['data'] as List)
+          .whereType<Map>()
+          .map((e) => VisitFollowup.fromJson(e))
+          .toList();
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return [];
+    }
+  }
+
+  Future<CommonResponse> addVisitFollowup(Map<String, String> body) async {
+    try {
+      final res = await _apiClient.postMethod(
+          method: _apiMethods.visitAddFollowup, body: body);
+      if (res.isEmpty) return CommonResponse(status: 500, message: 'No response');
+      return commonResponseFromJson(res);
+    } catch (e) {
+      if (kDebugMode) print(e);
+      return CommonResponse(status: 500, message: '$e');
     }
   }
 

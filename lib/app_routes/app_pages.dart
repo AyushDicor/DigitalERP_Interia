@@ -88,6 +88,8 @@ import '../screen/ui/home/payment_request/payment request detail/payment_request
 import '../screen/ui/home/payment_request/payment request list/payment_request_list_screen.dart';
 import '../screen/ui/home/payment_request/payment_request_screen.dart';
 import '../screen/ui/home/reimbursements/reimbursement_screen.dart';
+import '../production/production_stage_picker_view.dart';
+import '../visit_log/visit_list_view.dart';
 import '../screen/ui/home/visit_plan/new_visit_planing/new_visit_planing_view.dart';
 
 import '../screen/ui/home/visit_plan/visit_entry/visit_entry_detail_screen.dart';
@@ -157,6 +159,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.visitPlan,
       page: () => const VisitPlanView(),
+    ),
+    GetPage(
+      name: AppRoutes.visitLog,
+      page: () => const VisitListView(),
     ),
     GetPage(
       name: AppRoutes.approvedOrLeaveView,
@@ -467,6 +473,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.mrnScreen,
       page: () => MrnListScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.productionBulkEntry,
+      page: () => const ProductionStagePickerView(),
     ),
     // GetPage(
     //   name: AppRoutes.addMRN,

@@ -13,6 +13,7 @@ class AppRoutes {
   static const resetPassword                = '/reset-password';
   static const visitPlanDetail              = '/visit-plan-detail';
   static const visitPlan                    = '/visit-plan';
+  static const visitLog                     = '/visit-log'; // new web-ERP visit flow
   static const approvedOrLeaveView          = '/approve-or-rejected-leaves-view';
   static const executiveApprovedOrLeaveView = '/executive-approve-or-rejected-leaves-view';
   static const stockTakingView              = '/stock-taking-view';
@@ -98,6 +99,7 @@ class AppRoutes {
 
   //MRN Module
   static const mrnScreen = '/mrn';
+  static const productionBulkEntry = '/production-bulk-entry';
   static const addMRN = '/addMrn';
   static const filterMRN = '/filterMrn';
   static const materialReceiptScreen = '/materialReceived';

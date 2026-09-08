@@ -23,6 +23,11 @@ class ApiMethods {
   String attendanceList       = 'AttendanceList/attendanceList';
   // String markAttendance = 'MarkAttendance/markAttendance';
   String markAttendance       = 'MarkAttendancenew/markAttendancenew';
+  // Production — Bulk Stage Entry (menu 1389). JSON bodies (saveentry has a
+  // nested rows[] array), sent via ApiClient.postAppJson.
+  String productionStages     = 'production/stages';
+  String productionBatches    = 'production/batches';
+  String productionSaveEntry  = 'production/saveentry';
   String logout               = 'Logout/userLogout';
   // String applyLeave = 'Applyleave/leavapply';
   String applyLeave           = 'Applyleavenew/leavapplynew';
@@ -212,6 +217,17 @@ class ApiMethods {
   String previewVisitList = 'Addtovistlist/addtovisitlist';
   String deleteVisitList  = 'deletevisitfromlist/deletevisitlist';
   String saveVisitEntry   = 'Savevisitentry/savevisit';
+
+  /// Visit module (web-ERP flow) — POST, JSON/form, X-Api-Key.
+  String visitLogList     = 'visit/list';
+  String visitPending     = 'visit/pending';
+  String visitOpenLeads   = 'visit/openleads';
+  String visitDropdowns   = 'visit/dropdowns';
+  String visitDetailNew   = 'visit/detail';
+  String visitSave        = 'visit/save';
+  String visitDelete      = 'visit/delete';
+  String visitFollowups   = 'visit/followups';
+  String visitAddFollowup = 'visit/addfollowup';
 
   /// -Customer List Screen/party list
   String customersList          = 'partydetail/Fullpartydetail';

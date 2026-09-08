@@ -230,6 +230,7 @@ class _QuickLinksSheet extends StatelessWidget {
       2754: AppRoutes.mrnScreen,
       2701: AppRoutes.reimbursement,
       2586: AppRoutes.paymentRequestListScreen,
+      1389: AppRoutes.productionBulkEntry, // Production — Bulk Stage Entry
     };
     return menuId != null ? directRoutes[menuId] : null;
   }

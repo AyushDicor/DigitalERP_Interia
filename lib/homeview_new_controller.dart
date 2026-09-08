@@ -483,7 +483,7 @@ class HomeViewNewController extends AppBaseController {
   static String getRouteNameById(int? menuId) {
     if (menuId == 2377) return AppRoutes.executiveListView;
     if (menuId == 2378) return AppRoutes.orderView;
-    if (menuId == 2379) return AppRoutes.visitPlan;
+    if (menuId == 2379) return AppRoutes.visitLog; // new web-ERP visit flow
     if (menuId == 2380) return AppRoutes.partyList;
     if (menuId == 2381) return AppRoutes.imageView;
     if (menuId == 2382) return AppRoutes.accountModule;
