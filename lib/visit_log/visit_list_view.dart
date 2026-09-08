@@ -39,12 +39,12 @@ class VisitListView extends StatelessWidget {
         title: const Text('Visits',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => c.startNew(),
         backgroundColor: _purple,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Visit',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        shape: const CircleBorder(
+            side: BorderSide(color: Colors.white, width: 2)),
+        child: const Icon(Icons.add, color: Colors.white, size: 32),
       ),
       body: GetBuilder<VisitController>(
         init: c,

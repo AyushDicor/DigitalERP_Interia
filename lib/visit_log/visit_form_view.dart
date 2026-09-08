@@ -467,9 +467,13 @@ class VisitFormView extends StatelessWidget {
                     fontSize: 14.5, fontWeight: FontWeight.w700, color: _ink)),
           ),
           TextButton.icon(
-            onPressed: ctrl.pickFiles,
-            icon: const Icon(Icons.upload_file, size: 16),
-            label: const Text('Choose files'),
+            onPressed: () => _pickAttachmentSource(
+              onCamera: () => ctrl.pickImage(fromCamera: true),
+              onGallery: () => ctrl.pickImage(fromCamera: false),
+              onFiles: ctrl.pickFiles,
+            ),
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text('Add'),
             style: TextButton.styleFrom(foregroundColor: _purple),
           ),
         ]),
@@ -499,6 +503,44 @@ class VisitFormView extends StatelessWidget {
             ]),
           ),
       ]),
+    );
+  }
+
+  // Choose where an attachment comes from: camera, gallery or file browser.
+  void _pickAttachmentSource({
+    required VoidCallback onCamera,
+    required VoidCallback onGallery,
+    required VoidCallback onFiles,
+  }) {
+    Widget tile(IconData ic, String label, VoidCallback onTap) => ListTile(
+          leading: Icon(ic, color: _purple),
+          title: Text(label, style: const TextStyle(fontSize: 14.5, color: _ink)),
+          onTap: () {
+            Get.back();
+            onTap();
+          },
+        );
+    Get.bottomSheet(
+      Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(height: 8),
+            Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: _border, borderRadius: BorderRadius.circular(2))),
+            tile(Icons.photo_camera_outlined, 'Take photo', onCamera),
+            tile(Icons.photo_library_outlined, 'Choose from gallery', onGallery),
+            tile(Icons.attach_file, 'Choose file', onFiles),
+            const SizedBox(height: 6),
+          ]),
+        ),
+      ),
     );
   }
 

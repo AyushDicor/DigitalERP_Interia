@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:newdigitalerp/repo/attachment_repo.dart';
+import 'package:newdigitalerp/utils/show_message.dart';
 import 'package:newdigitalerp/visit_log/visit_controller.dart';
 import 'package:newdigitalerp/visit_log/visit_list_view.dart';
 import 'package:newdigitalerp/visit_log/visit_models.dart';
@@ -100,67 +101,69 @@ class VisitDetailView extends StatelessWidget {
     ]));
   }
 
-  // ── Field grid ──
+  // ── Field table (compact label-left / value-right rows) ──
   Widget _fieldsCard(VisitRecord v) {
-    final pairs = <List<String>>[
+    final rows = <List<String>>[
       ['Visited By', v.visitedByName],
       ['Purpose Type', v.purposeType],
       ['Location', v.location],
       ['Contact Person', v.contactPerson],
       ['Contact No', v.contactNo],
-      ['Distance (km)', v.distanceKm == 0 ? '' : _trim(v.distanceKm)],
+      ['Distance', v.distanceKm == 0 ? '' : '${_trim(v.distanceKm)} km'],
       ['Travel Mode', v.travelMode],
       ['Check-in', _fmtDateTime(v.checkInTime)],
       ['Check-out', _fmtDateTime(v.checkOutTime)],
+      ['Purpose / Details', v.purpose],
+      ['Outcome', v.outcome],
     ].where((p) => p[1].trim().isNotEmpty).toList();
 
     return _card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Wrap(
-        runSpacing: 14,
-        children: [
-          for (final p in pairs)
-            SizedBox(
-              width: (Get.width - 28 - 28) / 2,
-              child: _kv(p[0], p[1]),
-            ),
-        ],
-      ),
-      if (v.purpose.trim().isNotEmpty) ...[
-        const SizedBox(height: 14),
-        _kv('Purpose / Details', v.purpose),
-      ],
-      if (v.outcome.trim().isNotEmpty) ...[
-        const SizedBox(height: 14),
-        _kv('Outcome', v.outcome),
+      for (int i = 0; i < rows.length; i++) ...[
+        if (i != 0) const Divider(height: 1, color: _border),
+        _row(rows[i][0], rows[i][1]),
       ],
       if (v.latitude != 0 || v.longitude != 0) ...[
-        const SizedBox(height: 14),
+        const Divider(height: 1, color: _border),
         InkWell(
           onTap: () => _open(
               'https://www.google.com/maps/search/?api=1&query=${v.latitude},${v.longitude}'),
-          child: Row(children: const [
-            Icon(Icons.map_outlined, size: 16, color: _purple),
-            SizedBox(width: 6),
-            Text('View on map',
-                style: TextStyle(
-                    color: _purple, fontWeight: FontWeight.w600, fontSize: 13)),
-          ]),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 9),
+            child: Row(children: [
+              Icon(Icons.map_outlined, size: 16, color: _purple),
+              SizedBox(width: 6),
+              Text('View on map',
+                  style: TextStyle(
+                      color: _purple,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5)),
+            ]),
+          ),
         ),
       ],
     ]));
   }
 
-  Widget _kv(String k, String v) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(k.toUpperCase(),
-            style: const TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
-                letterSpacing: .3,
-                color: _muted)),
-        const SizedBox(height: 3),
-        Text(v, style: const TextStyle(fontSize: 14, color: _ink)),
-      ]);
+  Widget _row(String k, String v) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            width: 112,
+            child: Text(k.toUpperCase(),
+                style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: .2,
+                    height: 1.35,
+                    color: _muted)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(v,
+                style: const TextStyle(fontSize: 13, height: 1.35, color: _ink)),
+          ),
+        ]),
+      );
 
   // ── Measurements ──
   Widget _measurementsCard(List<VisitMeasurement> ms) {
@@ -197,7 +200,11 @@ class VisitDetailView extends StatelessWidget {
       Row(children: [
         Expanded(child: _sectionTitle(Icons.attach_file, 'Attachments')),
         TextButton.icon(
-          onPressed: ctrl.addAttachmentsToCurrentVisit,
+          onPressed: () => _pickAttachmentSource(
+            onCamera: () => ctrl.addPhotoToCurrentVisit(fromCamera: true),
+            onGallery: () => ctrl.addPhotoToCurrentVisit(fromCamera: false),
+            onFiles: ctrl.addAttachmentsToCurrentVisit,
+          ),
           icon: const Icon(Icons.add, size: 16),
           label: const Text('Add'),
           style: TextButton.styleFrom(foregroundColor: _purple),
@@ -337,6 +344,44 @@ class VisitDetailView extends StatelessWidget {
                 fontSize: 14.5, fontWeight: FontWeight.w700, color: _ink)),
       ]);
 
+  // Choose where an attachment comes from: camera, gallery or file browser.
+  void _pickAttachmentSource({
+    required VoidCallback onCamera,
+    required VoidCallback onGallery,
+    required VoidCallback onFiles,
+  }) {
+    Widget tile(IconData ic, String label, VoidCallback onTap) => ListTile(
+          leading: Icon(ic, color: _purple),
+          title: Text(label, style: const TextStyle(fontSize: 14.5, color: _ink)),
+          onTap: () {
+            Get.back();
+            onTap();
+          },
+        );
+    Get.bottomSheet(
+      Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(height: 8),
+            Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: _border, borderRadius: BorderRadius.circular(2))),
+            tile(Icons.photo_camera_outlined, 'Take photo', onCamera),
+            tile(Icons.photo_library_outlined, 'Choose from gallery', onGallery),
+            tile(Icons.attach_file, 'Choose file', onFiles),
+            const SizedBox(height: 6),
+          ]),
+        ),
+      ),
+    );
+  }
+
   void _confirmDelete(VisitController ctrl) {
     final id = ctrl.detail?.visit?.id ?? 0;
     if (id <= 0) return;
@@ -359,8 +404,19 @@ class VisitDetailView extends StatelessWidget {
 
   Future<void> _open(String url) async {
     final uri = Uri.tryParse(url);
-    if (uri != null && await canLaunchUrl(uri)) {
+    // The backend hands back a bare object key (not a URL) when file storage
+    // isn't configured for the company — that has no scheme and can't launch.
+    final launchable =
+        uri != null && (uri.scheme == 'http' || uri.scheme == 'https');
+    if (!launchable) {
+      ShowMessage.showSnackBar('Attachment',
+          "This file can't be opened — file storage isn't set up for this account.");
+      return;
+    }
+    if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ShowMessage.showSnackBar('Attachment', 'Could not open this file.');
     }
   }
 

@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/repo/attachment_repo.dart';
 import 'package:newdigitalerp/response/party_dropdown_list_response.dart';
@@ -243,16 +245,61 @@ class VisitController extends AppBaseController {
     if (files.isEmpty) return;
     detailLoading = true;
     update();
+    final failures = <String>[];
     for (final f in files) {
-      await AttachmentRepo.upload(
+      final err = await AttachmentRepo.upload(
         filePath: f.path!,
         compid: _compid,
         modulekey: AttachmentModule.visit,
         recordid: id,
         userid: _userid,
       );
+      if (err != null) failures.add(err);
     }
     await refreshDetail();
+    if (failures.isNotEmpty) {
+      ShowMessage.showSnackBar('Attachment',
+          '${failures.length} file(s) could not be uploaded — ${failures.first}');
+    }
+  }
+
+  // image_picker returns a *scaled* copy in the cache dir when maxWidth/quality
+  // are set, and the OS can purge that cache before we upload. Copy it into the
+  // app's own documents dir right away so the path stays valid until upload.
+  Future<String> _persistImage(XFile shot) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final name = shot.name.isEmpty ? 'photo.jpg' : shot.name;
+    final dest =
+        '${dir.path}/visit_att_${DateTime.now().millisecondsSinceEpoch}_$name';
+    await shot.saveTo(dest);
+    return dest;
+  }
+
+  // Capture a photo (camera) or pick one image (gallery) and upload it to the
+  // open visit straight away — the on-site "snap a photo" flow.
+  Future<void> addPhotoToCurrentVisit({required bool fromCamera}) async {
+    final id = detail?.visit?.id ?? 0;
+    if (id <= 0) return;
+    final shot = await _imagePicker.pickImage(
+      source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 2000,
+    );
+    if (shot == null) return;
+    final path = await _persistImage(shot);
+    detailLoading = true;
+    update();
+    final err = await AttachmentRepo.upload(
+      filePath: path,
+      compid: _compid,
+      modulekey: AttachmentModule.visit,
+      recordid: id,
+      userid: _userid,
+    );
+    await refreshDetail();
+    if (err != null) {
+      ShowMessage.showSnackBar('Attachment', 'Could not upload photo — $err');
+    }
   }
 
   Future<void> deleteAttachment(int attachmentId) async {
@@ -466,13 +513,36 @@ class VisitController extends AppBaseController {
     }
   }
 
+  final ImagePicker _imagePicker = ImagePicker();
+
   Future<void> pickFiles() async {
     final res = await FilePicker.platform.pickFiles(allowMultiple: true);
     if (res != null) {
-      // Skip empty / 0-byte parts.
-      pickedFiles = res.files.where((f) => (f.size) > 0 && f.path != null).toList();
+      // Add to (not replace) the current selection; skip 0-byte / path-less parts.
+      final more =
+          res.files.where((f) => (f.size) > 0 && f.path != null).toList();
+      pickedFiles = [...pickedFiles, ...more];
       update();
     }
+  }
+
+  // Capture a photo (camera) or pick one from the gallery and add it to the
+  // form's pending attachment list (uploaded after save). Persist to a stable
+  // path first — the scaled cache file can be purged before save runs.
+  Future<void> pickImage({required bool fromCamera}) async {
+    final shot = await _imagePicker.pickImage(
+      source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 2000,
+    );
+    if (shot == null) return;
+    final size = await shot.length();
+    final path = await _persistImage(shot);
+    pickedFiles = [
+      ...pickedFiles,
+      PlatformFile(name: shot.name, size: size, path: path),
+    ];
+    update();
   }
 
   void removePickedFile(int i) {
@@ -540,22 +610,31 @@ class VisitController extends AppBaseController {
         return;
       }
 
-      // Upload any picked files against the saved visit id.
+      // Upload any picked files against the saved visit id. The visit is
+      // already saved, so an upload failure (e.g. S3 not configured for the
+      // company) must NOT block leaving the form — just report it.
       final savedId = res.id > 0 ? res.id : editingId;
+      final failures = <String>[];
       if (savedId > 0 && pickedFiles.isNotEmpty) {
         for (final f in pickedFiles) {
           if (f.path == null) continue;
-          await AttachmentRepo.upload(
+          final err = await AttachmentRepo.upload(
             filePath: f.path!,
             compid: _compid,
             modulekey: AttachmentModule.visit,
             recordid: savedId,
             userid: _userid,
           );
+          if (err != null) failures.add(err);
         }
       }
 
-      ShowMessage.showSnackBar('Visit', 'Visit ${res.visitNo} saved.');
+      if (failures.isEmpty) {
+        ShowMessage.showSnackBar('Visit', 'Visit ${res.visitNo} saved.');
+      } else {
+        ShowMessage.showSnackBar('Visit saved',
+            'Saved, but ${failures.length} attachment(s) could not be uploaded — ${failures.first}');
+      }
       Get.back(); // leave the form
       // If we edited an open detail, refresh it; always refresh the list.
       if (editingId > 0 && detail?.visit?.id == editingId) {
