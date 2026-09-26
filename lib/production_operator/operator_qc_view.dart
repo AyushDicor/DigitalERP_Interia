@@ -201,7 +201,9 @@ class OperatorQcView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (rej > 0) ...[
+                  // Every rejection is a Rework while [kAllowScrap] is off —
+                  // nothing to choose, so nothing is asked.
+                  if (rej > 0 && kAllowScrap) ...[
                     const SizedBox(height: 12),
                     // Disposition inline (per backend's UI): Rework sends the
                     // pieces back to the operator as a Rework job; Scrap
@@ -298,7 +300,11 @@ class OperatorQcView extends StatelessWidget {
                   ),
                   const SizedBox(height: 13),
                   BigButton(
-                    rej > 0 ? 'Record Reject → ${c.qcDisposition}' : 'Save QC',
+                    rej > 0
+                        ? (kAllowScrap
+                              ? 'Record Reject → ${c.qcDisposition}'
+                              : 'Record Reject → Rework')
+                        : 'Save QC',
                     icon: rej > 0
                         ? Icons.arrow_forward_rounded
                         : Icons.check_rounded,

@@ -6,6 +6,7 @@ import 'package:newdigitalerp/repo/attachment_repo.dart' show AttachmentItem;
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 
 import 'operator_controller.dart';
+import 'operator_design_view.dart';
 import 'operator_models.dart';
 import 'operator_qc_view.dart';
 import 'operator_gatepass_sheet.dart';
@@ -61,6 +62,10 @@ class OperatorJobView extends StatelessWidget {
                 children: [
                   if (c.demoMode) const DemoBanner(),
                   _summary(c, j),
+                  // Approved drawings, client materials and BOM files —
+                  // above Produce/QC because they are what the operator
+                  // needs before touching the piece.
+                  const JobDesignSection(),
                   if (c.pendingConsignmentFor(j) != null) ...[
                     const _Label('Add production'),
                     _lockedByConsignment(c, c.pendingConsignmentFor(j)!),

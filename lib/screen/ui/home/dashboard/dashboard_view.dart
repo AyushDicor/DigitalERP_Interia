@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
@@ -8,6 +7,7 @@ import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/dashboard_controller.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/recent_activity_open.dart';
+import 'package:newdigitalerp/screen/ui/home/dashboard/shop_floor_summary.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/app_profile_image.dart';
 
@@ -44,7 +44,9 @@ class DashboardView extends StatelessWidget {
                         controller.fetchPendency();
                         controller.fetchApprovalPending();
                         controller.fetchActivity();
-                        controller.fetchGraphs();
+                        if (Get.isRegistered<ShopFloorController>()) {
+                          Get.find<ShopFloorController>().load();
+                        }
                       },
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -54,13 +56,13 @@ class DashboardView extends StatelessWidget {
                           children: [
                             _profileCard(controller, attendance),
                             const SizedBox(height: 22),
+                            // My Jobs / Order Tracking, each only for the
+                            // user the backend granted it to. Draws nothing
+                            // at all otherwise.
+                            const ShopFloorSummary(),
                             _sectionTitle('Action Center'),
                             const SizedBox(height: 12),
                             _actionGrid(controller),
-                            const SizedBox(height: 24),
-                            _sectionTitle('Overview'),
-                            const SizedBox(height: 12),
-                            _chartsSection(controller),
                             const SizedBox(height: 24),
                             _sectionTitle('Recent Activity',
                                 trailing: 'Last 3 days'),
@@ -558,299 +560,6 @@ class DashboardView extends StatelessWidget {
           decoration: BoxDecoration(shape: BoxShape.circle, color: color),
         ),
       );
-
-  // A frosted-glass card.
-  Widget _glass({required Widget child, EdgeInsets? padding}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: padding ?? const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(20),
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.65), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10)),
-            ],
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-
-  Widget _chartHeader(String title, IconData icon) => Row(children: [
-        Icon(icon, size: 16, color: newBlueColor),
-        const SizedBox(width: 6),
-        Text(title,
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: newTextPrimary)),
-      ]);
-
-  Widget _noData([String msg = 'No data available']) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 26),
-        child: Center(
-          child: Column(children: [
-            Icon(Icons.bar_chart_rounded,
-                size: 30, color: newTextSecondary.withValues(alpha: 0.5)),
-            const SizedBox(height: 6),
-            Text(msg,
-                style: const TextStyle(fontSize: 12, color: newTextSecondary)),
-          ]),
-        ),
-      );
-
-  static const List<Color> _mixColors = [
-    purpleColor,
-    Color(0xFFF59E0B),
-    Color(0xFF16A34A),
-    Color(0xFF8B5CF6),
-    Color(0xFF0EA5E9),
-    Color(0xFFEF4444),
-  ];
-
-  Widget _chartsSection(DashboardController c) {
-    if (c.graphsLoading &&
-        c.graphs.orderTrend.isEmpty &&
-        c.graphs.documentMix.isEmpty) {
-      return _glass(
-        child: const SizedBox(
-          height: 120,
-          child: Center(
-              child: CircularProgressIndicator(
-                  color: newBlueColor, strokeWidth: 2.5)),
-        ),
-      );
-    }
-    // Document Mix leads — it answers "what is going on right now" at a glance;
-    // the trend and the party/order breakdowns read as detail after it.
-    return Column(children: [
-      _mixCard(c),
-      const SizedBox(height: 14),
-      _trendCard(c),
-      const SizedBox(height: 14),
-      _partyCard(c),
-    ]);
-  }
-
-  // Order trend (line)
-  Widget _trendCard(DashboardController c) {
-    final data = c.graphs.orderTrend;
-    final spots = <FlSpot>[
-      for (var i = 0; i < data.length; i++)
-        FlSpot(i.toDouble(), data[i].count.toDouble())
-    ];
-    final maxV = data.isEmpty
-        ? 1.0
-        : data.map((e) => e.count).reduce((a, b) => a > b ? a : b).toDouble();
-    return _glass(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _chartHeader('Order Trend', Icons.show_chart_rounded),
-        const SizedBox(height: 14),
-        if (data.isEmpty)
-          _noData()
-        else
-          SizedBox(
-            height: 150,
-            child: LineChart(LineChartData(
-              minY: 0,
-              maxY: maxV * 1.35 + 0.5,
-              gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      strokeWidth: 1)),
-              borderData: FlBorderData(show: false),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 24,
-                        getTitlesWidget: (v, _) => Text(v.toInt().toString(),
-                            style: const TextStyle(
-                                fontSize: 9, color: newTextSecondary)))),
-                bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 26,
-                        interval:
-                            (data.length / 4).ceil().clamp(1, 999).toDouble(),
-                        getTitlesWidget: (v, _) {
-                          final i = v.toInt();
-                          if (i < 0 || i >= data.length) return const SizedBox();
-                          final parts = data[i].date.split(RegExp(r'[-/]'));
-                          final label = parts.length >= 2
-                              ? '${parts[0]}-${parts[1]}'
-                              : data[i].date;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(label,
-                                style: const TextStyle(
-                                    fontSize: 8, color: newTextSecondary)),
-                          );
-                        })),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              ),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: spots,
-                  isCurved: true,
-                  color: newBlueColor,
-                  barWidth: 2.5,
-                  dotData: const FlDotData(show: true),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    gradient: LinearGradient(colors: [
-                      newBlueColor.withValues(alpha: 0.22),
-                      newBlueColor.withValues(alpha: 0.0),
-                    ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                  ),
-                ),
-              ],
-            )),
-          ),
-      ]),
-    );
-  }
-
-  // Document mix (donut)
-  Widget _mixCard(DashboardController c) {
-    final data = c.graphs.documentMix;
-    final total = data.fold<int>(0, (a, b) => a + b.count);
-    return _glass(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _chartHeader('Document Mix', Icons.donut_large_rounded),
-        const SizedBox(height: 14),
-        if (data.isEmpty)
-          _noData()
-        else
-          Row(children: [
-            SizedBox(
-              width: 120,
-              height: 120,
-              child: Stack(alignment: Alignment.center, children: [
-                PieChart(PieChartData(
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 34,
-                  sections: [
-                    for (var i = 0; i < data.length; i++)
-                      PieChartSectionData(
-                        value: data[i].count.toDouble(),
-                        color: _mixColors[i % _mixColors.length],
-                        radius: 22,
-                        showTitle: false,
-                      ),
-                  ],
-                )),
-                Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text('$total',
-                      style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: newTextPrimary)),
-                  const Text('docs',
-                      style:
-                          TextStyle(fontSize: 10, color: newTextSecondary)),
-                ]),
-              ]),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                children: [
-                  for (var i = 0; i < data.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(children: [
-                        Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                                color: _mixColors[i % _mixColors.length],
-                                borderRadius: BorderRadius.circular(3))),
-                        const SizedBox(width: 8),
-                        Expanded(
-                            child: Text(data[i].name,
-                                style: const TextStyle(
-                                    fontSize: 12, color: newTextPrimary))),
-                        Text('${data[i].count}',
-                            style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: newTextSecondary)),
-                      ]),
-                    ),
-                ],
-              ),
-            ),
-          ]),
-      ]),
-    );
-  }
-
-  // Orders by party (bar)
-  Widget _partyCard(DashboardController c) {
-    final data = c.graphs.ordersByParty;
-    final maxV = data.isEmpty
-        ? 1.0
-        : data.map((e) => e.count).reduce((a, b) => a > b ? a : b).toDouble();
-    return _glass(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _chartHeader('Orders by Party', Icons.groups_2_outlined),
-        const SizedBox(height: 8),
-        if (data.isEmpty)
-          _noData()
-        else
-          ...data.map((e) {
-            final frac = maxV == 0 ? 0.0 : e.count / maxV;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(
-                        child: Text(e.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 12, color: newTextPrimary)),
-                      ),
-                      Text('${e.count}',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: newBlueColor)),
-                    ]),
-                    const SizedBox(height: 5),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: frac.clamp(0.05, 1.0),
-                        minHeight: 8,
-                        backgroundColor: Colors.black.withValues(alpha: 0.05),
-                        valueColor:
-                            const AlwaysStoppedAnimation(newBlueColor),
-                      ),
-                    ),
-                  ]),
-            );
-          }),
-      ]),
-    );
-  }
 
   static String _money(double v) {
     if (v >= 10000000) return '${(v / 10000000).toStringAsFixed(2)}Cr';

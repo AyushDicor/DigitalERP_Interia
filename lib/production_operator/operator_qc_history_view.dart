@@ -194,8 +194,11 @@ class QcHistoryPane extends StatelessWidget {
                 color: s.rejectedqty > 0 ? opRed : newTextSecondary,
                 bg: opRedBg,
                 value: fmtQty(s.rejectedqty),
-                label:
-                    'pcs · ${fmtQty(s.reworkqty)} rework · ${fmtQty(s.scrapqty)} scrap',
+                // Scrap is only named when some exists — it cannot be
+                // recorded any more, so "0 scrap" on every screen is noise.
+                label: s.scrapqty > 0
+                    ? 'pcs · ${fmtQty(s.reworkqty)} rework · ${fmtQty(s.scrapqty)} scrap'
+                    : 'pcs · ${fmtQty(s.reworkqty)} rework',
               ),
             ),
           ],

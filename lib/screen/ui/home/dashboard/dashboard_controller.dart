@@ -318,7 +318,6 @@ import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/homeview_new_controller.dart';
 import 'package:newdigitalerp/repo/recent_activity_repo.dart';
 import 'package:newdigitalerp/response/dashboard_details_response.dart';
-import 'package:newdigitalerp/response/dashboard_graphs_response.dart';
 import 'package:newdigitalerp/screen/ui/home/dashboard/pendency_response.dart';
 import 'package:newdigitalerp/screen/ui/home/executive_list/executive_list_model/executive_list_model.dart';
 import 'package:newdigitalerp/response/get_cart_list_response.dart';
@@ -338,8 +337,6 @@ class DashboardController extends AppBaseController {
   PendencyData pendency = PendencyData();
 
   // Home-dashboard chart data (order trend / doc mix / by-party / recent).
-  DashboardGraphsData graphs = DashboardGraphsData();
-  bool graphsLoading = false;
 
   List<DashboardDetailsData>? dashboardDetailsData = [];
 
@@ -365,7 +362,6 @@ class DashboardController extends AppBaseController {
     fetchPendency();
     fetchApprovalPending();
     fetchActivity();
-    fetchGraphs();
     super.onInit();
   }
 
@@ -405,22 +401,6 @@ class DashboardController extends AppBaseController {
         update();
       }
     } catch (_) {/* tile falls back to the pendency count */}
-  }
-
-  Future<void> fetchGraphs() async {
-    graphsLoading = true;
-    update();
-    try {
-      final body = <String, String>{
-        'compid': homeController.currentUserData?.compId.toString() ?? '',
-        'branchid': homeController.currentUserData?.branchId.toString() ?? '',
-      };
-      final res = await api.getDashboardGraphs(body);
-      if (res.status == 200 && res.data != null) graphs = res.data!;
-    } catch (_) {/* keep empty on failure */} finally {
-      graphsLoading = false;
-      update();
-    }
   }
 
   Future<void> fetchPendency() async {

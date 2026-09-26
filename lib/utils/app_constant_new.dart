@@ -159,6 +159,15 @@ class ReportType {
 class AppConst {
   static DateTime calenderFirstDate = DateTime(2000, 1, 1);
   static DateTime calenderLastDate  = DateTime(2050, 12, 31);
+  /// Check the appcast for a newer build on the home screen.
+  ///
+  /// OFF here: this white-label ships as a direct APK with no Play listing,
+  /// and the shared feed below advertises com.digitalerp.app. With it on, the
+  /// home screen showed an 'Update App?' dialog on every launch that could
+  /// not be dismissed and led to the wrong app. Turn it back on only once
+  /// this build has its own appcast and a store listing to match.
+  static const bool checkForUpdates = false;
+
   static String appCastUrl =
       'https://raw.githubusercontent.com/Reyparmar/appxml/main/digitalerpappcast.xml';
 }

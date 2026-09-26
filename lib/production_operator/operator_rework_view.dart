@@ -4,6 +4,7 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 
 import 'operator_controller.dart';
+import 'operator_design_view.dart' show DesignGalleryView;
 import 'operator_models.dart';
 import 'operator_widgets.dart';
 
@@ -81,21 +82,66 @@ class OperatorReworkView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 3),
+                        // The reason gets its own line and the heavier
+                        // weight: it is the one thing on this screen that
+                        // tells the operator what to actually do differently.
+                        if (c.reworkReason.isNotEmpty)
+                          Text(
+                            c.reworkReason,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF8A5A00),
+                              height: 1.3,
+                            ),
+                          ),
+                        if (c.reworkRemarks.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              c.reworkRemarks,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF6B4A0B),
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 3),
                         Text(
                           [
-                            if (c.reworkReason.isNotEmpty) c.reworkReason,
                             if (c.reworkFlaggedBy.isNotEmpty)
                               'flagged by QC (${c.reworkFlaggedBy})'
                             else
                               'flagged by QC',
+                            if (c.reworkWhen.isNotEmpty) c.reworkWhen,
                           ].join(' · '),
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF8A5A00),
                             height: 1.35,
                           ),
                         ),
+                        // What QC photographed. Seeing the defect beats any
+                        // description of it.
+                        if (c.reworkRejectImages.isNotEmpty) ...[
+                          const SizedBox(height: 9),
+                          SizedBox(
+                            height: 60,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: c.reworkRejectImages.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 7),
+                              itemBuilder: (_, i) => _rejectThumb(
+                                c.reworkRejectImages,
+                                i,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -393,6 +439,39 @@ class OperatorReworkView extends StatelessWidget {
         ),
       );
     },
+  );
+
+
+  /// One QC defect photo. Opens the same swipeable viewer the drawings use.
+  Widget _rejectThumb(List<String> urls, int i) => InkWell(
+    borderRadius: BorderRadius.circular(9),
+    onTap: () => Get.to(
+      () => DesignGalleryView(
+        files: [
+          for (final u in urls)
+            DesignFile(name: 'QC reject photo', url: u, isimage: true),
+        ],
+        index: i,
+        title: 'Why it came back',
+      ),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(9),
+      child: Container(
+        width: 60,
+        height: 60,
+        color: Colors.white,
+        child: Image.network(
+          urls[i],
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => const Icon(
+            Icons.broken_image_outlined,
+            size: 18,
+            color: newTextHint,
+          ),
+        ),
+      ),
+    ),
   );
 
   Widget _tri(String v, String k, {Color? color}) => Expanded(

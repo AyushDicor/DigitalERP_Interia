@@ -259,6 +259,13 @@ class HomeViewNewController extends AppBaseController
   bool hasMenu(int menuId) =>
       menuListData.isEmpty || menuListData.any((m) => m.menuid == menuId);
 
+  /// Strict version: the module must actually be granted. Unlike [hasMenu]
+  /// this does NOT fail open while the menu is loading — use it wherever
+  /// showing a module's data to someone without the grant would be wrong
+  /// (the dashboard's shop-floor cards, for one).
+  bool hasMenuStrict(int menuId) =>
+      menuListData.any((m) => m.menuid == menuId);
+
   /// True only once the menu has actually loaded.
   bool get menuLoaded => menuListData.isNotEmpty;
 

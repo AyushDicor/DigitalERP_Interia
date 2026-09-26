@@ -348,8 +348,9 @@ const kConsignmentRejectReasons = [
 /// free text. Returns null when cancelled.
 ///
 /// The receiver never decides what happens to the pieces — rejected qty
-/// always goes back to the issuing stage as rework. Writing stock off is the
-/// sending stage's QC call, through the normal QC reject → Scrap path.
+/// always goes back to the issuing stage as rework. (Writing stock off was
+/// the sending stage's QC call; scrap is switched off entirely now — see
+/// [kAllowScrap].)
 Future<String?> askRejectReason(BuildContext context) async {
   final ctrl = TextEditingController();
   String? picked;

@@ -66,6 +66,21 @@ class HomeView extends StatelessWidget {
     ),
   );
 
+  /// The store-update prompt, but only for a build that is actually published
+  /// under the appcast's listing — see [AppConst.checkForUpdates]. It has no
+  /// Ignore or Later button, so on any other build it would reappear on every
+  /// launch and send the user to the wrong app.
+  Widget _maybeUpgradeAlert({required Widget child}) {
+    if (!AppConst.checkForUpdates) return child;
+    return UpgradeAlert(
+      upgrader: _upgrader,
+      showIgnore: false,
+      showLater: false,
+      shouldPopScope: () => false,
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<HomeController>(
@@ -75,11 +90,7 @@ class HomeView extends StatelessWidget {
           backgroundColor: lightGreyColor,
           drawer: const DrawerView(),
           resizeToAvoidBottomInset: false,
-          body: UpgradeAlert(
-            upgrader: _upgrader,
-            showIgnore: false,
-            showLater: false,
-            shouldPopScope: () => false,
+          body: _maybeUpgradeAlert(
             child: GetBuilder<HomeViewNewController>(
               init: HomeViewNewController(),
               builder: (menuCtrl) {

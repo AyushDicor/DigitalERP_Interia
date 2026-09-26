@@ -467,6 +467,40 @@ class JobCard extends StatelessWidget {
               const SizedBox(height: 7),
               StagePill(j.stagename),
             ],
+            // Approved drawings / client materials exist for this item —
+            // the job screen shows them under "Drawings & Details".
+            if (j.hasdesign && j.designChipLabel.isNotEmpty) ...[
+              const SizedBox(height: 7),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: opBlueBg,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.architecture_outlined,
+                      size: 11,
+                      color: opBlue,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      j.designChipLabel,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: opBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 9),
             ThinBar(
               j.isQcJob

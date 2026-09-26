@@ -9,6 +9,7 @@
 //   interia/qc          -> QC pass qty (reject goes through qcreject)
 //   interia/qcreject    -> reject qty + Rework/Scrap disposition
 //   interia/qchistory   -> QC checks this user saved, grouped by day
+//   interia/jobdesign   -> approved drawings + client materials + BOM designs
 //   interia/issue       -> issue QC-passed qty to the next stage
 //   interia/downtime    -> log downtime      (same fields as bottleneck)
 //   interia/bottleneck  -> log bottleneck
@@ -90,6 +91,14 @@ class OperatorJob {
   /// Who rejected (Rework rows) — `rejectedby` / `qcby` when sent.
   final String rejectedby;
 
+  /// The rest of the QC rejection, live 2026-09-26: the checker's own note,
+  /// Rework / Scrap, when it happened, and photos of the defect. The photo
+  /// urls are presigned and expire, so they are never cached.
+  final String rejectremarks;
+  final String disposition;
+  final String rejectedon;
+  final List<String> rejectimages;
+
   /// Loader handover fields when the row is a consignment in transit
   /// (`status: "In Transit"`): the receiver must Accept before producing.
   final int consignmentid;
@@ -101,6 +110,14 @@ class OperatorJob {
   final String fromstagename;
   final List<String> receiptimages;
   final List<String> itemimages;
+
+  /// Design pack counts (live 2026-09-26). The drawings are APPROVED ones
+  /// only — the backend drops anything under review — so these are safe to
+  /// show as-is. The pack itself comes from `jobdesign`.
+  final int drawingcount;
+  final int materialcount;
+  final int bomdesigncount;
+  final bool hasdesign;
 
   OperatorJob({
     required this.challanid,
@@ -128,6 +145,10 @@ class OperatorJob {
     this.canqc = false,
     this.rejectreason = '',
     this.rejectedby = '',
+    this.rejectremarks = '',
+    this.disposition = '',
+    this.rejectedon = '',
+    this.rejectimages = const [],
     this.consignmentid = 0,
     this.loadername = '',
     this.loaderref = '',
@@ -137,6 +158,10 @@ class OperatorJob {
     this.fromstagename = '',
     this.receiptimages = const [],
     this.itemimages = const [],
+    this.drawingcount = 0,
+    this.materialcount = 0,
+    this.bomdesigncount = 0,
+    this.hasdesign = false,
   });
 
   factory OperatorJob.fromJson(Map<String, dynamic> j) => OperatorJob(
@@ -168,10 +193,12 @@ class OperatorJob {
     canqc:
         _canQc(j['canqc'] ?? j['qcallowed'] ?? j['isqc']) ||
         _str(j['status']).toLowerCase().contains('awaiting qc'),
-    rejectreason: _str(
-      j['rejectreason'] ?? j['reason'] ?? j['rejectremarks'] ?? '',
-    ),
+    rejectreason: _str(j['rejectreason'] ?? j['reason'] ?? ''),
     rejectedby: _str(j['rejectedby'] ?? j['qcby'] ?? j['qcname'] ?? ''),
+    rejectremarks: _str(j['rejectremarks'] ?? j['rejectnote'] ?? ''),
+    disposition: _str(j['disposition']),
+    rejectedon: _str(j['rejectedon']),
+    rejectimages: Consignment._urls(j['rejectimages'] ?? j['rejectphotos']),
     consignmentid: _int(j['consignmentid'] ?? j['issueid']),
     loadername: _str(j['loadername']),
     loaderref: _str(j['loaderref'] ?? j['loaderno']),
@@ -181,10 +208,30 @@ class OperatorJob {
     fromstagename: _str(j['fromstagename']),
     receiptimages: Consignment._urls(j['receiptimages'] ?? j['receiptphotos']),
     itemimages: Consignment._urls(j['itemimages'] ?? j['itemphotos']),
+    drawingcount: _int(j['drawingcount']),
+    materialcount: _int(j['materialcount']),
+    bomdesigncount: _int(j['bomdesigncount']),
+    // Trust the flag, but fall back to the counts for an older API build.
+    hasdesign:
+        _canQc(j['hasdesign']) ||
+        _int(j['drawingcount']) +
+                _int(j['materialcount']) +
+                _int(j['bomdesigncount']) >
+            0,
   );
 
   /// Same job on the same (challan, item, stage) — the key `progress` upserts on.
   String get key => '$challanid/$itemid/$stageid';
+
+  /// "1 drawing · 3 materials" for the card chip; zero parts are left out.
+  String get designChipLabel => [
+    if (drawingcount > 0)
+      '$drawingcount ${drawingcount == 1 ? 'drawing' : 'drawings'}',
+    if (kShowClientMaterials && materialcount > 0)
+      '$materialcount ${materialcount == 1 ? 'material' : 'materials'}',
+    if (bomdesigncount > 0)
+      '$bomdesigncount BOM ${bomdesigncount == 1 ? 'design' : 'designs'}',
+  ].join(' · ');
 
   /// Produced but not yet QC'd (pass or reject) — what the QC screen works on.
   double get qcPending =>
@@ -1089,4 +1136,202 @@ class QcHistory {
     stages: [],
     days: [],
   );
+}
+
+// ── Design pack (interia/jobdesign) ──────────────────────────────────────────
+//
+// What the operator needs in front of them to build the item right: the
+// approved technical drawings, the materials the client specified, and the
+// order's BOM design files.
+//
+// The backend already returns only APPROVED drawings (latest revision per
+// drawing no) — never filter these again in the app, or a legitimately
+// approved revision could be hidden.
+
+/// Let QC write a rejected piece off as Scrap.
+///
+/// OFF at the client's request (2026-09-26). Scrap closed the challan short:
+/// the operator's row went to `status: "Done"` with balance 0 and no reason
+/// on it, so nobody was told the piece had been written off and nothing
+/// replaced it — the order silently ran one short. Every rejection is a
+/// Rework until that is sorted out. Flip to true to bring the picker back;
+/// `qcreject` still accepts either disposition.
+const bool kAllowScrap = false;
+
+/// Show the client's custom materials on the job screen.
+///
+/// OFF at the client's request (2026-09-26): the operator is meant to work
+/// from the approved technical drawings, and the material list — client
+/// pricing lines, brand names, supplier codes — is not theirs to read. Flip
+/// this to true to bring the whole section back; nothing else needs changing,
+/// the card chip and the empty state follow it.
+const bool kShowClientMaterials = false;
+
+/// One attachment on a drawing / material / BOM design.
+class DesignFile {
+  final String name;
+
+  /// Presigned S3 link. It expires, so it is never cached — the screen
+  /// re-reads the pack when it opens or is pulled to refresh.
+  final String url;
+  final bool isimage;
+
+  const DesignFile({
+    required this.name,
+    required this.url,
+    required this.isimage,
+  });
+
+  factory DesignFile.fromJson(Map<String, dynamic> j) => DesignFile(
+    name: _str(j['name']),
+    url: _str(j['url']),
+    // Fall back to the extension if the backend ever omits the flag.
+    isimage:
+        _canQc(j['isimage']) ||
+        RegExp(
+          r'\.(jpe?g|png|webp|gif|bmp)$',
+          caseSensitive: false,
+        ).hasMatch(_str(j['name'])),
+  );
+
+  static List<DesignFile> listFrom(dynamic v) => v is List
+      ? v
+            .whereType<Map>()
+            .map((e) => DesignFile.fromJson(Map<String, dynamic>.from(e)))
+            .where((f) => f.url.isNotEmpty)
+            .toList()
+      : const [];
+
+  bool get isPdf => name.toLowerCase().endsWith('.pdf');
+}
+
+/// One approved technical drawing.
+class Drawing {
+  final int id;
+  final String drawingno;
+  final String type; // "Working Drawing - Rev R0"
+  final String status; // always "Approved" from this endpoint
+  final String remarks;
+  final String docno;
+  final List<DesignFile> files;
+
+  const Drawing({
+    required this.id,
+    required this.drawingno,
+    required this.type,
+    required this.status,
+    required this.remarks,
+    required this.docno,
+    required this.files,
+  });
+
+  factory Drawing.fromJson(Map<String, dynamic> j) => Drawing(
+    id: _int(j['id']),
+    drawingno: _str(j['drawingno']),
+    type: _str(j['type']),
+    status: _str(j['status']),
+    remarks: _str(j['remarks']),
+    docno: _str(j['docno']),
+    files: DesignFile.listFrom(j['files']),
+  );
+
+  List<DesignFile> get images => files.where((f) => f.isimage).toList();
+  List<DesignFile> get docs => files.where((f) => !f.isimage).toList();
+}
+
+/// A material the client specified for this item (Material Requirement).
+class DesignMaterial {
+  final int id;
+  final String name;
+  final String category;
+  final double qty;
+  final String unit;
+  final String remarks;
+  final List<DesignFile> photos;
+
+  const DesignMaterial({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.qty,
+    required this.unit,
+    required this.remarks,
+    required this.photos,
+  });
+
+  factory DesignMaterial.fromJson(Map<String, dynamic> j) => DesignMaterial(
+    id: _int(j['id']),
+    name: _str(j['name']),
+    category: _str(j['category']),
+    qty: _dbl(j['qty']),
+    unit: _str(j['unit']),
+    remarks: _str(j['remarks']),
+    photos: DesignFile.listFrom(j['photos']),
+  );
+
+  /// "12 SQFT", or just "SQFT" when no quantity was set — qty is often 0 on
+  /// a client-specified finish, where only the material matters.
+  String get qtyLabel =>
+      qty > 0 ? '${fmtQty(qty)} $unit'.trim() : unit.trim();
+}
+
+/// BOM design files, grouped by design number.
+class BomDesign {
+  final String designno;
+  final List<DesignFile> files;
+
+  const BomDesign({required this.designno, required this.files});
+
+  factory BomDesign.fromJson(Map<String, dynamic> j) => BomDesign(
+    designno: _str(j['designno']),
+    files: DesignFile.listFrom(j['files']),
+  );
+}
+
+/// Everything `jobdesign` returns for one (order, item).
+class JobDesign {
+  final List<Drawing> drawings;
+  final List<DesignMaterial> materials;
+  final List<BomDesign> bomdesigns;
+
+  const JobDesign({
+    this.drawings = const [],
+    this.materials = const [],
+    this.bomdesigns = const [],
+  });
+
+  factory JobDesign.fromJson(Map<String, dynamic> j) => JobDesign(
+    drawings: j['drawings'] is List
+        ? (j['drawings'] as List)
+              .whereType<Map>()
+              .map((e) => Drawing.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+        : const [],
+    materials: j['materials'] is List
+        ? (j['materials'] as List)
+              .whereType<Map>()
+              .map((e) => DesignMaterial.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+        : const [],
+    bomdesigns: j['bomdesigns'] is List
+        ? (j['bomdesigns'] as List)
+              .whereType<Map>()
+              .map((e) => BomDesign.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+        : const [],
+  );
+
+  /// The materials the screen may actually draw — empty while
+  /// [kShowClientMaterials] is off.
+  List<DesignMaterial> get visibleMaterials =>
+      kShowClientMaterials ? materials : const [];
+
+  /// Empty as far as the operator is concerned: hidden materials do not keep
+  /// the empty state away.
+  bool get isEmpty =>
+      drawings.isEmpty && visibleMaterials.isEmpty && bomdesigns.isEmpty;
+
+  /// Every image across the pack, in the order they are shown — the viewer
+  /// swipes through one section's images, so each section builds its own.
+  static const empty = JobDesign();
 }

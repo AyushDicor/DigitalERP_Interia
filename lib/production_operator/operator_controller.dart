@@ -473,8 +473,9 @@ class OperatorController extends GetxController {
     issueQtyCtrl.text = '';
     jobLoading = true;
     update();
-    loadGallery(); // independent of the trail — don't hold the screen for it
-    loadEntries();
+    // The gallery, the day-wise log and the design pack are all independent
+    // of the spinner — they are kicked off AFTER the three calls below, so
+    // the screen is not waiting behind six connections on a weak link.
     try {
       final s = session;
       final results = await Future.wait([
@@ -501,6 +502,9 @@ class OperatorController extends GetxController {
     } finally {
       jobLoading = false;
       update();
+      loadGallery();
+      loadEntries();
+      loadJobDesign();
     }
   }
 
@@ -866,10 +870,16 @@ class OperatorController extends GetxController {
   DateTime reworkDate = DateTime.now();
   List<PickedAttachment> reworkPhotos = [];
 
-  /// Who rejected / why — from the last Reject entry of the job when the
-  /// myjobs row itself does not carry it.
+  /// Why QC sent it back. `myjobs` carries all of this since 2026-09-26;
+  /// the entries fallback below stays for a row that predates that.
   String reworkFlaggedBy = '';
   String reworkReason = '';
+  String reworkRemarks = '';
+  String reworkWhen = '';
+
+  /// Photos of the defect, taken by QC. Presigned and short-lived — shown
+  /// straight from the job row, never cached.
+  List<String> reworkRejectImages = const [];
 
   double get reworkQtyEntered =>
       double.tryParse(reworkQtyCtrl.text.trim()) ?? 0;
@@ -882,6 +892,9 @@ class OperatorController extends GetxController {
     reworkPhotos = [];
     reworkFlaggedBy = j.rejectedby;
     reworkReason = j.rejectreason;
+    reworkRemarks = j.rejectremarks;
+    reworkWhen = j.rejectedon;
+    reworkRejectImages = j.rejectimages;
     update();
     if (reworkFlaggedBy.isEmpty || reworkReason.isEmpty) {
       final r = await repo.entries(session, j);
@@ -893,8 +906,13 @@ class OperatorController extends GetxController {
       if (rejects.isNotEmpty) {
         if (reworkFlaggedBy.isEmpty) reworkFlaggedBy = rejects.first.username;
         if (reworkReason.isEmpty) {
-          reworkReason = rejects.first.remarks.isNotEmpty
-              ? rejects.first.remarks
+          // `note`, not `remarks`: the backend stamps its own rows
+          // "QC (mobile)", and showing that where the reject reason belongs
+          // reads like the reason was "QC (mobile)". `entries` still returns
+          // only that boilerplate, so this fallback usually yields nothing —
+          // which is right. The real reason now comes from myjobs above.
+          reworkReason = rejects.first.note.isNotEmpty
+              ? rejects.first.note
               : rejects.first.disposition;
         }
       }
@@ -1368,6 +1386,7 @@ class OperatorController extends GetxController {
   /// Rework (back to the operator) or Scrap — chosen inline on the QC screen.
   String qcDisposition = 'Rework';
   void setQcDisposition(String d) {
+    if (!kAllowScrap && d != 'Rework') return;
     qcDisposition = d;
     update();
   }
@@ -1715,5 +1734,61 @@ class OperatorController extends GetxController {
       if (keep.isNotEmpty) out.add(d.withEntries(keep));
     }
     return out;
+  }
+
+  // ── Drawings & details (interia/jobdesign) ────────────────────────────────
+  //
+  // The approved technical drawings, the client's custom materials and the
+  // BOM design files for the open job. The urls are presigned and expire, so
+  // this is re-read every time the job screen opens or is refreshed — never
+  // held over from a previous visit.
+
+  JobDesign? design;
+  bool designLoading = false;
+  String designError = '';
+
+  /// True when the job's own counts promise a pack, so the section can show a
+  /// shimmer of the right shape before the call lands.
+  bool get designExpected => job?.hasdesign ?? false;
+
+  Future<void> loadJobDesign() async {
+    final j = job;
+    if (j == null) return;
+    // Both ids are required by the endpoint; without them it answers 400.
+    // An in-transit row carries them just like a normal job does.
+    // `hasdesign` comes from myjobs, so a job with no pack costs no call at
+    // all — that is most of them.
+    if (!j.hasdesign || j.orderrefid <= 0 || j.itemid <= 0) {
+      design = JobDesign.empty;
+      update();
+      return;
+    }
+    design = null;
+    designError = '';
+    designLoading = true;
+    update();
+    try {
+      final r = await repo.jobDesign(session, j.orderrefid, j.itemid);
+      if (r.ok && r.data != null) {
+        design = r.data;
+      } else {
+        designError = r.message.isEmpty
+            ? 'Could not load the drawings.'
+            : r.message;
+      }
+    } catch (e) {
+      designError = '$e';
+    } finally {
+      designLoading = false;
+      update();
+    }
+  }
+
+  /// Collapsed / expanded state of the section, remembered for the session so
+  /// an operator who works from the drawings is not re-opening it every time.
+  bool designOpen = true;
+  void toggleDesign() {
+    designOpen = !designOpen;
+    update();
   }
 }

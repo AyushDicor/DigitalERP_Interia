@@ -138,6 +138,17 @@ abstract class OperatorRepo {
     int stageid = 0,
   });
 
+  /// The design pack for one job: approved drawings, the client's custom
+  /// materials and the order's BOM design files.
+  ///   POST interia/jobdesign { compid, orderrefid, itemid }
+  /// All three are required; the urls that come back are presigned and
+  /// expire, so the result is re-read rather than cached.
+  Future<OperatorResult<JobDesign>> jobDesign(
+    OperatorSession s,
+    int orderrefid,
+    int itemid,
+  );
+
   /// Issue QC-passed qty to the next stage. With [gatePass] the consignment
   /// travels via loader: extra fields go in the same call and the next stage
   /// sees it under `incoming` until they Accept / Reject it.
@@ -199,6 +210,7 @@ class ApiOperatorRepo implements OperatorRepo {
   static const _qc = 'interia/qc';
   static const _qcreject = 'interia/qcreject';
   static const _qchistory = 'interia/qchistory';
+  static const _jobdesign = 'interia/jobdesign';
   static const _issue = 'interia/issue';
   static const _incoming = 'interia/incoming';
   static const _receive = 'interia/receive';
@@ -452,6 +464,25 @@ class ApiOperatorRepo implements OperatorRepo {
       ok: env['success'] == true,
       message: (env['message'] ?? '').toString(),
       data: d is Map ? QcHistory.fromJson(Map<String, dynamic>.from(d)) : null,
+    );
+  }
+
+  @override
+  Future<OperatorResult<JobDesign>> jobDesign(
+    OperatorSession s,
+    int orderrefid,
+    int itemid,
+  ) async {
+    final env = await _post(_jobdesign, {
+      'compid': s.compid,
+      'orderrefid': orderrefid,
+      'itemid': itemid,
+    });
+    final d = env['data'];
+    return OperatorResult(
+      ok: env['success'] == true,
+      message: (env['message'] ?? '').toString(),
+      data: d is Map ? JobDesign.fromJson(Map<String, dynamic>.from(d)) : null,
     );
   }
 
@@ -1247,6 +1278,16 @@ class MockOperatorRepo implements OperatorRepo {
         days: days,
       ),
     );
+  }
+
+  @override
+  Future<OperatorResult<JobDesign>> jobDesign(
+    OperatorSession s,
+    int orderrefid,
+    int itemid,
+  ) async {
+    await _lag();
+    return const OperatorResult(ok: true, message: 'demo', data: JobDesign());
   }
 
   @override
