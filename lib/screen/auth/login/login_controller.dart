@@ -295,6 +295,11 @@ import 'package:newdigitalerp/utils/shared_pre.dart';
 const String _dummyMobile   = '9999999999';
 const String _dummyPassword = 'Test@1234';
 
+/// Skip the OTP screen: `/api/Login` already returns the OTP (no SMS
+/// provider), so the app verifies it itself and goes straight to the
+/// dashboard. Flip to false to make users type the code again.
+const bool kSkipOtp = true;
+
 class LoginController extends GetxController {
   final TextEditingController mobileCtrl   = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
@@ -340,10 +345,17 @@ class LoginController extends GetxController {
       });
 
       if (res.status == 200 && res.data != null) {
-        // Credentials valid → go to OTP verification (pass login id + password + the
-        // server-generated OTP so the screen can show it; there is no SMS provider).
-        Get.toNamed(AppRoutes.otp,
-            arguments: [mobile, password, res.data?.otp?.toString() ?? '']);
+        final otp = res.data?.otp?.toString() ?? '';
+        // There is no SMS provider — /api/Login hands the OTP straight back, so
+        // the screen was only asking the user to retype what the app already
+        // had. Verify it silently and land on the dashboard. Set [kSkipOtp]
+        // false to bring the OTP screen back.
+        if (kSkipOtp && otp.isNotEmpty && await _verifySilently(mobile, password, otp)) {
+          return;
+        }
+        // Fallback (no OTP in the response, or verification failed): show the
+        // screen so the user can type / resend it.
+        Get.toNamed(AppRoutes.otp, arguments: [mobile, password, otp]);
       } else {
         _showSnack('Login Failed',
             (res.message?.isNotEmpty ?? false) ? res.message! : 'Invalid mobile number or password');
@@ -352,6 +364,32 @@ class LoginController extends GetxController {
       _showSnack('Login Failed', '$e');
     } finally {
       _setBusy(false);
+    }
+  }
+
+  /// Run the normal OTP verification in the background: it is the call that
+  /// returns the full user record and creates the session, so the login path
+  /// stays exactly as before — only the screen is skipped.
+  /// Returns true when the user is on the dashboard.
+  Future<bool> _verifySilently(
+      String mobile, String password, String otp) async {
+    try {
+      final v = await Api().otpVerify({
+        'mobileno': mobile,
+        'password': password,
+        'otp': otp,
+      });
+      if (v.status != 200 || v.data == null) return false;
+      await SharedPre.setValue(SharedPre.userData, v.data!.toJson());
+      await SharedPre.setValue(SharedPre.isLogin, true);
+      final home = Get.isRegistered<HomeController>()
+          ? Get.find<HomeController>()
+          : Get.put(HomeController(), permanent: true);
+      await home.loadUserData();
+      Get.offAllNamed(AppRoutes.home);
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 

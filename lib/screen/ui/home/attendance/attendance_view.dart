@@ -758,6 +758,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/attendance_controller.dart';
+import 'package:newdigitalerp/screen/ui/home/attendance/attendance_insights.dart';
 import 'package:newdigitalerp/screen/ui/home/attendance/leave_apply_view/leave_apply_controller.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/app_network_image.dart';
@@ -1070,6 +1071,10 @@ class _AttendanceViewState extends State<AttendanceView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _markAttendanceCard(controller),
+          // "This Month" insights — streak, worked hours, live on-the-clock
+          // timer and a month heatmap. Renders nothing when there's no data.
+          AttendanceInsightsCard(
+              controller.attendanceSummaryData?[0].details),
           const SizedBox(height: 20),
           _sectionTitle('Leave Overview'),
           const SizedBox(height: 12),
@@ -1177,7 +1182,22 @@ class _AttendanceViewState extends State<AttendanceView>
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            padding: const EdgeInsets.only(top: 20),
+            child: Center(
+              child: AttendanceRateRing(
+                present: (summary != null && summary.isNotEmpty
+                        ? summary[0].present
+                        : 0) ??
+                    0,
+                absent: (summary != null && summary.isNotEmpty
+                        ? summary[0].absent
+                        : 0) ??
+                    0,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
             child: Row(
               children: [
                 _statBlock(

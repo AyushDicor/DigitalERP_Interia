@@ -310,7 +310,7 @@ class DrawerView extends StatelessWidget {
                             color: lightGreyColor,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text('Dicor ERP  ·  v1.0.0',
+                          child: const Text('Interia  ·  v1.0.0',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                   fontSize: 10,

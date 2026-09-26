@@ -333,6 +333,17 @@ class LeadManagementController extends AppBaseController {
   List<LeadItemData> selectedItems = [];
   bool itemsBusy = false;
 
+  //  Full lead header (all EditLeadEntry fields) for the detail screen — the
+  //  bundle's LeadData is a thin row, so the rich fields (country/state/city,
+  //  currency, territory, source, forecast, owner, gst, project, …) come from
+  //  here. Lowercase keys, populated by loadSelectedItems.
+  Map<String, dynamic> selectedHeader = {};
+
+  //  The lead's latest site visit (+ measurements + images) for the detail
+  //  screen's "Site Visit" section (/api/lead/visit). Null until loaded / none.
+  LeadVisitResponse? siteVisit;
+  bool siteVisitBusy = false;
+
   // ── Leads shown in the list: dynamic dropdown filters + free-text search ──
   List<LeadData> get leadList {
     Iterable<LeadData> list = allLeads;
@@ -503,6 +514,8 @@ class LeadManagementController extends AppBaseController {
         .toList()
       ..sort((a, b) => (b.id ?? 0).compareTo(a.id ?? 0));
     selectedItems = [];
+    selectedHeader = {};
+    siteVisit = null;
     update();
   }
 
@@ -612,10 +625,31 @@ class LeadManagementController extends AppBaseController {
         'compid': _compId,
       });
       selectedItems = (res.status == 200) ? res.items : [];
+      selectedHeader =
+          (res.status == 200) ? (res.headerMap ?? {}) : {};
     } catch (e) {
       selectedItems = [];
+      selectedHeader = {};
     } finally {
       itemsBusy = false;
+      update();
+    }
+    loadSiteVisit(); // fetch the lead's site visit alongside its items
+  }
+
+  /// The lead's latest site visit (+ measurements + images) for the detail
+  /// screen — mirrors the web Lead Detail "Site Visit" section.
+  Future<void> loadSiteVisit() async {
+    if (selectedLead?.mainid == null) return;
+    siteVisitBusy = true;
+    update();
+    try {
+      siteVisit = await api.getLeadVisit(
+          {'compid': _compId, 'leadid': selectedLead!.mainid.toString()});
+    } catch (_) {
+      siteVisit = null;
+    } finally {
+      siteVisitBusy = false;
       update();
     }
   }
@@ -861,6 +895,15 @@ class LeadManagementController extends AppBaseController {
   final TextEditingController areaController = TextEditingController();
   final TextEditingController whatsappController = TextEditingController();
   final TextEditingController gstController = TextEditingController();
+  // New fields the ERP header carries (web-parity): address geography + sizing.
+  final TextEditingController countryController = TextEditingController();
+  final TextEditingController stateController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
+  final TextEditingController noOfEmployeesController = TextEditingController();
+  final TextEditingController forecastController = TextEditingController();
+
+  // '--Select--' placeholders from the proc mean "not set" → treat as blank.
+  String _noSel(String s) => s == '--Select--' ? '' : s;
 
   String get companyTypeName => companyTypeId == 2 ? 'Existing' : 'Direct';
 
@@ -974,6 +1017,11 @@ class LeadManagementController extends AppBaseController {
       areaController.text = hs('area');
       whatsappController.text = hs('whatsappno');
       gstController.text = hs('gstno');
+      countryController.text = _noSel(hs('country'));
+      stateController.text = _noSel(hs('state'));
+      cityController.text = _noSel(hs('city'));
+      noOfEmployeesController.text = _numText(h['noofemployees']);
+      forecastController.text = _numText(h['forcastamt']);
 
       final ld = _leadDateForForm(hs('leaddate'));
       if (ld.isNotEmpty) setSelectedDate(ld);
@@ -1083,6 +1131,11 @@ class LeadManagementController extends AppBaseController {
         'area': areaController.text.trim(),
         'whatsappno': whatsappController.text.trim(),
         'gstno': gstController.text.trim(),
+        'country': countryController.text.trim(),
+        'state': stateController.text.trim(),
+        'city': cityController.text.trim(),
+        'noofemployees': noOfEmployeesController.text.trim(),
+        'forcastamt': forecastController.text.trim(),
         'businessnature': businessNatureController.text.trim(),
         'requirement': requirementController.text.trim(),
         'projectname': projectNameController.text.trim(),
@@ -1142,6 +1195,8 @@ class LeadManagementController extends AppBaseController {
       projectNameController, refNoController, refferByController,
       budgetController, approxAmtController, otherRemarksController,
       pincodeController, areaController, whatsappController, gstController,
+      countryController, stateController, cityController,
+      noOfEmployeesController, forecastController,
     ]) {
       c.clear();
     }

@@ -1,6 +1,6 @@
 class AppAssets {
   // static const String appLogo = 'assets/images/app_logo.png';
-  static const String appLogo               = 'assets/images/dicor.png';
+  static const String appLogo               = 'assets/images/interia_logo.jpeg';
   static const String splashBg              = 'assets/images/splash_bg.png';
   static const String splashScreen          = 'assets/images/splash_screen.png';
   static const String setupBg               = 'assets/images/setup_bg.png';
@@ -50,6 +50,9 @@ class AppAssets {
   static const String poIcon                 = 'assets/iconsnew/po.png';
   static const String indentIcon             = 'assets/iconsnew/indent.png';
   static const String tapCardIcon            = 'assets/iconsnew/tapCard.png';
+  static const String myJobIcon              = 'assets/iconsnew/my_jobs.png';
+  static const String orderTrackingIcon      = 'assets/iconsnew/order_tracking.png';
+  static const String productionIcon         = 'assets/iconsnew/Production.png';
 
 
   static const String attendencenewIcon      = 'assets/iconsnew/Attendance.png';

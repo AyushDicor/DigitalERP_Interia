@@ -50,18 +50,18 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyANZSJo2YjED3Nke4pzioAJPEBQkb2xeyA',
-    appId: '1:930383834678:android:1f0cc1b77368125a08f297',
-    messagingSenderId: '930383834678',
-    projectId: 'digitalerp-dicor',
-    storageBucket: 'digitalerp-dicor.firebasestorage.app',
+    apiKey: 'AIzaSyDNupx3ztK00DFG0tazsULduBA2QYQDJhY',
+    appId: '1:953777419138:android:8a8ba872bcbafb9a71559b',
+    messagingSenderId: '953777419138',
+    projectId: 'digitalerp-interia',
+    storageBucket: 'digitalerp-interia.firebasestorage.app',
   );
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCE4ACTEarktKBkgDZR_V4wo5ltDYFm7AQ',
-    appId: '1:930383834678:ios:2a3cfe005d5b5c8708f297',
-    messagingSenderId: '930383834678',
-    projectId: 'digitalerp-dicor',
-    storageBucket: 'digitalerp-dicor.firebasestorage.app',
-    iosBundleId: 'com.newdicorerp.app',
+    apiKey: 'AIzaSyBOJsgvcymsF139NZHZUQM_wRZXZpH6x-Y',
+    appId: '1:953777419138:ios:de2e08aa8fd8f0cf71559b',
+    messagingSenderId: '953777419138',
+    projectId: 'digitalerp-interia',
+    storageBucket: 'digitalerp-interia.firebasestorage.app',
+    iosBundleId: 'com.interiaerp.app',
   );
 }

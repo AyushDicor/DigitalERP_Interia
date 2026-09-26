@@ -178,9 +178,7 @@ class VisitFormView extends StatelessWidget {
               ...ctrl.openLeads.map((l) =>
                   DropdownMenuItem(value: l.value, child: Text(l.text))),
             ],
-            onChanged: (v) => ctrl
-              ..leadId = v ?? 0
-              ..update(),
+            onChanged: ctrl.selectLead,
           ),
         ),
       ),

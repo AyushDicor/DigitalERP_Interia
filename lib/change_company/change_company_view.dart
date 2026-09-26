@@ -137,6 +137,24 @@ class ChangeCompanyView extends StatelessWidget {
                             _label('Financial Year'),
                             ctrl.isLoadingFy
                                 ? _loadingBox()
+                                : ctrl.fyList.isEmpty
+                                // Some companies (e.g. INTERIA) have no
+                                // financial-year master yet — the API returns
+                                // []. Don't block the branch change on it.
+                                ? _dropdownBox(
+                                    child: const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      child: Text(
+                                        'No financial year set up for this company',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: _kTextHint,
+                                        ),
+                                      ),
+                                    ),
+                                  )
                                 : _dropdownBox(
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<int>(
@@ -145,7 +163,9 @@ class ChangeCompanyView extends StatelessWidget {
                                         hint: const Text(
                                           'Select Financial Year',
                                           style: TextStyle(
-                                              fontSize: 14, color: _kTextHint),
+                                            fontSize: 14,
+                                            color: _kTextHint,
+                                          ),
                                         ),
                                         icon: const Icon(
                                           Icons.keyboard_arrow_down_rounded,
@@ -153,8 +173,9 @@ class ChangeCompanyView extends StatelessWidget {
                                         ),
                                         onChanged: (val) {
                                           if (val == null) return;
-                                          final fy = ctrl.fyList
-                                              .firstWhere((e) => e.fyid == val);
+                                          final fy = ctrl.fyList.firstWhere(
+                                            (e) => e.fyid == val,
+                                          );
                                           ctrl.selectFy = fy;
                                           ctrl.update();
                                         },
@@ -164,8 +185,9 @@ class ChangeCompanyView extends StatelessWidget {
                                             child: Text(
                                               f.financialyear ?? '',
                                               style: const TextStyle(
-                                                  fontSize: 14,
-                                                  color: _kTextPrimary),
+                                                fontSize: 14,
+                                                color: _kTextPrimary,
+                                              ),
                                             ),
                                           );
                                         }).toList(),
@@ -183,7 +205,11 @@ class ChangeCompanyView extends StatelessWidget {
                                 onPressed:
                                     (ctrl.selectCompany == null ||
                                         ctrl.selectBranch == null ||
-                                        ctrl.selectFy == null)
+                                        ctrl.isLoadingFy ||
+                                        // FY is required only when the company
+                                        // actually has financial years.
+                                        (ctrl.selectFy == null &&
+                                            ctrl.fyList.isNotEmpty))
                                     ? null // greyed out until all selected
                                     : () async {
                                         final userData = ctrl
@@ -193,30 +219,37 @@ class ChangeCompanyView extends StatelessWidget {
                                             ctrl.selectCompany!.compid;
                                         userData.branchId =
                                             ctrl.selectBranch!.branchid;
+                                        // No FY master → keep whatever the
+                                        // login gave (may be ''), like before.
                                         userData.yearId =
-                                            ctrl.selectFy!.fyid?.toString();
+                                            ctrl.selectFy?.fyid?.toString() ??
+                                            userData.yearId;
                                         await SharedPre.setValue(
                                           SharedPre.userData,
                                           userData.toJson(),
                                         );
                                         await SharedPre.setValue(
-                                            SharedPre.currentBranchId,
-                                            ctrl.selectBranch!.branchid);
+                                          SharedPre.currentBranchId,
+                                          ctrl.selectBranch!.branchid,
+                                        );
                                         await SharedPre.setValue(
-                                            SharedPre.currentBranchName,
-                                            ctrl.selectBranch!.branchname ?? '');
+                                          SharedPre.currentBranchName,
+                                          ctrl.selectBranch!.branchname ?? '',
+                                        );
                                         ctrl.homeController.update();
                                         // Stay logged in and RELOAD data in place
                                         // for the new branch (don't delete the
                                         // controllers — that left them un-created
                                         // and data wouldn't reload).
                                         if (Get.isRegistered<
-                                            HomeViewNewController>()) {
+                                          HomeViewNewController
+                                        >()) {
                                           Get.find<HomeViewNewController>()
                                               .getNewMenuList(0);
                                         }
                                         if (Get.isRegistered<
-                                            DashboardController>()) {
+                                          DashboardController
+                                        >()) {
                                           Get.find<DashboardController>()
                                               .fetchPendency();
                                         }

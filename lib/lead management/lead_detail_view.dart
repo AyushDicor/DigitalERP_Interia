@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:newdigitalerp/lead%20management/lead%20management%20controller/lead_management_controller.dart';
 import 'package:newdigitalerp/lead%20management/lead_entry_view.dart';
@@ -136,9 +137,11 @@ class _LeadDetailViewState extends State<LeadDetailView> {
                     const SizedBox(height: 14),
                     _actionBar(context, c),
                     const SizedBox(height: 14),
-                    _infoCard(lead),
+                    _infoCard(c, lead),
                     const SizedBox(height: 14),
                     _itemsCard(c),
+                    const SizedBox(height: 14),
+                    _siteVisitCard(c),
                     const SizedBox(height: 14),
                     _docCard(
                       title: 'Latest Estimate',
@@ -500,40 +503,115 @@ class _LeadDetailViewState extends State<LeadDetailView> {
       colorText: Colors.white);
 
   // ── Lead Information card ──
-  Widget _infoCard(LeadData lead) {
+  // Shows the full lead header the ERP returns (via /api/lead/items), the same
+  // set the web ERP's Lead Detail displays — not just the thin bundle row.
+  // Only fields that actually have a value are rendered.
+  Widget _infoCard(LeadManagementController c, LeadData lead) {
+    final h = c.selectedHeader;
+    // Header value; '' when missing / placeholder ('--Select--') / zero amount.
+    String hv(String key, {bool amount = false}) {
+      final v = (h[key] ?? '').toString().trim();
+      if (v.isEmpty || v == '--Select--' || v == 'null') return '';
+      if (amount) {
+        final d = double.tryParse(v) ?? 0;
+        if (d == 0) return '';
+        return d == d.roundToDouble() ? d.toInt().toString() : v;
+      }
+      return v;
+    }
+
+    // Prefer the rich header; fall back to the thin bundle row.
+    String pick(String key, String? fallback) {
+      final v = hv(key);
+      return v.isNotEmpty ? v : ((fallback ?? '').trim());
+    }
+
+    final pairs = <List<String>>[
+      ['Lead No', pick('leadno', lead.leadnumber)],
+      ['Lead Date', _fmtDate(pick('leaddate', lead.leaddate))],
+      ['Company Name', pick('companyname', lead.companyname)],
+      ['Company Type', hv('companytype')],
+      ['Owner Name', pick('ownername', lead.ownername)],
+      ['Contact Person', pick('contactperson', lead.contactperson)],
+      ['Designation', hv('designation')],
+      ['Mobile No', pick('mobileno', lead.mobilenumber)],
+      ['Alternate Mobile', hv('alternativemobileno')],
+      ['WhatsApp', hv('whatsappno')],
+      ['Email', pick('emailid', lead.email)],
+      ['Website', hv('website')],
+      ['Phone', hv('phoneno')],
+      ['GST No', hv('gstno')],
+      ['Lead Source', pick('leadsource', lead.leadsource)],
+      ['Source', hv('source')],
+      ['Category', hv('leadcategory')],
+      ['Priority', hv('leadpriority')],
+      ['Status', pick('leadstatus', lead.status)],
+      ['Assigned To', pick('assignto', lead.handler)],
+      ['Market Segment', hv('marketsegment')],
+      ['Industry Type', hv('industrytype')],
+      ['Territory', hv('territory')],
+      ['Currency', hv('currency')],
+      ['No. of Employees', hv('noofemployees', amount: true)],
+      ['Forecast Amt', hv('forcastamt', amount: true)],
+      ['Budget', hv('budget', amount: true)],
+      ['Approx Amt', hv('approxamt', amount: true)],
+      ['Country', hv('country')],
+      ['State', hv('state')],
+      ['City', hv('city')],
+      ['Pincode', hv('pincode')],
+      ['Area', hv('area')],
+      ['Business Nature', hv('businessnature')],
+    ].where((p) => p[1].trim().isNotEmpty).toList();
+
+    // Long, full-width fields.
+    final address = pick('companyaddress', lead.address);
+    final project = hv('projectname');
+    final requirement =
+        pick('requirement', lead.specification ?? lead.requirement);
+    final remarks = pick('otherremarks', lead.otherremarks);
+
+    // Chunk the short pairs into rows of two.
+    final rows = <Widget>[];
+    for (var i = 0; i < pairs.length; i += 2) {
+      final hasRight = i + 1 < pairs.length;
+      rows.add(Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(children: [
+          _kv(pairs[i][0], pairs[i][1]),
+          if (hasRight)
+            _kv(pairs[i + 1][0], pairs[i + 1][1])
+          else
+            const Spacer(),
+        ]),
+      ));
+    }
+
     return _titledCard(
       title: 'Lead Information',
       icon: Icons.info_outline_rounded,
-      child: Column(children: [
-        Row(children: [
-          _kv('Lead No', lead.leadnumber ?? '-'),
-          _kv('Company Name', lead.companyname ?? '-'),
-        ]),
-        const SizedBox(height: 12),
-        Row(children: [
-          _kv('Contact Person', lead.contactperson ?? '-'),
-          _kv('Mobile No', lead.mobilenumber ?? '-'),
-        ]),
-        const SizedBox(height: 12),
-        Row(children: [
-          _kv('Lead Source', lead.leadsource ?? '-'),
-          _kv('Status', lead.status ?? '-'),
-        ]),
-        const SizedBox(height: 12),
-        Row(children: [
-          _kv('Assigned To', lead.handler ?? '-'),
-          _kv('Address', lead.address ?? '-'),
-        ]),
-        const SizedBox(height: 12),
-        Row(children: [
-          _kv('Requirement / Specification', lead.specification ?? '-'),
-        ]),
-        if ((lead.otherremarks ?? '').isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Row(children: [_kv('Remarks', lead.otherremarks ?? '-')]),
-        ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        ...rows,
+        if (address.isNotEmpty) _fullKv('Company Address', address),
+        if (project.isNotEmpty) _fullKv('Project Name', project),
+        if (requirement.isNotEmpty)
+          _fullKv('Requirement / Specification', requirement),
+        if (remarks.isNotEmpty) _fullKv('Remarks', remarks),
       ]),
     );
+  }
+
+  Widget _fullKv(String label, String value) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(children: [_kv(label, value)]),
+      );
+
+  // yyyy-MM-dd(THH:mm:ss) → dd-MM-yyyy; anything else passes through.
+  String _fmtDate(String raw) {
+    if (raw.isEmpty) return '';
+    final s = raw.contains('T') ? raw.split('T').first : raw;
+    final p = s.split('-');
+    if (p.length == 3 && p[0].length == 4) return '${p[2]}-${p[1]}-${p[0]}';
+    return s;
   }
 
   Widget _kv(String label, String value) => Expanded(
@@ -615,6 +693,139 @@ class _LeadDetailViewState extends State<LeadDetailView> {
                       )),
                 ]),
     );
+  }
+
+  // ── Site Visit card (mirrors the web Lead Detail "Site Visit" section) ──
+  Widget _siteVisitCard(LeadManagementController c) {
+    const teal = Color(0xFF06B6D4);
+    final sv = c.siteVisit;
+    final v = sv?.visit;
+    return _titledCard(
+      title: 'Site Visit',
+      icon: Icons.place_outlined,
+      iconColor: teal,
+      child: c.siteVisitBusy
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                  child: CircularProgressIndicator(
+                      color: _kPrimary, strokeWidth: 2)),
+            )
+          : v == null
+              ? _emptyLine('No site visit logged for this lead yet')
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      _kv('Visit No', v.visitNo.isEmpty ? '-' : v.visitNo),
+                      _kv('Date', v.visitDate.isEmpty ? '-' : v.visitDate),
+                    ]),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      _kv('Status', v.status.isEmpty ? '-' : v.status),
+                      _kv('Visited By',
+                          v.visitedBy.isEmpty ? '-' : v.visitedBy),
+                    ]),
+                    if (v.contactPerson.isNotEmpty || v.contactNo.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        _kv('Contact',
+                            v.contactPerson.isEmpty ? '-' : v.contactPerson),
+                        _kv('Contact No',
+                            v.contactNo.isEmpty ? '-' : v.contactNo),
+                      ]),
+                    ],
+                    if (v.checkIn.isNotEmpty || v.checkOut.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        _kv('Check-in', v.checkIn.isEmpty ? '-' : v.checkIn),
+                        _kv('Check-out', v.checkOut.isEmpty ? '-' : v.checkOut),
+                      ]),
+                    ],
+                    if (v.purpose.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(children: [_kv('Purpose', v.purpose)]),
+                    ],
+                    if (v.location.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(children: [_kv('Location', v.location)]),
+                    ],
+                    if (v.outcome.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(children: [_kv('Outcome', v.outcome)]),
+                    ],
+                    if (sv!.measurements.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _subLabel('Measurements'),
+                      ...sv.measurements.map((m) => Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(m.itemName.isEmpty ? '-' : m.itemName,
+                                      style: const TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: _kTextPrimary)),
+                                  Text(
+                                      'L ${_num(m.length)} · W ${_num(m.width)} · H ${_num(m.height)} · '
+                                      'Qty ${_num(m.qty)} ${m.unit} · Area ${_num(m.area)}'
+                                      '${m.remarks.isNotEmpty ? ' · ${m.remarks}' : ''}',
+                                      style: const TextStyle(
+                                          fontSize: 11.5,
+                                          color: _kTextSecondary)),
+                                ]),
+                          )),
+                    ],
+                    if (sv.attachments.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _subLabel('Photos / Attachments'),
+                      ...sv.attachments.map((a) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            child: Row(children: [
+                              Icon(
+                                  a.isImage
+                                      ? Icons.image_outlined
+                                      : Icons.insert_drive_file_outlined,
+                                  size: 18,
+                                  color: _kPrimary),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(a.fileName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: _kTextPrimary)),
+                              ),
+                              IconButton(
+                                visualDensity: VisualDensity.compact,
+                                icon: const Icon(Icons.open_in_new,
+                                    size: 18, color: _kPrimary),
+                                onPressed:
+                                    a.openable ? () => _openUrl(a.url) : null,
+                              ),
+                            ]),
+                          )),
+                    ],
+                  ]),
+    );
+  }
+
+  Widget _subLabel(String t) => Text(t.toUpperCase(),
+      style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+          color: _kTextSecondary));
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   // ── Estimate / Quotation card ──

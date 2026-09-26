@@ -1,4 +1,4 @@
-package com.newdicorerp.app
+package com.interiaerp.app
 
 import io.flutter.embedding.android.FlutterActivity
 

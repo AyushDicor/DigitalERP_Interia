@@ -392,6 +392,160 @@ class LeadItemsResponse {
 LeadItemsResponse leadItemsResponseFromJson(String str) =>
     LeadItemsResponse.fromJson(json.decode(str));
 
+// ═══════════════════════════ Site Visit (lead) ══════════════════════════════
+// /api/lead/visit → the lead's latest site visit + measurements + images,
+// mirroring the web Lead Detail "Site Visit" section. visit is null when none.
+class LeadVisitInfo {
+  final int visitId;
+  final String visitNo;
+  final String visitDate;
+  final String visitedBy;
+  final String purposeType;
+  final String purpose;
+  final String location;
+  final String contactPerson;
+  final String contactNo;
+  final String outcome;
+  final String status;
+  final String checkIn;
+  final String checkOut;
+
+  LeadVisitInfo({
+    this.visitId = 0,
+    this.visitNo = '',
+    this.visitDate = '',
+    this.visitedBy = '',
+    this.purposeType = '',
+    this.purpose = '',
+    this.location = '',
+    this.contactPerson = '',
+    this.contactNo = '',
+    this.outcome = '',
+    this.status = '',
+    this.checkIn = '',
+    this.checkOut = '',
+  });
+
+  factory LeadVisitInfo.fromJson(Map j) => LeadVisitInfo(
+        visitId: _i(j.cast<String, dynamic>(), ['visitId', 'VisitId']) ?? 0,
+        visitNo: _s(j.cast<String, dynamic>(), ['visitNo', 'VisitNo']) ?? '',
+        visitDate:
+            _s(j.cast<String, dynamic>(), ['visitDate', 'VisitDate']) ?? '',
+        visitedBy: _s(j.cast<String, dynamic>(),
+                ['visitedBy', 'VisitedByName', 'visitedByName']) ??
+            '',
+        purposeType:
+            _s(j.cast<String, dynamic>(), ['purposeType', 'PurposeType']) ?? '',
+        purpose: _s(j.cast<String, dynamic>(), ['purpose', 'Purpose']) ?? '',
+        location: _s(j.cast<String, dynamic>(), ['location', 'Location']) ?? '',
+        contactPerson: _s(j.cast<String, dynamic>(),
+                ['contactPerson', 'ContactPerson']) ??
+            '',
+        contactNo:
+            _s(j.cast<String, dynamic>(), ['contactNo', 'ContactNo']) ?? '',
+        outcome: _s(j.cast<String, dynamic>(), ['outcome', 'Outcome']) ?? '',
+        status: _s(j.cast<String, dynamic>(), ['status', 'Status']) ?? '',
+        checkIn: _s(j.cast<String, dynamic>(),
+                ['checkIn', 'CheckInText', 'CheckIn']) ??
+            '',
+        checkOut: _s(j.cast<String, dynamic>(),
+                ['checkOut', 'CheckOutText', 'CheckOut']) ??
+            '',
+      );
+}
+
+class LeadVisitMeasure {
+  final String itemName;
+  final String description;
+  final double length;
+  final double width;
+  final double height;
+  final double qty;
+  final String unit;
+  final double area;
+  final String remarks;
+
+  LeadVisitMeasure({
+    this.itemName = '',
+    this.description = '',
+    this.length = 0,
+    this.width = 0,
+    this.height = 0,
+    this.qty = 0,
+    this.unit = '',
+    this.area = 0,
+    this.remarks = '',
+  });
+
+  factory LeadVisitMeasure.fromJson(Map j) => LeadVisitMeasure(
+        itemName: _s(j.cast<String, dynamic>(), ['ItemName', 'itemName']) ?? '',
+        description:
+            _s(j.cast<String, dynamic>(), ['Description', 'description']) ?? '',
+        length: _d(j.cast<String, dynamic>(), ['Length', 'length']),
+        width: _d(j.cast<String, dynamic>(), ['Width', 'width']),
+        height: _d(j.cast<String, dynamic>(), ['Height', 'height']),
+        qty: _d(j.cast<String, dynamic>(), ['Qty', 'qty']),
+        unit: _s(j.cast<String, dynamic>(), ['Unit', 'unit']) ?? '',
+        area: _d(j.cast<String, dynamic>(), ['Area', 'area']),
+        remarks: _s(j.cast<String, dynamic>(), ['Remarks', 'remarks']) ?? '',
+      );
+}
+
+class LeadVisitAttachment {
+  final String fileName;
+  final String fileExt;
+  final String url; // presigned; empty when storage not configured
+
+  LeadVisitAttachment({this.fileName = '', this.fileExt = '', this.url = ''});
+
+  factory LeadVisitAttachment.fromJson(Map j) => LeadVisitAttachment(
+        fileName: _s(j.cast<String, dynamic>(), ['FileName', 'filename']) ?? '',
+        fileExt: _s(j.cast<String, dynamic>(), ['FileExt', 'fileext']) ?? '',
+        url: _s(j.cast<String, dynamic>(), ['Url', 'url']) ?? '',
+      );
+
+  bool get isImage => const ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
+      .contains(fileExt.toLowerCase());
+  bool get openable => url.startsWith('http');
+}
+
+class LeadVisitResponse {
+  final LeadVisitInfo? visit;
+  final List<LeadVisitMeasure> measurements;
+  final List<LeadVisitAttachment> attachments;
+  final String? message;
+  final int? status;
+
+  LeadVisitResponse({
+    this.visit,
+    this.measurements = const [],
+    this.attachments = const [],
+    this.message,
+    this.status,
+  });
+
+  factory LeadVisitResponse.fromJson(Map<String, dynamic> j) {
+    final data = j['data'] as Map<String, dynamic>?;
+    final v = (data != null && data['visit'] is Map)
+        ? LeadVisitInfo.fromJson(Map<String, dynamic>.from(data['visit']))
+        : null;
+    List<T> lst<T>(dynamic v, T Function(Map) f) =>
+        v is List ? v.whereType<Map>().map(f).toList() : <T>[];
+    return LeadVisitResponse(
+      visit: v,
+      measurements:
+          lst(data?['measurements'], (m) => LeadVisitMeasure.fromJson(m)),
+      attachments:
+          lst(data?['attachments'], (a) => LeadVisitAttachment.fromJson(a)),
+      message: j['message'],
+      status: j['status'],
+    );
+  }
+}
+
+LeadVisitResponse leadVisitResponseFromJson(String str) =>
+    LeadVisitResponse.fromJson(json.decode(str));
+
 // ── Legacy aliases kept so older screens still compile ──
 LeadListResponse leadListResponseFromJson(String str) =>
     LeadListResponse.fromJson(json.decode(str));

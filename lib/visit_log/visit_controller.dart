@@ -46,7 +46,7 @@ class VisitController extends AppBaseController {
   String listError = '';
   DateTime? fromDate;
   DateTime? toDate;
-  String statusFilter = ''; // '' = all
+  String statusFilter = 'Planned'; // default view = Planned; '' = all
   String purposeFilter = '';
   final TextEditingController searchCtrl = TextEditingController();
 
@@ -115,16 +115,35 @@ class VisitController extends AppBaseController {
     listError = '';
     update();
     try {
-      final body = <String, String>{
-        'compid': _compid,
-        'userid': _userid,
-        'status': statusFilter,
-        'purposetype': purposeFilter,
-        'search': searchCtrl.text.trim(),
-        if (fromDate != null) 'fromdate': _dateFmt.format(fromDate!),
-        if (toDate != null) 'todate': _dateFmt.format(toDate!),
-      };
-      visits = await api.getVisitList(body);
+      Map<String, String> body(String status) => {
+            'compid': _compid,
+            'userid': _userid,
+            'status': status,
+            'purposetype': purposeFilter,
+            'search': searchCtrl.text.trim(),
+            if (fromDate != null) 'fromdate': _dateFmt.format(fromDate!),
+            if (toDate != null) 'todate': _dateFmt.format(toDate!),
+          };
+      if (statusFilter.isEmpty || statusFilter == 'Planned') {
+        // Backend quirk: visit/list is disjoint by status — status='' returns
+        // real saved visits (no enquiries), while status='Planned' returns ONLY
+        // the pending-enquiry worklist (Id 0), dropping real Planned visits.
+        // So both the All and Planned views must merge the two calls.
+        final all = await api.getVisitList(body(''));
+        final enquiryRows = await api.getVisitList(body('Planned'));
+        final enquiries = enquiryRows.where((v) => v.isEnquiry).toList();
+        if (statusFilter == 'Planned') {
+          final plannedVisits = all
+              .where((v) => !v.isEnquiry && v.status.toLowerCase() == 'planned')
+              .toList();
+          visits = [...plannedVisits, ...enquiries];
+        } else {
+          // All Status: every real visit + the pending enquiries.
+          visits = [...all.where((v) => !v.isEnquiry), ...enquiries];
+        }
+      } else {
+        visits = await api.getVisitList(body(statusFilter));
+      }
       if (visits.isEmpty) listError = 'No visits found.';
     } catch (e) {
       listError = '$e';
@@ -222,14 +241,22 @@ class VisitController extends AppBaseController {
 
   // ── Delete ───────────────────────────────────────────────────────────
   Future<void> deleteVisit(int id) async {
-    final res =
-        await api.deleteVisit({'compid': _compid, 'id': '$id', 'userid': _userid});
-    if (res.status == 200) {
-      ShowMessage.showSnackBar('Visit', 'Visit deleted.');
-      Get.back(); // leave detail
-      loadList();
-    } else {
-      ShowMessage.showSnackBar('Visit', res.message ?? 'Could not delete.');
+    try {
+      final res = await api
+          .deleteVisit({'compid': _compid, 'id': '$id', 'userid': _userid});
+      if (res.status == 200) {
+        // Leave the detail screen FIRST, then show the snackbar. Get.snackbar
+        // is a route, so showing it before Get.back() makes Get.back() pop the
+        // snackbar instead of the page — leaving you stuck on detail with no
+        // visible message.
+        Get.back();
+        await loadList();
+        ShowMessage.showSnackBar('Visit', 'Visit deleted.');
+      } else {
+        ShowMessage.showSnackBar('Visit', res.message ?? 'Could not delete.');
+      }
+    } catch (e) {
+      ShowMessage.showSnackBar('Visit', 'Could not delete — $e');
     }
   }
 
@@ -306,6 +333,7 @@ class VisitController extends AppBaseController {
     final ok = await AttachmentRepo.delete(compid: _compid, id: attachmentId);
     if (ok) {
       await refreshDetail();
+      ShowMessage.showSnackBar('Attachment', 'Attachment removed.');
     } else {
       ShowMessage.showSnackBar('Attachment', 'Could not delete file.');
     }
@@ -334,6 +362,18 @@ class VisitController extends AppBaseController {
     loadOpenLeads();
     loadParties();
     Get.to(() => const VisitFormView());
+  }
+
+  // Tapping a pending-enquiry row in the Planned list logs a visit against it:
+  // open a fresh form pre-seeded with the enquiry's lead + name.
+  void startNewFromEnquiry(VisitListItem v) {
+    startNew();
+    leadId = v.leadId;
+    if (v.visitTo.trim().isNotEmpty) visitToCtrl.text = v.visitTo.trim();
+    if (v.contactPerson.trim().isNotEmpty) {
+      contactPersonCtrl.text = v.contactPerson.trim();
+    }
+    update();
   }
 
   void startEdit() {
@@ -377,15 +417,39 @@ class VisitController extends AppBaseController {
     update();
   }
 
+  // Pick an enquiry/lead for the visit. Seeds the required "Visited" field from
+  // the enquiry label (strips the leading "3 - " code) when it's still blank, so
+  // the enquiry → visit flow isn't blocked by the empty-visitto guard on save.
+  void selectLead(int? v) {
+    leadId = v ?? 0;
+    if (leadId != 0 && visitToCtrl.text.trim().isEmpty) {
+      OpenLead? match;
+      for (final l in openLeads) {
+        if (l.value == leadId) {
+          match = l;
+          break;
+        }
+      }
+      if (match != null) {
+        final txt = match.text;
+        final i = txt.indexOf(' - ');
+        final name = i >= 0 ? txt.substring(i + 3).trim() : txt.trim();
+        if (name.isNotEmpty) visitToCtrl.text = name;
+      }
+    }
+    update();
+  }
+
   // Party picker (optional) — flat searchable list, sets partyid + prefills the
   // "Visited" name (still editable). partyid 0 = free-typed, per the API.
   // Sends branchid + executiveid too (executiveid=0 = no executive filter); the
   // widened endpoint uses them, the legacy one ignores them.
   Future<void> loadParties() async {
     if (parties.isNotEmpty) return; // load once per form session
-    final res = await api.getPartyDropdownList({
+    // Rich customer list (Fullpartydetailwithbranch) — carries mobileno/address/
+    // location so selectParty can prefill Contact No + GPS. executiveid 0 = all.
+    final res = await api.getFullPartyList({
       'compid': _compid,
-      'userid': _userid,
       'branchid': _branchid,
       'executiveid': '0',
     });
@@ -629,18 +693,20 @@ class VisitController extends AppBaseController {
         }
       }
 
+      // Leave the form FIRST, then show the snackbar — Get.snackbar is a route,
+      // so showing it before Get.back() would pop the snackbar, not the form.
+      Get.back();
+      // If we edited an open detail, refresh it; always refresh the list.
+      if (editingId > 0 && detail?.visit?.id == editingId) {
+        await _fetchDetail(editingId);
+      }
+      await loadList();
       if (failures.isEmpty) {
         ShowMessage.showSnackBar('Visit', 'Visit ${res.visitNo} saved.');
       } else {
         ShowMessage.showSnackBar('Visit saved',
             'Saved, but ${failures.length} attachment(s) could not be uploaded — ${failures.first}');
       }
-      Get.back(); // leave the form
-      // If we edited an open detail, refresh it; always refresh the list.
-      if (editingId > 0 && detail?.visit?.id == editingId) {
-        await _fetchDetail(editingId);
-      }
-      await loadList();
     } catch (e) {
       ShowMessage.showSnackBar('Not saved', '$e');
     } finally {

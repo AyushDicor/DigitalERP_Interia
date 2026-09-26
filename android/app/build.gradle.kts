@@ -17,12 +17,12 @@ val keystorePropertiesFile = rootProject.file("key.properties").also { f ->
 }
 
 android {
-    namespace = "com.newdicorerp.app"
+    namespace = "com.interiaerp.app"
     compileSdk = 36
     ndkVersion = "28.2.13676358"
 
     defaultConfig {
-        applicationId = "com.newdicorerp.app"
+        applicationId = "com.interiaerp.app"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutter.versionCode

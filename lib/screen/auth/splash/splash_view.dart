@@ -27,7 +27,7 @@ class SplashView extends StatelessWidget {
 
 
               const Text(
-                'Dicor ERP',
+                'Interia',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,

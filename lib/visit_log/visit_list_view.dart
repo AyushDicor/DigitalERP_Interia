@@ -206,7 +206,8 @@ class VisitListView extends StatelessWidget {
   Widget _card(VisitController ctrl, VisitListItem v) {
     final sc = statusColor(v.status);
     return InkWell(
-      onTap: () => ctrl.openDetail(v.id),
+      onTap: () =>
+          v.isEnquiry ? ctrl.startNewFromEnquiry(v) : ctrl.openDetail(v.id),
       borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
@@ -223,6 +224,22 @@ class VisitListView extends StatelessWidget {
                       fontSize: 15, fontWeight: FontWeight.w700, color: _ink),
                   maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
+            if (v.isEnquiry) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                    color: _purple.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20)),
+                child: const Text('ENQUIRY',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .3,
+                        color: _purple)),
+              ),
+              const SizedBox(width: 6),
+            ],
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -234,8 +251,13 @@ class VisitListView extends StatelessWidget {
             ),
           ]),
           const SizedBox(height: 8),
-          _line(Icons.confirmation_number_outlined,
-              '${v.visitNo}   •   ${v.visitDate}'),
+          _line(
+              v.isEnquiry
+                  ? Icons.touch_app_outlined
+                  : Icons.confirmation_number_outlined,
+              v.isEnquiry
+                  ? 'Tap to log visit   •   ${v.visitDate}'
+                  : '${v.visitNo}   •   ${v.visitDate}'),
           const SizedBox(height: 4),
           _line(Icons.person_outline,
               '${v.visitedByName}${v.contactPerson.isNotEmpty ? '   •   ${v.contactPerson}' : ''}'),

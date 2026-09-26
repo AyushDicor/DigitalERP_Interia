@@ -124,6 +124,11 @@ class AppRoutes {
  //Cards
  static const String tapCardList ='/cardList';
 
+ // My Jobs — Production Operator (menu 9404, live interia/* API)
+ static const String productionOperator = '/production-operator';
+
+ // Order Production Tracking (menu 9405, live interia/track/* API)
+ static const String orderTracking = '/order-tracking';
 
 }
 

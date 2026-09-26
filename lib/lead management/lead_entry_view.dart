@@ -111,6 +111,14 @@ class _LeadEntryViewState extends State<LeadEntryView> {
         Expanded(child: _text('Approx Amount', c.approxAmtController, number: true)),
       ]),
       Row(children: [
+        Expanded(
+            child: _text('No. of Employees', c.noOfEmployeesController,
+                number: true)),
+        const SizedBox(width: 10),
+        Expanded(
+            child: _text('Forecast Amount', c.forecastController, number: true)),
+      ]),
+      Row(children: [
         Expanded(child: _text('Ref No', c.refNoController)),
         const SizedBox(width: 10),
         Expanded(child: _text('Reffer By', c.refferByController)),
@@ -162,6 +170,12 @@ class _LeadEntryViewState extends State<LeadEntryView> {
         Expanded(child: _text('GST No', c.gstController)),
       ]),
       _text('Area', c.areaController),
+      Row(children: [
+        Expanded(child: _text('Country', c.countryController)),
+        const SizedBox(width: 10),
+        Expanded(child: _text('State', c.stateController)),
+      ]),
+      _text('City', c.cityController),
       _pick(ctx, c, 'Business Nature', 'businessNatureOpt', const [],
           controllerText: c.businessNatureController),
       _pick(ctx, c, 'Market Segment', 'marketSegment', c.formData.marketSegment),

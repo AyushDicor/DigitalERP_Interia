@@ -4,7 +4,6 @@ import 'dart:developer';
 import 'package:newdigitalerp/services/api_Inspector/alice.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-
 import '../../../app_routes/app_routes.dart';
 
 class ApiClient extends GetConnect {
@@ -55,8 +54,11 @@ class ApiClient extends GetConnect {
         headers: {'Content-Type': 'application/json', 'X-Api-Key': apiKey},
         body: jsonEncode(body),
       );
+      // Decode as UTF-8 explicitly: when the server omits `charset` the http
+      // package falls back to latin-1, which turns "—" into "â€"".
+      final text = utf8.decode(response.bodyBytes, allowMalformed: true);
       log("RES -------------> ${response.statusCode}");
-      log("RES --------B-----> ${response.body}");
+      log("RES --------B-----> $text");
       AliceInterceptor.getAlice.onHttpResponse(response);
       if (response.statusCode != 200) {
         return jsonEncode({
@@ -66,7 +68,7 @@ class ApiClient extends GetConnect {
           "data": null,
         });
       }
-      return response.body;
+      return text;
     } catch (e) {
       log('______ postAppJson error ${e.toString()}');
       return '';

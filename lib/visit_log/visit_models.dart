@@ -33,6 +33,11 @@ class VisitListItem {
   final String location;
   final String contactPerson;
   final String status;
+  // A "Planned" row can be a pending enquiry (Id 0, IsEnquiry 1) that carries a
+  // LeadId — tapping it should start a NEW visit for that enquiry, not open a
+  // (non-existent) detail.
+  final int leadId;
+  final bool isEnquiry;
 
   VisitListItem({
     required this.id,
@@ -44,6 +49,8 @@ class VisitListItem {
     required this.location,
     required this.contactPerson,
     required this.status,
+    this.leadId = 0,
+    this.isEnquiry = false,
   });
 
   factory VisitListItem.fromJson(Map j) => VisitListItem(
@@ -56,6 +63,8 @@ class VisitListItem {
         location: _str(j['Location']),
         contactPerson: _str(j['ContactPerson']),
         status: _str(j['Status']),
+        leadId: _int(j['LeadId']),
+        isEnquiry: _int(j['IsEnquiry']) == 1 || _int(j['Id']) == 0,
       );
 }
 

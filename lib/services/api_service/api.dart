@@ -1178,6 +1178,36 @@ class Api {
     }
   }
 
+  // Rich customer/party list — same envelope/model as getPartyDropdownList but
+  // hits Fullpartydetailwithbranch, which also returns mobileno/address/location/
+  // executive/remarks (used by the Visit form to prefill contact + GPS).
+  Future<PartyDropdownListResponse> getFullPartyList(
+      Map<String, String> body) async {
+    List<ConnectivityResult> connectivityResults =
+    await connectivity.checkConnectivity();
+
+    if (connectivityResults.contains(ConnectivityResult.wifi) ||
+        connectivityResults.contains(ConnectivityResult.mobile)) {
+      String res = await _apiClient.postMethod(
+          method: _apiMethods.fullPartyList, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return partyDropdownListResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) {
+            print(e);
+          }
+          return PartyDropdownListResponse(status: 500, message: e.toString());
+        }
+      } else {
+        return PartyDropdownListResponse(
+            status: 500, message: 'Something went wrong');
+      }
+    } else {
+      return PartyDropdownListResponse(status: 500, message: 'No Internet');
+    }
+  }
+
   Future<AddContactsViewResponse> getAddContactsView(
       Map<String, String> body) async {
     List<ConnectivityResult> connectivityResults =
@@ -5293,6 +5323,25 @@ class Api {
       return LeadItemsResponse(status: 500, message: 'Something went wrong');
     }
     return LeadItemsResponse(status: 500, message: 'No internet');
+  }
+
+  Future<LeadVisitResponse> getLeadVisit(Map<String, String> body) async {
+    final c = await connectivity.checkConnectivity();
+    if (c.contains(ConnectivityResult.wifi) ||
+        c.contains(ConnectivityResult.mobile)) {
+      String res =
+          await _apiClient.postMethod(method: _apiMethods.leadVisit, body: body);
+      if (res.isNotEmpty) {
+        try {
+          return leadVisitResponseFromJson(res);
+        } catch (e) {
+          if (kDebugMode) print(e);
+          return LeadVisitResponse(status: 500, message: e.toString());
+        }
+      }
+      return LeadVisitResponse(status: 500, message: 'Something went wrong');
+    }
+    return LeadVisitResponse(status: 500, message: 'No internet');
   }
 
   Future<LeadListResponse> getLeadList(Map<String, String> body) async {

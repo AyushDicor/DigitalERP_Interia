@@ -45,6 +45,10 @@ class ApiMethods {
   String executiveOrderList   =
       'Executiveorderlistwithbranch/orderlistexecutivewithbranch';
   String partyDropdownNew     = 'agentparty/getagentpartyname';
+  // Rich customer/party list (partyid,partyname,mobileno,address,location,
+  // executive,remarks) — used by the Visit party picker for contact/GPS prefill.
+  String fullPartyList        =
+      'partydetailwithbranch/Fullpartydetailwithbranch';
   String validateUserForOrder = 'validateuserfororder/validateuser';
   String matchUserLocation    = 'checkuserlocation/validateuserlocation';
   String singleOrderDetail    = 'orderdetail/orderwithproduct';
@@ -356,6 +360,7 @@ class ApiMethods {
   /// Lead Management (ERP-native module)
   String leadDashboard    = 'lead/dashboard';
   String leadItems        = 'lead/items';
+  String leadVisit        = 'lead/visit';
   String leadFormDropdowns = 'lead/formdropdowns';
   String leadCompanies    = 'lead/companies';
   String leadItemMaster   = 'lead/itemmaster';

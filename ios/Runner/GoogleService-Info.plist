@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyCE4ACTEarktKBkgDZR_V4wo5ltDYFm7AQ</string>
+	<string>AIzaSyBOJsgvcymsF139NZHZUQM_wRZXZpH6x-Y</string>
 	<key>GCM_SENDER_ID</key>
-	<string>930383834678</string>
+	<string>953777419138</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.newdicorerp.app</string>
+	<string>com.interiaerp.app</string>
 	<key>PROJECT_ID</key>
-	<string>digitalerp-dicor</string>
+	<string>digitalerp-interia</string>
 	<key>STORAGE_BUCKET</key>
-	<string>digitalerp-dicor.firebasestorage.app</string>
+	<string>digitalerp-interia.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:930383834678:ios:2a3cfe005d5b5c8708f297</string>
+	<string>1:953777419138:ios:de2e08aa8fd8f0cf71559b</string>
 </dict>
 </plist>

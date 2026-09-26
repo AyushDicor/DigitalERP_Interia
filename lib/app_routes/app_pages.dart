@@ -98,6 +98,8 @@ import '../screen/ui/home/visit_plan/visit_plan_detail/stock_taking_view/stock_t
 import '../screen/ui/home/visit_plan/visit_plan_detail/visit_plan_detail_view.dart';
 import '../screen/ui/home/visit_plan/visit_plan_view.dart';
 import '../stock _reconcillation/stock_reconciliation.dart';
+import '../order_tracking/tracking_view.dart';
+import '../production_operator/operator_shell_view.dart';
 import '../utils/app_constant_new.dart';
 import 'app_routes.dart';
 
@@ -517,6 +519,14 @@ class AppPages {
     GetPage(
       name: AppRoutes.reimbursement,
       page: () => ReimbursementListScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.productionOperator,
+      page: () => const OperatorShellView(),
+    ),
+    GetPage(
+      name: AppRoutes.orderTracking,
+      page: () => const OrderTrackingView(),
     ),
   ];
 }

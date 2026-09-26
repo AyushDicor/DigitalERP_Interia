@@ -5,6 +5,7 @@ import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/homeview_new_controller.dart';
 import 'package:newdigitalerp/new_menu_defalut_screen.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
+import 'package:newdigitalerp/utils/menu_ids.dart';
 
 /// The module grid ("Quick Links").
 ///
@@ -22,7 +23,13 @@ void openQuickLinksSheet() {
   // on resume — so top the list up here if it never loaded.
   if (Get.isRegistered<HomeViewNewController>()) {
     final ctrl = Get.find<HomeViewNewController>();
-    if (ctrl.menuListData.isEmpty) ctrl.getNewMenuList(0);
+    if (ctrl.menuListData.isEmpty) {
+      ctrl.getNewMenuList(0);
+    } else {
+      // Pick up modules an admin granted or revoked since login — the grid
+      // updates under the user instead of needing a logout.
+      ctrl.refreshMenu();
+    }
   }
 
   showModalBottomSheet(
@@ -89,17 +96,21 @@ class _QuickLinksSheet extends StatelessWidget {
               color: newBlueLightColor,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.grid_view_rounded,
-                color: newBlueColor, size: 18),
+            child: const Icon(
+              Icons.grid_view_rounded,
+              color: newBlueColor,
+              size: 18,
+            ),
           ),
           const SizedBox(width: 12),
           const Expanded(
             child: Text(
               'Quick Links',
               style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: newTextPrimary),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: newTextPrimary,
+              ),
             ),
           ),
           GestureDetector(
@@ -111,8 +122,11 @@ class _QuickLinksSheet extends StatelessWidget {
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.close_rounded,
-                  size: 18, color: Colors.grey.shade600),
+              child: Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: Colors.grey.shade600,
+              ),
             ),
           ),
         ],
@@ -122,12 +136,16 @@ class _QuickLinksSheet extends StatelessWidget {
 
   Widget _grid(BuildContext context, HomeViewNewController ctrl) {
     if (ctrl.isListLoading) {
-      return const Center(child: CircularProgressIndicator(color: newBlueColor));
+      return const Center(
+        child: CircularProgressIndicator(color: newBlueColor),
+      );
     }
     if (ctrl.menuListData.isEmpty) {
       return Center(
-        child: Text('No menu items found',
-            style: TextStyle(color: Colors.grey.shade500)),
+        child: Text(
+          'No menu items found',
+          style: TextStyle(color: Colors.grey.shade500),
+        ),
       );
     }
     return GridView.builder(
@@ -145,7 +163,10 @@ class _QuickLinksSheet extends StatelessWidget {
   }
 
   Widget _menuTile(
-      BuildContext context, MenuNewData data, HomeViewNewController ctrl) {
+    BuildContext context,
+    MenuNewData data,
+    HomeViewNewController ctrl,
+  ) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).pop(); // close the sheet first
@@ -159,10 +180,12 @@ class _QuickLinksSheet extends StatelessWidget {
         }
 
         if (data.child == 1) {
-          Get.to(() => MenuDefaultScreen(
-                menuID: data.menuid!,
-                title: data.menuname ?? 'Menu',
-              ));
+          Get.to(
+            () => MenuDefaultScreen(
+              menuID: data.menuid!,
+              title: data.menuname ?? 'Menu',
+            ),
+          );
         } else {
           Get.toNamed(HomeViewNewController.getRouteNameById(data.menuid));
         }
@@ -194,10 +217,13 @@ class _QuickLinksSheet extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Image.asset(
                   ctrl.imageList()[data.menuname] ?? '',
-                  errorBuilder: (_, __, ___) => const Icon(
-                      Icons.grid_view_rounded,
-                      color: newBlueColor,
-                      size: 24),
+                  // No PNG for this module → Material icon (My Jobs ships
+                  // without an asset), then the generic grid glyph.
+                  errorBuilder: (_, __, ___) => Icon(
+                    menuFallbackIcons[data.menuid] ?? Icons.grid_view_rounded,
+                    color: newBlueColor,
+                    size: 24,
+                  ),
                 ),
               ),
             ),
@@ -210,9 +236,10 @@ class _QuickLinksSheet extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: newTextPrimary),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: newTextPrimary,
+                ),
               ),
             ),
           ],

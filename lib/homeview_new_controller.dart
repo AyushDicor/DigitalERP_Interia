@@ -231,6 +231,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:newdigitalerp/Menu_new_list_responce.dart';
 import 'package:newdigitalerp/app_routes/app_routes.dart';
+import 'package:newdigitalerp/utils/menu_ids.dart';
 import 'package:newdigitalerp/screen/auth/base/base_contoller.dart';
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/response/update_approvalstatus_responce.dart';
@@ -238,7 +239,8 @@ import 'package:newdigitalerp/utils/app_assets.dart';
 import 'services/api_service/request_keys.dart';
 import 'utils/show_message.dart';
 
-class HomeViewNewController extends AppBaseController {
+class HomeViewNewController extends AppBaseController
+    with WidgetsBindingObserver {
   // Lazy getter (NOT a field initializer): HomeController.onInit creates this
   // controller, so resolving HomeController at construction time caused a
   // circular init → StackOverflow (hard crash in release builds). Deferring the
@@ -267,7 +269,39 @@ class HomeViewNewController extends AppBaseController {
     super.onInit();
     // Load the real menu from the mobile API for the logged-in user.
     getNewMenuList(0);
+    // Menu grants change server-side while people are logged in; picking
+    // them up on resume saves everyone a logout / login.
+    WidgetsBinding.instance.addObserver(this);
     // _loadDummyMenuList();
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
+  }
+
+  DateTime? _lastMenuFetch;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) refreshMenu();
+  }
+
+  /// Re-read the granted menu without disturbing the user: no spinner, no
+  /// error toast, and — unlike the first load — never a forced logout if the
+  /// call fails or comes back empty. Throttled so a quick app-switch does
+  /// not fire a burst of calls.
+  Future<void> refreshMenu({bool force = false}) async {
+    final last = _lastMenuFetch;
+    if (!force &&
+        last != null &&
+        DateTime.now().difference(last) < const Duration(seconds: 20)) {
+      return;
+    }
+    _lastMenuFetch = DateTime.now();
+    await getNewMenuList(0, silent: true);
   }
 
   void _loadDummyMenuList() {
@@ -338,13 +372,19 @@ class HomeViewNewController extends AppBaseController {
 
   bool _fetchInProgress = false;
 
-  Future<void> getNewMenuList(int menuId) async {
+  /// [silent] = a background re-read (app resumed, Quick Links opened): no
+  /// spinner, no error toast, and the previous menu is kept if the call fails
+  /// or returns nothing. Only the first load may sign the user out.
+  Future<void> getNewMenuList(int menuId, {bool silent = false}) async {
     if (_fetchInProgress) return;
     _fetchInProgress = true;
+    final previous = List<MenuNewData>.from(menuListData);
 
     try {
-      isBusy = true;
-      update();
+      if (!silent) {
+        isBusy = true;
+        update();
+      }
 
       // Not logged in yet (this controller can init before login) → skip the
       // menu fetch silently. No error toast on the login screen; the menu loads
@@ -407,6 +447,13 @@ class HomeViewNewController extends AppBaseController {
       menuListData.removeWhere((m) => m.menuid == 126);
 
       if (menuListData.isEmpty) {
+        // A background refresh must never sign anyone out — an empty answer
+        // there usually means a dropped request, not a revoked account.
+        if (silent) {
+          menuListData = previous;
+          debugPrint("Refresh returned no menu — keeping the previous list");
+          return;
+        }
         debugPrint("Empty menu list — logging out with message");
         await logout(); // clears session
         Get.offAllNamed(
@@ -419,7 +466,11 @@ class HomeViewNewController extends AppBaseController {
       }
     } catch (e, st) {
       debugPrint("getNewMenuList error: $e\n$st");
-      ShowMessage.showSnackBar('getMenuList catch', '$e');
+      if (silent) {
+        menuListData = previous;
+      } else {
+        ShowMessage.showSnackBar('getMenuList catch', '$e');
+      }
     } finally {
       isBusy = false;
       update();
@@ -450,33 +501,36 @@ class HomeViewNewController extends AppBaseController {
 
   Map<String, dynamic> imageList() {
     return {
-      'Executive'           : 'assets/iconsnew/Executive2.png',
-      'Order'               : AppAssets.ordernewIcon,
-      'Visit'               : AppAssets.visitnewIcon,
-      'Payment Request'     : AppAssets.expensenewIcon,
-      'Party List'          : AppAssets.partylistnewIcon,
-      'Image'               : AppAssets.imagenewIcon,
-      'Accounts'            : AppAssets.accountNewIcon,
-      'MIS'                 : AppAssets.misnewIcon,
-      'Approval'            : AppAssets.approvalnewIcon,
-      'Task'                : AppAssets.taskManagementnewIcon,
-      'Document Management' : AppAssets.documentnewIcon,
-      'Follow Up'           : AppAssets.orderfollowpnewIcon,
-      'Lead Management'     : AppAssets.leadManagementNewIcon,
-      'Performa Invoice'    : AppAssets.invoiceIcon,
-      'Purchase Order'      : AppAssets.poIcon,
-      'Pending Indent for PO' : AppAssets.poIcon,
-      'Category Catalouge'  : 'assets/iconsnew/Category Catalogue.png',
-      'Complaints'          : AppAssets.complaintsIcon,
-      'Reimbursement'       : 'assets/iconsnew/Reimbursements.png',
-      'Performance'         : AppAssets.performancenewIcon,
-      'Attendance'          : AppAssets.attendencenewIcon,
-      'MRN'                 : AppAssets.mrnIcon,
-      'GRN Entry'           : AppAssets.grnIcon,
-      'MRN QC'              : AppAssets.mrnQcIcon,
-      'Material Received'   : AppAssets.mrnrIcon,
-      'Indent'              : AppAssets.indentIcon,
-      'Tap Card'            : AppAssets.tapCardIcon,
+      'Executive': 'assets/iconsnew/Executive2.png',
+      'Order': AppAssets.ordernewIcon,
+      'Visit': AppAssets.visitnewIcon,
+      'Payment Request': AppAssets.expensenewIcon,
+      'Party List': AppAssets.partylistnewIcon,
+      'Image': AppAssets.imagenewIcon,
+      'Accounts': AppAssets.accountNewIcon,
+      'MIS': AppAssets.misnewIcon,
+      'Approval': AppAssets.approvalnewIcon,
+      'Task': AppAssets.taskManagementnewIcon,
+      'Document Management': AppAssets.documentnewIcon,
+      'Follow Up': AppAssets.orderfollowpnewIcon,
+      'Lead Management': AppAssets.leadManagementNewIcon,
+      'Performa Invoice': AppAssets.invoiceIcon,
+      'Purchase Order': AppAssets.poIcon,
+      'Pending Indent for PO': AppAssets.poIcon,
+      'Category Catalouge': 'assets/iconsnew/Category Catalogue.png',
+      'Complaints': AppAssets.complaintsIcon,
+      'Reimbursement': 'assets/iconsnew/Reimbursements.png',
+      'Performance': AppAssets.performancenewIcon,
+      'Attendance': AppAssets.attendencenewIcon,
+      'MRN': AppAssets.mrnIcon,
+      'GRN Entry': AppAssets.grnIcon,
+      'MRN QC': AppAssets.mrnQcIcon,
+      'Material Received': AppAssets.mrnrIcon,
+      'Indent': AppAssets.indentIcon,
+      'Tap Card': AppAssets.tapCardIcon,
+      'My Jobs': AppAssets.myJobIcon,
+      'Order Tracking': AppAssets.orderTrackingIcon,
+      'Production': AppAssets.productionIcon,
     };
   }
 
@@ -495,7 +549,7 @@ class HomeViewNewController extends AppBaseController {
     if (menuId == 2419) return AppRoutes.leadManagement;
     if (menuId == 9401) return AppRoutes.performaInvoice;
     if (menuId == 9402) return AppRoutes.purchaseOrder;
-    if (menuId == 97  ) return AppRoutes.pendingIndentForPo;
+    if (menuId == 97) return AppRoutes.pendingIndentForPo;
     if (menuId == 2423) return AppRoutes.performance;
     if (menuId == 2429) return AppRoutes.catalougeListView;
     if (menuId == 2586) return AppRoutes.paymentRequestListScreen;
@@ -509,6 +563,8 @@ class HomeViewNewController extends AppBaseController {
     // so the old `2755 -> tapCardList` line here was unreachable and the tile
     // fell through to '/materialReceived', whose GetPage is commented out.
     if (menuId == 9403) return AppRoutes.tapCardList;
+    if (menuId == 9404) return AppRoutes.productionOperator;
+    if (menuId == 9405) return AppRoutes.orderTracking;
     return AppRoutes.homeNew;
   }
 }
