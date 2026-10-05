@@ -305,7 +305,9 @@ class _OverviewTab extends StatelessWidget {
         else if (d != null) ...[
           _summaryCard(d),
           const SizedBox(height: 14),
+          _waitBanner(d),
           _pipelineCard(d),
+          _subItemsCard(d),
           if (c.itemStoppages.isNotEmpty) ...[
             const SizedBox(height: 14),
             _itemStoppages(c),
@@ -564,16 +566,25 @@ class _OverviewTab extends StatelessWidget {
                 ),
               ),
             ),
+            if (d.route.branched) ...[
+              const TrkPill('Parallel route', fg: trkBlue, bg: trkBlueBg),
+              const SizedBox(width: 6),
+            ],
             TrkPill(
-              '${d.summary.completionpct}% complete',
+              '${d.summary.completionpct}%',
               fg: trkViolet,
               bg: trkVioletBg,
             ),
           ],
         ),
         const SizedBox(height: 12),
-        for (var i = 0; i < d.pipeline.length; i++)
-          _step(d.pipeline[i], last: i == d.pipeline.length - 1),
+        // Stages that run side by side cannot be drawn as a stepper — it
+        // would imply an order the plan does not have.
+        if (d.route.branched)
+          _groupedPipeline(d)
+        else
+          for (var i = 0; i < d.pipeline.length; i++)
+            _step(d.pipeline[i], last: i == d.pipeline.length - 1),
       ],
     ),
   );
@@ -653,13 +664,7 @@ class _OverviewTab extends StatelessWidget {
                       ),
                       // "Rework 1" says how much has to be re-made, which is
                       // the number the supervisor is looking for.
-                      TrkPill(
-                        s.isRework && s.rework > 0
-                            ? '${s.statelabel} ${_n(s.rework)}'
-                            : s.statelabel,
-                        fg: tone.fg,
-                        bg: tone.bg,
-                      ),
+                      _statePill(s, tone),
                     ],
                   ),
                   const SizedBox(height: 2),
@@ -691,10 +696,518 @@ class _OverviewTab extends StatelessWidget {
                       ),
                     ],
                   ),
+                  // Planned dates arrive on a routed challan even when it is
+                  // not branched; they are simply absent on an old one.
+                  if (s.startslabel.isNotEmpty || s.dueLabel.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    _startsAndDue(s, tight: false),
+                  ],
+                  if (s.parts.isNotEmpty) _partsBlock(s),
                 ],
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ── Parallel route ────────────────────────────────────────────────────────
+
+  /// One amber line per joining stage that is short of parts. The server
+  /// writes the sentence, so nothing is assembled here.
+  Widget _waitBanner(TrackDetail d) {
+    if (d.waitnotes.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          for (final note in d.waitnotes)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+              decoration: BoxDecoration(
+                color: trkOrangeBg,
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(color: trkOrange.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.schedule_rounded,
+                    size: 16,
+                    color: trkOrangeText,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      note,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: trkOrangeText,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Stages grouped into steps. Everything in one column runs at the same
+  /// time, so a step with two stages draws them side by side rather than one
+  /// after the other — the stepper would otherwise imply an order that the
+  /// plan does not have.
+  Widget _groupedPipeline(TrackDetail d) {
+    final byColumn = <int, List<PipelineStage>>{};
+    for (final s in d.pipeline) {
+      byColumn.putIfAbsent(s.column, () => []).add(s);
+    }
+    final columns = byColumn.keys.toList()..sort();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < columns.length; i++) ...[
+          _stepHeader(i + 1, byColumn[columns[i]]!.length),
+          const SizedBox(height: 8),
+          _stepRow(byColumn[columns[i]]!),
+          if (i < columns.length - 1)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 9),
+              child: Center(
+                child: Icon(
+                  Icons.arrow_downward_rounded,
+                  size: 17,
+                  color: Color(0xFF9AA0BB),
+                ),
+              ),
+            ),
+        ],
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _stepHeader(int n, int count) => Text(
+    count > 1 ? 'STEP $n · $count STAGES RUN TOGETHER' : 'STEP $n',
+    style: const TextStyle(
+      fontSize: 10,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0.7,
+      color: newTextSecondary,
+    ),
+  );
+
+  /// One stage full width; two or more in pairs.
+  Widget _stepRow(List<PipelineStage> stages) {
+    if (stages.length == 1) return _stageCard(stages.first);
+    final rows = <Widget>[];
+    for (var i = 0; i < stages.length; i += 2) {
+      final pair = stages.skip(i).take(2).toList();
+      rows.add(
+        Padding(
+          padding: EdgeInsets.only(bottom: i + 2 < stages.length ? 8 : 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _stageCard(pair.first, tight: true)),
+              const SizedBox(width: 8),
+              if (pair.length > 1)
+                Expanded(child: _stageCard(pair[1], tight: true))
+              else
+                const Expanded(child: SizedBox()),
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(children: rows);
+  }
+
+  /// A stage as a card (used by the grouped layout). [tight] is the 2-up
+  /// version, where the operator name and the qty stack instead of sitting
+  /// on one line.
+  Widget _stageCard(PipelineStage s, {bool tight = false}) {
+    final tone = _stageTone(s);
+    return Container(
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: tone.bg.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: s.isWaiting
+              ? trkOrange.withValues(alpha: 0.5)
+              : tone.fg.withValues(alpha: 0.25),
+          width: s.isWaiting ? 1.4 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  s.stagename,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: trkInk,
+                  ),
+                ),
+              ),
+              if (!tight) ...[const SizedBox(width: 8), _statePill(s, tone)],
+            ],
+          ),
+          if (tight) ...[const SizedBox(height: 5), _statePill(s, tone)],
+          const SizedBox(height: 5),
+          if (tight) ...[
+            Text(
+              s.operatorname.isEmpty ? '—' : s.operatorname,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: newTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              s.qtyLabel,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: newTextSecondary,
+              ),
+            ),
+          ] else
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    s.operatorname.isEmpty ? '—' : s.operatorname,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: newTextSecondary,
+                    ),
+                  ),
+                ),
+                Text(
+                  s.qtyLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: s.reject > 0 ? trkOrangeText : newTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          if (s.startslabel.isNotEmpty || s.dueLabel.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            _startsAndDue(s, tight: tight),
+          ],
+          if (s.nextstages.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              '→ ${s.nextstages}',
+              maxLines: 2,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: tone.fg,
+              ),
+            ),
+          ],
+          if (s.parts.isNotEmpty) _partsBlock(s),
+        ],
+      ),
+    );
+  }
+
+  Widget _startsAndDue(PipelineStage s, {required bool tight}) {
+    final due = s.dueLabel;
+    final dueStyle = TextStyle(
+      fontSize: 10.5,
+      fontWeight: s.overdue ? FontWeight.w800 : FontWeight.w600,
+      color: s.overdue ? trkRed : newTextSecondary,
+    );
+    if (tight) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (s.startslabel.isNotEmpty)
+            Text(
+              s.startslabel,
+              maxLines: 2,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: newTextSecondary,
+              ),
+            ),
+          if (due.isNotEmpty) Text(due, style: dueStyle),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            s.startslabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: newTextSecondary,
+            ),
+          ),
+        ),
+        if (due.isNotEmpty) Text(due, style: dueStyle),
+      ],
+    );
+  }
+
+  /// What a joining stage can build now, and where each part has got to.
+  Widget _partsBlock(PipelineStage s) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 9),
+      Container(height: 1, color: trkOrange.withValues(alpha: 0.25)),
+      const SizedBox(height: 8),
+      Text(
+        'Can make now: ${_n(s.canmake)}',
+        style: const TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w800,
+          color: trkInk,
+        ),
+      ),
+      const SizedBox(height: 6),
+      for (final p in s.parts) _partRow(p),
+    ],
+  );
+
+  Widget _partRow(StagePart p) {
+    final tone = _partTone(p.tone);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+        decoration: BoxDecoration(
+          color: tone.bg,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: tone.fg, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              p.stagename,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: trkInk,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                p.text,
+                maxLines: 2,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: tone.fg,
+                  height: 1.3,
+                ),
+              ),
+            ),
+            if (p.waitingfor) ...[
+              const SizedBox(width: 6),
+              Text(
+                'WAITING',
+                style: TextStyle(
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.4,
+                  color: tone.fg,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statePill(PipelineStage s, ({Color bg, Color fg}) tone) => TrkPill(
+    s.isRework && s.rework > 0
+        ? '${s.statelabel} ${_n(s.rework)}'
+        : s.statelabel,
+    fg: tone.fg,
+    bg: tone.bg,
+    icon: s.isWaiting ? Icons.lock_outline_rounded : null,
+  );
+
+  ({Color bg, Color fg}) _stageTone(PipelineStage s) => s.isDone
+      ? (fg: trkGreen, bg: trkGreenBg)
+      : s.isWaiting
+      ? (fg: trkOrangeText, bg: trkOrangeBg)
+      : s.isRework
+      ? (fg: trkOrangeText, bg: trkOrangeBg)
+      : s.isActive
+      ? (fg: trkViolet, bg: trkVioletBg)
+      : (fg: trkGray, bg: trkGrayBg);
+
+  /// The API's part tone. Amber uses the darker text colour, not [trkAmber],
+  /// which is too light to read at this size.
+  ({Color bg, Color fg}) _partTone(String tone) => switch (tone.toLowerCase()) {
+    'green' => (fg: trkGreen, bg: trkGreenBg),
+    'blue' => (fg: trkBlue, bg: trkBlueBg),
+    'amber' => (fg: trkOrangeText, bg: trkOrangeBg),
+    _ => (fg: trkGray, bg: trkGrayBg),
+  };
+
+  /// Parts card: one block per part, showing where it has got to along its
+  /// own route. Only the stages a part actually passes through get a line —
+  /// the wide grid in the mockup is a tablet layout; on a phone a row of
+  /// five columns would be unreadable.
+  Widget _subItemsCard(TrackDetail d) {
+    if (d.subitemgrid.isEmpty) return const SizedBox.shrink();
+    final stagenames = d.pipeline.map((p) => p.stagename).toList();
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      decoration: trkCard(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Parts'.tr,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: trkInk,
+                  ),
+                ),
+              ),
+              TrkPill(
+                '${d.subitemgrid.length} per piece',
+                fg: trkViolet,
+                bg: trkVioletBg,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (final row in d.subitemgrid) _subItemRow(row, stagenames),
+        ],
+      ),
+    );
+  }
+
+  Widget _subItemRow(SubItemGridRow row, List<String> stagenames) {
+    final steps = row.steps(stagenames);
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  row.partname,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: trkInk,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '×${_n(row.qtyperpiece)} per piece',
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: newTextSecondary,
+                ),
+              ),
+            ],
+          ),
+          if (row.path.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              row.path,
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: newTextHint,
+              ),
+            ),
+          ],
+          const SizedBox(height: 7),
+          for (final (stagename, cell) in steps)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 86,
+                    child: Text(
+                      stagename,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: newTextSecondary,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _partTone(cell.tone).bg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        cell.text,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: _partTone(cell.tone).fg,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

@@ -135,10 +135,8 @@ class OperatorReworkView extends StatelessWidget {
                               itemCount: c.reworkRejectImages.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(width: 7),
-                              itemBuilder: (_, i) => _rejectThumb(
-                                c.reworkRejectImages,
-                                i,
-                              ),
+                              itemBuilder: (_, i) =>
+                                  _rejectThumb(c.reworkRejectImages, i),
                             ),
                           ),
                         ],
@@ -432,6 +430,7 @@ class OperatorReworkView extends StatelessWidget {
                       final ok = await c.saveRework();
                       if (ok && context.mounted) {
                         Navigator.of(context).pop();
+                        c.backToJobsHome();
                       }
                     },
             ),
@@ -440,7 +439,6 @@ class OperatorReworkView extends StatelessWidget {
       );
     },
   );
-
 
   /// One QC defect photo. Opens the same swipeable viewer the drawings use.
   Widget _rejectThumb(List<String> urls, int i) => InkWell(

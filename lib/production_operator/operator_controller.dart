@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -6,6 +7,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:newdigitalerp/home/home_contoller.dart';
 import 'package:newdigitalerp/repo/attachment_repo.dart';
+import 'package:newdigitalerp/app_routes/app_routes.dart';
 import 'package:newdigitalerp/utils/attachment_picker.dart';
 
 import 'operator_models.dart';
@@ -62,12 +64,37 @@ class OperatorController extends GetxController {
   // ── Shell ──
   int tab = 0;
 
+  /// Index of the Home tab.
+  static const int homeTab = 0;
+
   /// Index of the Log tab (Home · My Work · Log).
   static const int logTab = 2;
 
   /// Index of the QC tab. It is drawn before Log in the nav bar but kept last
   /// in the stack so [logTab] keeps its number.
   static const int qcTab = 3;
+
+  /// After anything is saved — produced, QC'd, issued, received, sent back —
+  /// land the operator back on the My Jobs home with a freshly loaded list.
+  ///
+  /// The detail screens hold figures the server has just recalculated, so
+  /// staying on them shows numbers that are already out of date. Popping
+  /// back to the shell is also the only place that reloads every list at
+  /// once (jobs, incoming, and the counts the tiles read).
+  ///
+  /// Call it AFTER any sheet has closed: it pops every route above the
+  /// module, so a `Navigator.pop()` running afterwards would take the shell
+  /// with it.
+  Future<void> backToJobsHome() async {
+    // Never pop past the module itself, even if it was opened some other
+    // way than its named route.
+    Get.until(
+      (r) => r.settings.name == AppRoutes.productionOperator || r.isFirst,
+    );
+    setTab(homeTab);
+    await loadJobs();
+    await loadIncoming();
+  }
 
   void setTab(int i) {
     tab = i;
@@ -86,10 +113,31 @@ class OperatorController extends GetxController {
   bool jobsLoading = false;
   String jobsError = '';
 
-  /// Production jobs only (QC assignments and in-transit consignments are
-  /// listed separately).
+  /// Production jobs only (QC assignments, in-transit consignments and send
+  /// back legs are listed separately).
+  ///
+  /// A send back leg arrives in the very same `myjobs` list as forward work,
+  /// but its numbers mean different things — `balanceqty` is "to rework
+  /// here", not "to produce" — so it must never be blended in.
   List<OperatorJob> get workJobs =>
-      jobs.where((j) => !j.isQcJob && !j.isInTransit).toList();
+      jobs.where((j) => !j.isQcJob && !j.isInTransit && !j.isSendBack).toList();
+
+  // ── Send back (pieces that came BACK here to be fixed) ──
+
+  /// Every send back leg standing at this login's stage.
+  List<OperatorJob> get sendBackJobs =>
+      jobs.where((j) => j.isSendBack && !j.isInTransit).toList();
+
+  /// The legs with something to do right now. The actions come from the
+  /// numbers, not from `status`: one leg can have pieces to rework AND
+  /// pieces ready to send on at the same time.
+  List<OperatorJob> get sendBackTodo => sendBackJobs
+      .where((j) => j.canReworkHere || j.canSendOn || j.canQcHere)
+      .toList();
+
+  /// My own jobs that have pieces away at another stage being fixed.
+  List<OperatorJob> get awayJobs =>
+      workJobs.where((j) => j.hasSentBack).toList();
 
   /// Pieces QC sent back to me to re-produce (status "Rework").
   List<OperatorJob> get reworkJobs =>
@@ -123,13 +171,36 @@ class OperatorController extends GetxController {
         return doneJobs;
       case 'qc':
         return qcDueJobs;
+      case 'toissue':
+        return toIssueJobs;
       default:
+        // Ready-to-issue sits high: it is finished work that still needs a
+        // hand-off, and it would otherwise hide at the bottom under Done.
+        final issuing = toIssueJobs.map((j) => j.key).toSet();
+        // A send back leg holds up whichever stage is waiting for the
+        // pieces, so it outranks this stage's own forward work. qcDueJobs
+        // already carries the legs waiting for a QC login — don't list twice.
+        final qcKeys = qcDueJobs.map((j) => j.key).toSet();
+        // A packing job reads "Done" while it still needs boxes, so it
+        // would otherwise sort to the very bottom.
+        final packKeys = packJobs.map((j) => j.key).toSet();
         return [
           ...qcDueJobs,
-          ...reworkJobs,
-          ...pendingJobs,
-          ...runningJobs,
-          ...doneJobs,
+          ...packJobs,
+          ...sendBackJobs.where((j) => !qcKeys.contains(j.key)),
+          ...toIssueJobs,
+          ...reworkJobs.where(
+            (j) => !issuing.contains(j.key) && !packKeys.contains(j.key),
+          ),
+          ...pendingJobs.where(
+            (j) => !issuing.contains(j.key) && !packKeys.contains(j.key),
+          ),
+          ...runningJobs.where(
+            (j) => !issuing.contains(j.key) && !packKeys.contains(j.key),
+          ),
+          ...doneJobs.where(
+            (j) => !issuing.contains(j.key) && !packKeys.contains(j.key),
+          ),
         ];
     }
   }
@@ -138,8 +209,13 @@ class OperatorController extends GetxController {
   /// flagged the job as QC-able for this user (`canqc`). The backend gives QC
   /// work only to QC people, so an operator sees his own lots as "With QC"
   /// status but gets no Do-QC button.
-  List<OperatorJob> get qcDueJobs =>
-      jobs.where((j) => j.qcPending > 0 && j.canqc).toList();
+  /// A send back leg states its own waiting qty in `canqcqty`; a normal row
+  /// has none, so produced-minus-checked still decides there.
+  List<OperatorJob> get qcDueJobs => jobs
+      .where(
+        (j) => j.canqc && (j.isSendBack ? j.canqcqty > 0 : j.qcPending > 0),
+      )
+      .toList();
 
   /// Produced lots awaiting QC by anyone (status only).
   List<OperatorJob> get awaitingQcJobs =>
@@ -179,6 +255,9 @@ class OperatorController extends GetxController {
     produceRemarksCtrl.dispose();
     reworkQtyCtrl.dispose();
     reworkNotesCtrl.dispose();
+    for (final c in sharedQty.values) {
+      c.dispose();
+    }
     qcSearchCtrl.dispose();
     _qcSearchTimer?.cancel();
     super.onClose();
@@ -269,6 +348,8 @@ class OperatorController extends GetxController {
         jobs = res.data ?? [];
         _mergeIncoming();
         _loadJobProgress(); // cards show part-done pieces; don't block the list
+        _loadIssuable(); // which finished lots still have somewhere to go
+        _loadPackLeft(); // which packing jobs still need boxes
         if (jobs.isEmpty) {
           jobsError = res.message.isNotEmpty
               ? res.message
@@ -302,8 +383,15 @@ class OperatorController extends GetxController {
   /// other two are what stop the same lot being issued twice.
   double issuedForward = 0;
   double issuedForwardTrail = 0;
-  double get toIssue =>
-      job == null ? 0 : (job!.qcqty - issuedForward).clamp(0, double.infinity);
+
+  /// On a send back leg the server states the cap outright (`cansendqty`);
+  /// the forward arithmetic does not apply, because what was QC-passed on
+  /// this leg has nothing to do with the job's own qcqty.
+  double get toIssue => job == null
+      ? 0
+      : job!.isSendBack
+      ? job!.cansendqty
+      : (job!.qcqty - issuedForward).clamp(0, double.infinity);
 
   /// The lock is inferred (device memory / downstream ledger), not stated by
   /// the server trail — the operator may clear it if the lot came back.
@@ -471,6 +559,7 @@ class OperatorController extends GetxController {
     entryDate = DateTime.now();
     batchNoCtrl.clear();
     issueQtyCtrl.text = '';
+    issueTarget = null;
     jobLoading = true;
     update();
     // The gallery, the day-wise log and the design pack are all independent
@@ -480,7 +569,7 @@ class OperatorController extends GetxController {
       final s = session;
       final results = await Future.wait([
         repo.jobStages(s, j.challanid, j.itemid),
-        repo.nextStage(s, j.stageid, j.challanid),
+        repo.nextStage(s, j.stageid, j.challanid, itemid: j.itemid),
         repo.progressGet(s, j.challanid, j.itemid, j.stageid),
       ]);
       trail = _inRouteOrder(
@@ -505,6 +594,10 @@ class OperatorController extends GetxController {
       loadGallery();
       loadEntries();
       loadJobDesign();
+      // So the Send back card can say what is actually available here
+      // instead of opening onto an empty form. A stage that has handed
+      // everything on has nothing to send back, and should say so.
+      if (!j.isSendBack) loadSendBackOptions();
     }
   }
 
@@ -644,6 +737,7 @@ class OperatorController extends GetxController {
         final r = await repo.produce(
           s,
           j,
+          returnid: j.returnid,
           producedDelta.toDouble(),
           entrydate: entryDate,
           remarks: note,
@@ -704,6 +798,10 @@ class OperatorController extends GetxController {
             : 'Produced ${fmtQty(j.producedqty)} / ${fmtQty(j.issuedqty)} · ${wipQty > 0 ? '$wipQty pcs' : 'next piece'} at ${piecePct.toStringAsFixed(0)}%.',
       );
       await _refreshJob();
+      // Straight back to a freshly loaded My Jobs, like every other save.
+      // Nothing is popped between here and the shell, so this is safe to
+      // call from the controller rather than the view.
+      await backToJobsHome();
     } finally {
       saving = false;
       update();
@@ -968,6 +1066,7 @@ class OperatorController extends GetxController {
       final r = await repo.produce(
         session,
         j,
+        returnid: j.returnid,
         qty,
         entrydate: reworkDate,
         remarks: reworkNotesCtrl.text.trim(),
@@ -1002,7 +1101,10 @@ class OperatorController extends GetxController {
 
   // ── Issue to next stage ──
   bool get canIssue =>
-      job != null && next != null && !next!.isLast && toIssue > 0;
+      job != null &&
+      next != null &&
+      !next!.isLast &&
+      (isSplit ? nextOptions.any((o) => maxIssuableTo(o) > 0) : toIssue > 0);
 
   /// Loader handover is MANDATORY (2026-09-23): every issue goes through the
   /// gate-pass sheet (loader / date-time / receipt + item photos) and the
@@ -1017,10 +1119,12 @@ class OperatorController extends GetxController {
       opSnack('Check qty', 'Enter the qty to issue.');
       return null;
     }
-    if (qty > toIssue) {
+    // On a split the cap belongs to the destination, not the card total.
+    final cap = issueTarget != null ? maxIssuableTo(issueTarget!) : toIssue;
+    if (qty > cap) {
       opSnack(
         'Check qty',
-        'Only QC-passed qty can be issued (max ${fmtQty(toIssue)}).',
+        'Only QC-passed qty can be issued (max ${fmtQty(cap)}${issueTarget != null ? ' to ${issueTarget!.stagename}' : ''}).',
       );
       return null;
     }
@@ -1040,8 +1144,9 @@ class OperatorController extends GetxController {
       final r = await repo.issue(
         session,
         j,
+        returnid: j.returnid,
         qty,
-        to: next,
+        to: _issueTo,
         batchno: batchNoCtrl.text.trim(),
         gatePass: gatePass,
       );
@@ -1077,6 +1182,11 @@ class OperatorController extends GetxController {
       opSnack('Loader name', 'Enter the loader name.');
       return false;
     }
+    // Nothing leaves the stage without its signed gate pass.
+    if (receiptPhotos.isEmpty) {
+      opSnack('Issue receipt', 'Attach the signed issue receipt photo.');
+      return false;
+    }
     if (_issueQtyOrWarn() == null) return false;
     _rememberLoader(loadername);
     saving = true;
@@ -1093,6 +1203,58 @@ class OperatorController extends GetxController {
     }
     saving = false;
     return issueForward(
+      gatePass: GatePass(
+        loadername: loadername.trim(),
+        issuedAt: issuedAt,
+        remarks: remarks.trim(),
+        receiptKeys: receiptKeys,
+        itemKeys: itemKeys,
+      ),
+    );
+  }
+
+  /// Shared split: the same gate pass for every destination. The photos
+  /// are uploaded ONCE and their keys reused, so two hand-offs of the same
+  /// lot carry the same receipt rather than two half-sets.
+  Future<bool> issueSharedViaLoader({
+    required String loadername,
+    required DateTime issuedAt,
+    String remarks = '',
+    List<PickedAttachment> receiptPhotos = const [],
+    List<PickedAttachment> itemPhotos = const [],
+  }) async {
+    if (loadername.trim().isEmpty) {
+      opSnack('Loader name', 'Enter the loader name.');
+      return false;
+    }
+    final total = sharedEntered;
+    if (total <= 0) {
+      opSnack('Check qty', 'Enter the qty for at least one stage.');
+      return false;
+    }
+    if (total > sharedRemaining) {
+      opSnack(
+        'Check qty',
+        'Total is ${fmtQty(total)} but only ${fmtQty(sharedRemaining)} is '
+            'left to share between the next stages.',
+      );
+      return false;
+    }
+    _rememberLoader(loadername);
+    saving = true;
+    update();
+    List<String> receiptKeys, itemKeys;
+    try {
+      receiptKeys = await _uploadKeys(receiptPhotos);
+      itemKeys = await _uploadKeys(itemPhotos);
+    } catch (e) {
+      saving = false;
+      update();
+      opSnack('Photo upload failed', '$e');
+      return false;
+    }
+    saving = false;
+    return issueSharedForward(
       gatePass: GatePass(
         loadername: loadername.trim(),
         issuedAt: issuedAt,
@@ -1162,9 +1324,11 @@ class OperatorController extends GetxController {
   void _mergeIncoming() {
     // Same consignment can appear in both lists (each with different fields
     // filled) — key by consignment id when present, else challan/item/stage.
+    // In part mode one job can have several consignments in transit at once
+    // (one per part), so the fallback key has to name the part too.
     String key(Consignment c) => c.consignmentid > 0
         ? '#${c.consignmentid}'
-        : '${c.challanid}/${c.itemid}/${c.tostageid}';
+        : '${c.challanid}/${c.itemid}/${c.tostageid}/${c.partid}';
     final byKey = <String, Consignment>{};
     for (final c in [..._incomingFromApi, ..._incomingFromJobs]) {
       final k = key(c);
@@ -1246,6 +1410,10 @@ class OperatorController extends GetxController {
       final r = await repo.receive(
         session,
         cn,
+        // Part consignments are looked up by part on the server, and a send
+        // back leg by its ticket — leave either out and it is "not found".
+        partid: cn.partid,
+        returnid: cn.returnid,
         loadername: loadername.trim(),
         receivedAt: receivedAt,
         qtyaccepted: qtyaccepted,
@@ -1466,7 +1634,14 @@ class OperatorController extends GetxController {
     saving = true;
     update();
     try {
-      final res = await repo.qcPass(session, j, p, entrydate: qcDate);
+      final res = await repo.qcPass(
+        session,
+        j,
+        returnid: j.returnid,
+        p,
+        entrydate: qcDate,
+        remarks: qcRemarksCtrl.text.trim(),
+      );
       if (!res.ok) {
         opSnack('QC not saved', res.message);
         return null;
@@ -1514,6 +1689,10 @@ class OperatorController extends GetxController {
         session,
         j,
         r,
+        returnid: j.returnid,
+        // Whose work was faulty, when the checker pointed at a stage. It is
+        // counted there even though the fix happens at this stage.
+        faultstageid: qcFaultStageId,
         disposition: disposition,
         reason: qcReason,
         remarks: qcRemarksCtrl.text.trim(),
@@ -1791,4 +1970,1315 @@ class OperatorController extends GetxController {
     designOpen = !designOpen;
     update();
   }
+
+  // ── Parallel routes: where this stage's work goes next ────────────────────
+  //
+  // One destination behaves exactly as before. Two or more is a split, and
+  // the split mode decides the arithmetic:
+  //   Full  — each stage owes its own full qty, so the cap is PER stage and
+  //           sending to PAINT does not reduce what UPHOLSTRY still needs.
+  //   Share — the stages divide the QC-passed qty, so the cap is the TOTAL.
+
+  /// The destination the operator tapped Issue on. Null = single next stage.
+  NextStageOption? issueTarget;
+
+  /// Shared split: one qty box per destination, keyed by stage id.
+  final Map<int, TextEditingController> sharedQty = {};
+
+  /// Every destination of this stage. An API build without the list still
+  /// yields one entry, so the rest of the code never special-cases it.
+  List<NextStageOption> get nextOptions {
+    final n = next;
+    if (n == null || n.isLast) return const [];
+    if (n.stages.isNotEmpty) return n.stages;
+    return [
+      NextStageOption(
+        stageid: n.stageid,
+        stagename: n.stagename,
+        planqty: job?.qcqty ?? 0,
+        remainingqty: toIssue,
+      ),
+    ];
+  }
+
+  bool get isSplit => nextOptions.length > 1;
+  bool get isSharedSplit => isSplit && (next?.isShared ?? false);
+
+  /// Cap for one destination. Per stage on a full-qty split; the shared
+  /// remainder on a shared one.
+  double maxIssuableTo(NextStageOption o) {
+    final qc = job?.qcqty ?? 0;
+    if (isSharedSplit) return sharedRemaining;
+    return (qc - o.sentqty).clamp(0, double.infinity).toDouble();
+  }
+
+  /// Shared split: QC-passed minus everything already sent anywhere.
+  double get sharedRemaining {
+    final qc = job?.qcqty ?? 0;
+    final sent = nextOptions.fold<double>(0, (a, s) => a + s.sentqty);
+    return (qc - sent).clamp(0, double.infinity).toDouble();
+  }
+
+  /// What the operator has typed across the shared boxes.
+  double get sharedEntered => sharedQty.values.fold<double>(
+    0,
+    (a, c) => a + (double.tryParse(c.text.trim()) ?? 0),
+  );
+
+  /// Fill one box per destination, defaulted to what that stage is still
+  /// owed and then capped so the boxes cannot add up past the remainder.
+  void prepareSharedQty() {
+    for (final c in sharedQty.values) {
+      c.dispose();
+    }
+    sharedQty.clear();
+    var left = sharedRemaining;
+    for (final o in nextOptions) {
+      final want = o.remainingqty.clamp(0, left).toDouble();
+      left -= want;
+      sharedQty[o.stageid] = TextEditingController(
+        text: want > 0 ? fmtQty(want) : '',
+      );
+    }
+    update();
+  }
+
+  void sharedQtyChanged() => update();
+
+  /// Start an issue to one destination (full-qty split, or the single next
+  /// stage). Seeds the qty box with what that stage is still owed.
+  void beginIssueTo(NextStageOption o) {
+    issueTarget = o;
+    final cap = maxIssuableTo(o);
+    final want = o.remainingqty > 0
+        ? o.remainingqty.clamp(0, cap).toDouble()
+        : cap;
+    issueQtyCtrl.text = want > 0 ? fmtQty(want) : '';
+    update();
+  }
+
+  /// The destination an issue will go to, as the repo wants it.
+  ///
+  /// A send back leg has no say in this: the ticket's own way decides where
+  /// it goes next, and `nextstage` would answer with the FORWARD plan, which
+  /// the server would refuse. Send no destination and let it route.
+  NextStage? get _issueTo {
+    if (job?.isSendBack ?? false) return null;
+    final o = issueTarget;
+    if (o != null) return NextStage(stageid: o.stageid, stagename: o.stagename);
+    return next;
+  }
+
+  /// Shared split: one hand-off per destination with a qty, all carrying the
+  /// same loader details. The API has no multi-stage call, so this is not
+  /// atomic — it stops at the first refusal and reloads, leaving whatever
+  /// already went through in place rather than guessing at a rollback.
+  Future<bool> issueSharedForward({GatePass? gatePass}) async {
+    final j = job;
+    if (j == null || saving) return false;
+    final total = sharedEntered;
+    if (total <= 0) {
+      opSnack('Check qty', 'Enter the qty for at least one stage.');
+      return false;
+    }
+    if (total > sharedRemaining) {
+      opSnack(
+        'Check qty',
+        'Total is ${fmtQty(total)} but only ${fmtQty(sharedRemaining)} is '
+            'left to share between the next stages.',
+      );
+      return false;
+    }
+    saving = true;
+    update();
+    var sent = 0.0;
+    final done = <String>[];
+    try {
+      for (final o in nextOptions) {
+        final qty =
+            double.tryParse(sharedQty[o.stageid]?.text.trim() ?? '') ?? 0;
+        if (qty <= 0) continue;
+        final r = await repo.issue(
+          session,
+          j,
+          returnid: j.returnid,
+          qty,
+          to: NextStage(stageid: o.stageid, stagename: o.stagename),
+          batchno: batchNoCtrl.text.trim(),
+          gatePass: gatePass,
+        );
+        if (!r.ok) {
+          opSnack(
+            done.isEmpty ? 'Not issued' : 'Stopped part-way',
+            done.isEmpty
+                ? r.message
+                : '${done.join(', ')} went out; ${o.stagename} was refused — '
+                      '${r.message}',
+          );
+          return false;
+        }
+        sent += qty;
+        done.add('${o.stagename} ${fmtQty(qty)}');
+        _rememberIssued(j, qty);
+        issuedForward += qty;
+      }
+      opSnack('Issued', '${fmtQty(sent)} sent — ${done.join(' · ')}.');
+      return true;
+    } finally {
+      saving = false;
+      await _refreshJob();
+    }
+  }
+
+  // ── Ready to issue ────────────────────────────────────────────────────────
+  //
+  // A lot that QC has passed still has to be handed to the next stage, but
+  // the job's balance is already 0 by then, so it reads as "Done" and sinks
+  // to the bottom of the list. Operators were hunting through Done to find
+  // work that was actually outstanding.
+  //
+  // The catch: qcqty > issuedfwdqty is ALSO true at the last stage, where
+  // there is nothing to issue and never will be. Flagging on that alone gave
+  // the assembly operator nine permanent false alarms. So each candidate is
+  // checked against `nextstage` once — cheap, because only a handful of jobs
+  // are ever candidates — and only jobs with somewhere to send are flagged.
+
+  /// job.key → does this stage feed another one? Absent = not asked yet.
+  final Map<String, bool> _hasNextStage = {};
+
+  /// QC-passed qty still sitting at this stage.
+  double pendingIssueQty(OperatorJob j) =>
+      (j.qcqty - j.issuedfwdqty).clamp(0, double.infinity).toDouble();
+
+  /// Worth asking the server about.
+  bool _issueCandidate(OperatorJob j) =>
+      pendingIssueQty(j) > 0 && !j.isInTransit && !j.isQcJob;
+
+  /// QC-passed and confirmed to have a next stage: real outstanding work.
+  bool readyToIssue(OperatorJob j) =>
+      _issueCandidate(j) && (_hasNextStage[j.key] ?? false);
+
+  List<OperatorJob> get toIssueJobs =>
+      jobs.where(readyToIssue).toList()
+        ..sort((a, b) => pendingIssueQty(b).compareTo(pendingIssueQty(a)));
+
+  /// Total pcs waiting to go forward — the number on the chip.
+  double get toIssueQty =>
+      toIssueJobs.fold<double>(0, (a, j) => a + pendingIssueQty(j));
+
+  /// Ask `nextstage` about each candidate we have not resolved yet. Runs
+  /// after the list is drawn and never blocks it; a failure just leaves the
+  /// job unflagged rather than guessing.
+  Future<void> _loadIssuable() async {
+    final todo = jobs
+        .where((j) => _issueCandidate(j) && !_hasNextStage.containsKey(j.key))
+        .toList();
+    if (todo.isEmpty) return;
+    final s = session;
+    await Future.wait(
+      todo.map((j) async {
+        try {
+          final r = await repo.nextStage(
+            s,
+            j.stageid,
+            j.challanid,
+            itemid: j.itemid,
+          );
+          final n = r.data;
+          _hasNextStage[j.key] = n != null && !n.isLast;
+        } catch (_) {
+          // Leave it unknown; the next load asks again.
+        }
+      }),
+    );
+    update();
+  }
+
+  // ── Recording one part at a time ───────────────────────────────────────────
+  //
+  // A stage with `partmode == 1` records its parts separately: METAL makes a
+  // frame and four legs, and each can be produced, checked and handed on by
+  // itself. The server works out every limit (`canproduceqty`, `canqcqty`,
+  // `canissueqty`) and rolls complete sets up into the item's own figures, so
+  // nothing here recomputes them — a disabled button and a refusal can never
+  // disagree.
+
+  /// The part a sheet is currently working on.
+  JobSubItem? partInAction;
+
+  /// Latest copy of that part after a reload, so an open sheet keeps up.
+  JobSubItem? get livePart {
+    final p = partInAction;
+    if (p == null) return null;
+    return job?.subitems.where((s) => s.partid == p.partid).firstOrNull ?? p;
+  }
+
+  void setPartInAction(JobSubItem? p) {
+    partInAction = p;
+    update();
+  }
+
+  /// Produce (or work on) some of one part. Photos attach to the entry that
+  /// is written, the same way item-level production does, so they show up
+  /// against that day's row in the log.
+  Future<bool> producePart(
+    JobSubItem part,
+    double qty, {
+    String remarks = '',
+    List<PickedAttachment> photos = const [],
+  }) async {
+    final j = job;
+    if (j == null || saving) return false;
+    if (qty <= 0) {
+      opSnack('Check qty', 'Enter how many ${part.partname} to record.');
+      return false;
+    }
+    if (qty > part.canproduceqty) {
+      opSnack(
+        'Check qty',
+        'Only ${fmtQty(part.canproduceqty)} ${part.partname} left to '
+            '${part.produceVerb.toLowerCase()}.',
+      );
+      return false;
+    }
+    saving = true;
+    update();
+    try {
+      final r = await repo.produce(
+        session,
+        j,
+        returnid: j.returnid,
+        qty,
+        partid: part.partid,
+        entrydate: entryDate,
+        remarks: remarks.trim(),
+      );
+      if (!r.ok) {
+        opSnack('Not saved', r.message);
+        return false;
+      }
+      if (photos.isNotEmpty) {
+        final failed = await _uploadAttachments(
+          photos,
+          j,
+          recordid: r.id > 0 ? r.id : null,
+        );
+        if (failed.isNotEmpty) opSnack('Photo upload', failed);
+      }
+      opSnack('Saved', '${fmtQty(qty)} × ${part.partname}.');
+      return true;
+    } finally {
+      saving = false;
+      await _refreshJob();
+    }
+  }
+
+  /// QC one part. A reject also needs a disposition and a reason, exactly as
+  /// the item-level flow does.
+  Future<bool> qcPart(
+    JobSubItem part, {
+    double pass = 0,
+    double reject = 0,
+    String disposition = 'Rework',
+    String reason = '',
+    String remarks = '',
+    PickedAttachment? photo,
+  }) async {
+    final j = job;
+    if (j == null || saving) return false;
+    if (pass <= 0 && reject <= 0) {
+      opSnack('Check qty', 'Enter a passed or rejected qty.');
+      return false;
+    }
+    if (pass + reject > part.canqcqty) {
+      opSnack(
+        'Check qty',
+        'Only ${fmtQty(part.canqcqty)} ${part.partname} are waiting for QC.',
+      );
+      return false;
+    }
+    if (reject > 0 && reason.isEmpty) {
+      opSnack('Check QC', 'Reject reason is required.');
+      return false;
+    }
+    saving = true;
+    update();
+    try {
+      if (pass > 0) {
+        final r = await repo.qcPass(
+          session,
+          j,
+          pass,
+          partid: part.partid,
+          entrydate: entryDate,
+          remarks: remarks.trim(),
+        );
+        if (!r.ok) {
+          opSnack('QC not saved', r.message);
+          return false;
+        }
+        // A pass has no `imagepath` to ride on, so its photo goes to the
+        // attachment store against the QC entry — the same route the
+        // item-level pass uses. Without this the photo was picked and
+        // thrown away.
+        if (photo != null && reject <= 0) {
+          final err = await _uploadAttachments(
+            [photo],
+            j,
+            recordid: r.id > 0 ? r.id : null,
+          );
+          if (err.isNotEmpty) opSnack('Photo upload', err);
+        }
+      }
+      if (reject > 0) {
+        // The defect photo rides on the reject itself (imagepath), the same
+        // as the item-level flow, so QC history shows it.
+        String imagepath = '';
+        if (photo != null) {
+          final up = await repo.uploadImage(session, photo.path);
+          if (!up.ok || up.data == null) {
+            opSnack('Photo upload failed', up.message);
+            return false;
+          }
+          imagepath = up.data!.filepath;
+        }
+        final r = await repo.qcReject(
+          session,
+          j,
+          reject,
+          disposition: disposition,
+          reason: reason,
+          partid: part.partid,
+          remarks: remarks.trim(),
+          imagepath: imagepath,
+          entrydate: entryDate,
+        );
+        if (!r.ok) {
+          opSnack('Reject not saved', r.message);
+          return false;
+        }
+      }
+      opSnack(
+        'QC saved',
+        reject > 0
+            ? '${part.partname} — passed ${fmtQty(pass)}, rejected ${fmtQty(reject)}.'
+            : '${part.partname} — passed ${fmtQty(pass)}.',
+      );
+      return true;
+    } finally {
+      saving = false;
+      await _refreshJob();
+    }
+  }
+
+  /// Hand one part to the stage the plan sends it to. The destination is not
+  /// the operator's to choose, so it is taken straight from the part.
+  Future<bool> issuePart(
+    JobSubItem part,
+    double qty, {
+    GatePass? gatePass,
+  }) async {
+    final j = job;
+    if (j == null || saving) return false;
+    if (qty <= 0) {
+      opSnack('Check qty', 'Enter how many ${part.partname} to hand over.');
+      return false;
+    }
+    if (qty > part.canissueqty) {
+      opSnack(
+        'Check qty',
+        'Only ${fmtQty(part.canissueqty)} ${part.partname} are QC-passed and '
+            'still here.',
+      );
+      return false;
+    }
+    saving = true;
+    update();
+    try {
+      final r = await repo.issue(
+        session,
+        j,
+        returnid: j.returnid,
+        qty,
+        to: NextStage(stageid: part.nextstageid, stagename: part.nextstage),
+        partid: part.partid,
+        gatePass: gatePass,
+      );
+      if (!r.ok) {
+        opSnack('Not issued', r.message);
+        return false;
+      }
+      opSnack(
+        'Handed over',
+        '${fmtQty(qty)} × ${part.partname} → ${part.nextstage}.',
+      );
+      return true;
+    } finally {
+      saving = false;
+      await _refreshJob();
+    }
+  }
+
+  /// Hand a part over on a loader: upload the photos once, then issue.
+  Future<bool> issuePartViaLoader(
+    JobSubItem part,
+    double qty, {
+    required String loadername,
+    required DateTime issuedAt,
+    String remarks = '',
+    List<PickedAttachment> receiptPhotos = const [],
+    List<PickedAttachment> itemPhotos = const [],
+  }) async {
+    if (loadername.trim().isEmpty) {
+      opSnack('Loader name', 'Enter the loader name.');
+      return false;
+    }
+    // Nothing leaves the stage without its signed gate pass.
+    if (receiptPhotos.isEmpty) {
+      opSnack('Issue receipt', 'Attach the signed issue receipt photo.');
+      return false;
+    }
+    _rememberLoader(loadername);
+    saving = true;
+    update();
+    List<String> receiptKeys, itemKeys;
+    try {
+      receiptKeys = await _uploadKeys(receiptPhotos);
+      itemKeys = await _uploadKeys(itemPhotos);
+    } catch (e) {
+      saving = false;
+      update();
+      opSnack('Photo upload failed', '$e');
+      return false;
+    }
+    saving = false;
+    return issuePart(
+      part,
+      qty,
+      gatePass: GatePass(
+        loadername: loadername.trim(),
+        issuedAt: issuedAt,
+        remarks: remarks.trim(),
+        receiptKeys: receiptKeys,
+        itemKeys: itemKeys,
+      ),
+    );
+  }
+
+  // ── Send back form ────────────────────────────────────────────────────
+  //
+  // A fault found at this stage can go back to ANY stage the piece actually
+  // passed through, not only the previous one. The server works that list
+  // out per good (`fixstages`), so the app never reasons about the route —
+  // it shows what it is given.
+
+  SendBackOptions? sbOptions;
+  bool sbLoading = false;
+  String sbError = '';
+
+  /// Which job [sbOptions] was fetched for. The job screen preloads them so
+  /// the Send back card can say what is actually available, and without this
+  /// the previous job's answer would label the next one.
+  int sbForChallan = 0;
+  int sbForStage = 0;
+
+  /// True when [sbOptions] describes the job now open.
+  bool get sbOptionsAreForOpenJob =>
+      job != null &&
+      sbForChallan == job!.challanid &&
+      sbForStage == job!.stageid;
+
+  /// Nothing at this stage can go back — everything has either not arrived
+  /// yet or has already been handed on.
+  bool get sbNothingToSend =>
+      sbOptionsAreForOpenJob && !sbLoading && (sbOptions?.isEmpty ?? false);
+
+  /// How many separate things could be sent back from here.
+  int get sbAvailableCount =>
+      sbOptionsAreForOpenJob ? (sbOptions?.goods.length ?? 0) : 0;
+
+  /// The good being sent back, the "already worked on here" side, where it
+  /// is fixed, and which stages redo their work on the way home.
+  int sbPartId = 0;
+  bool sbWorked = false;
+  int sbFixStageId = 0;
+  final Set<int> sbRedoIds = {};
+  int sbFaultStageId = 0;
+  final sbQtyCtrl = TextEditingController();
+  final sbReasonCtrl = TextEditingController();
+  final sbLoaderCtrl = TextEditingController();
+  bool sbViaLoader = false;
+  List<PickedAttachment> sbPhotos = [];
+
+  SendBackGood? get sbGood => sbOptions?.goodFor(sbPartId);
+
+  /// The stage the piece goes back to, as the server described it.
+  SendBackFixStage? get sbFixStage {
+    for (final f in sbOptions?.fixstages ?? const <SendBackFixStage>[]) {
+      if (f.stageid == sbFixStageId) return f;
+    }
+    return null;
+  }
+
+  /// Stages between the fix stage and home — each may be ticked to redo its
+  /// work on the way back. Empty means it comes straight back.
+  List<SendBackFixStage> get sbBetween => sbFixStage?.between ?? const [];
+
+  /// The cap for the qty box: what is here untouched, or what this stage
+  /// already worked on and can take back.
+  double get sbMaxQty => sbGood?.maxFor(worked: sbWorked) ?? 0;
+
+  /// "ASSEMBLY → PAINT → STONE → ASSEMBLY" — the way this send back takes,
+  /// built from what the operator has ticked.
+  String get sbWayLabel {
+    final j = job;
+    final home = j?.stagename ?? '';
+    final fix = sbFixStage?.stagename ?? '';
+    if (fix.isEmpty) return '';
+    final via = sbBetween
+        .where((b) => sbRedoIds.contains(b.stageid))
+        .map((b) => b.stagename);
+    return [home, fix, ...via, home].join(' → ');
+  }
+
+  /// The stages on the way that were NOT ticked — their work stays as it is.
+  List<String> get sbSkipped => sbBetween
+      .where((b) => !sbRedoIds.contains(b.stageid))
+      .map((b) => b.stagename)
+      .toList();
+
+  /// Open the form for the current job. Asks the server what can go back.
+  Future<void> loadSendBackOptions({int partid = 0}) async {
+    final j = job;
+    if (j == null) return;
+    sbLoading = true;
+    sbError = '';
+    update();
+    try {
+      final r = await repo.sendBackOptions(
+        session,
+        challanid: j.challanid,
+        stageid: j.stageid,
+        partid: partid,
+      );
+      sbOptions = r.data;
+      sbForChallan = j.challanid;
+      sbForStage = j.stageid;
+      if (!r.ok) sbError = r.message;
+      final g = sbOptions?.goods.isNotEmpty == true
+          ? sbOptions!.goods.first
+          : null;
+      // Keep the operator's pick when they are only refreshing one good's
+      // routes; otherwise start on the first thing that can go back.
+      if (partid > 0) {
+        sbPartId = partid;
+      } else if (g != null) {
+        sbPartId = g.partid;
+      }
+      // Default to whichever side actually has pieces.
+      final good = sbGood;
+      if (good != null) sbWorked = !good.canUnworked && good.canWorked;
+      _sbResetRoute();
+    } finally {
+      sbLoading = false;
+      update();
+    }
+  }
+
+  /// Pick a different good. Its route differs, so the server is asked again.
+  Future<void> setSendBackGood(int partid) async {
+    if (partid == sbPartId) return;
+    sbPartId = partid;
+    await loadSendBackOptions(partid: partid);
+  }
+
+  void setSendBackWorked(bool v) {
+    sbWorked = v;
+    sbQtyCtrl.text = '';
+    update();
+  }
+
+  void setSendBackFixStage(int stageid) {
+    sbFixStageId = stageid;
+    // The stages on the way belong to the chosen fix stage, so any earlier
+    // ticks are meaningless now.
+    sbRedoIds.clear();
+    // Whoever is at fault defaults to the stage doing the fix, which is the
+    // common case; the operator can point at a different one.
+    if (sbFaultStageId == 0) sbFaultStageId = stageid;
+    update();
+  }
+
+  void toggleSendBackRedo(int stageid) {
+    if (!sbRedoIds.remove(stageid)) sbRedoIds.add(stageid);
+    update();
+  }
+
+  void setSendBackFault(int stageid) {
+    sbFaultStageId = stageid;
+    update();
+  }
+
+  void setSendBackViaLoader(bool v) {
+    sbViaLoader = v;
+    update();
+  }
+
+  void addSendBackPhotos(List<PickedAttachment> p) {
+    sbPhotos = [...sbPhotos, ...p];
+    update();
+  }
+
+  void removeSendBackPhoto(PickedAttachment p) {
+    sbPhotos = [...sbPhotos]..remove(p);
+    update();
+  }
+
+  void _sbResetRoute() {
+    final first = sbOptions?.fixstages.isNotEmpty == true
+        ? sbOptions!.fixstages.first
+        : null;
+    sbFixStageId = first?.stageid ?? 0;
+    sbFaultStageId = sbFixStageId;
+    sbRedoIds.clear();
+    sbQtyCtrl.text = '';
+  }
+
+  void resetSendBackForm() {
+    sbOptions = null;
+    sbError = '';
+    sbPartId = 0;
+    sbWorked = false;
+    sbFixStageId = 0;
+    sbFaultStageId = 0;
+    sbRedoIds.clear();
+    sbQtyCtrl.text = '';
+    sbReasonCtrl.clear();
+    sbLoaderCtrl.text = lastLoaderName;
+    sbViaLoader = false;
+    sbPhotos = [];
+  }
+
+  /// Send it back. Every limit below is also enforced by the server, which
+  /// answers with the live figure — those messages are shown as they come.
+  Future<bool> submitSendBack() async {
+    final j = job;
+    final good = sbGood;
+    if (j == null || good == null || saving) return false;
+    final qty = double.tryParse(sbQtyCtrl.text.trim()) ?? 0;
+    if (qty <= 0) {
+      opSnack('Check qty', 'Enter how many ${good.name} go back.');
+      return false;
+    }
+    if (qty > sbMaxQty) {
+      opSnack(
+        'Check qty',
+        sbWorked
+            ? 'Only ${fmtQty(good.qcqty)} ${good.name} worked here can be taken back.'
+            : 'Only ${fmtQty(good.stageqty)} ${good.name} here have not been worked on. '
+                  'Send worked pieces back as already worked.',
+      );
+      return false;
+    }
+    if (sbFixStageId <= 0) {
+      opSnack('Where to', 'Pick the stage that fixes it.');
+      return false;
+    }
+    if (sbReasonCtrl.text.trim().isEmpty) {
+      opSnack('Reason', 'Say what is wrong — the fix stage only sees this.');
+      return false;
+    }
+    if (sbViaLoader && sbLoaderCtrl.text.trim().isEmpty) {
+      opSnack('Loader', 'Enter the loader name.');
+      return false;
+    }
+    saving = true;
+    update();
+    try {
+      final keys = await _uploadKeys(sbPhotos);
+      if (sbViaLoader) _rememberLoader(sbLoaderCtrl.text);
+      final r = await repo.sendBack(
+        session,
+        challanid: j.challanid,
+        stageid: j.stageid,
+        partid: sbPartId,
+        qty: qty,
+        worked: sbWorked ? 1 : 0,
+        fixstageid: sbFixStageId,
+        redostageids: sbRedoIds.toList(),
+        faultstageid: sbFaultStageId,
+        reason: sbReasonCtrl.text.trim(),
+        imageKeys: keys,
+        gatePass: sbViaLoader
+            ? GatePass(
+                loadername: sbLoaderCtrl.text.trim(),
+                issuedAt: DateTime.now(),
+                remarks: sbReasonCtrl.text.trim(),
+                receiptKeys: const [],
+                itemKeys: keys,
+              )
+            : null,
+      );
+      if (!r.ok) {
+        opSnack('Not sent back', r.message);
+        return false;
+      }
+      opSnack('Sent back', r.message);
+      resetSendBackForm();
+      await loadJobs();
+      await openJob(j);
+      return true;
+    } catch (e) {
+      opSnack('Photo upload failed', '$e');
+      return false;
+    } finally {
+      saving = false;
+      update();
+    }
+  }
+
+  // ── QC: fix here, or send it back ─────────────────────────────────────
+  //
+  // A QC reject used to mean one thing — rework at this stage. It can now
+  // also go back to any stage the piece passed through. Both are the same
+  // endpoint; `action: sendback` is the fork.
+
+  /// 'here' = rework at this stage (as before) · 'back' = send it to an
+  /// earlier stage, then it returns here.
+  String qcRejectAction = 'here';
+
+  /// The stage whose work was faulty, for either route. 0 = not stated.
+  int qcFaultStageId = 0;
+
+  bool get qcSendsBack => qcRejectAction == 'back';
+
+  void setQcRejectAction(String a) {
+    qcRejectAction = a;
+    update();
+  }
+
+  void setQcFaultStage(int stageid) {
+    qcFaultStageId = stageid == qcFaultStageId ? 0 : stageid;
+    update();
+  }
+
+  /// True when the send back form is being filled for a QC rejection rather
+  /// than by the stage operator. The form is the same; the call is not.
+  bool sbFromQc = false;
+
+  /// How many pieces QC rejected — the qty that travels.
+  double sbRejectQty = 0;
+
+  /// Open the send back form from the QC screen, carrying the rejection
+  /// across. Nothing is recorded until the form is submitted: the reject and
+  /// the send back are one call, so a half-finished form must leave no trace.
+  Future<void> openQcSendBack() async {
+    final j = qcJob;
+    if (j == null) return;
+    sbFromQc = true;
+    sbRejectQty = qcReject;
+    // The form works against the job being checked.
+    await openJob(j);
+    resetSendBackForm();
+    sbFromQc = true;
+    // The item-level QC screen checks the item, never a part.
+    sbQcPartId = 0;
+    sbRejectQty = qcReject;
+    sbReasonCtrl.text = qcReason;
+    // loadSendBackOptions resets the route and clears the qty box, so the
+    // rejected qty is seeded after it, not before.
+    await loadSendBackOptions();
+    sbQtyCtrl.text = fmtQty(qcReject);
+    update();
+  }
+
+  /// What QC checked, when the check was on a part rather than the item.
+  /// 0 = the item. It is NOT the same as [sbPartId]: a faulty Carcass can be
+  /// taken out of a rejected Body, so what was checked and what travels
+  /// differ.
+  int sbQcPartId = 0;
+
+  /// Open the send back form from the PART QC sheet. Same form, same call —
+  /// only the part that was checked differs.
+  Future<void> openPartQcSendBack(
+    JobSubItem part, {
+    required double rejectQty,
+    required String reason,
+    String remarks = '',
+  }) async {
+    final j = job;
+    if (j == null) return;
+    resetSendBackForm();
+    sbFromQc = true;
+    sbQcPartId = part.partid;
+    sbRejectQty = rejectQty;
+    sbReasonCtrl.text = reason;
+    qcRemarksCtrl.text = remarks;
+    // The part that was checked is the obvious default for what goes back,
+    // but the form lets the checker pick a different one — the fault may be
+    // in a part fitted inside it.
+    await loadSendBackOptions(partid: part.partid);
+    sbQtyCtrl.text = fmtQty(rejectQty);
+    update();
+  }
+
+  /// The QC route: reject and send back in one call. The rejection is
+  /// recorded now; the rework here opens only as the pieces come home.
+  Future<bool> submitQcSendBack() async {
+    final j = job ?? qcJob;
+    if (j == null || saving) return false;
+    final qty = double.tryParse(sbQtyCtrl.text.trim()) ?? 0;
+    if (qty <= 0) {
+      opSnack('Check qty', 'Enter how many pieces go back.');
+      return false;
+    }
+    if (sbFixStageId <= 0) {
+      opSnack('Where to', 'Pick the stage that fixes it.');
+      return false;
+    }
+    if (sbReasonCtrl.text.trim().isEmpty) {
+      opSnack('Reason', 'Say what is wrong — the fix stage only sees this.');
+      return false;
+    }
+    if (sbViaLoader && sbLoaderCtrl.text.trim().isEmpty) {
+      opSnack('Loader', 'Enter the loader name.');
+      return false;
+    }
+    saving = true;
+    update();
+    try {
+      final keys = await _uploadKeys(sbPhotos);
+      if (sbViaLoader) _rememberLoader(sbLoaderCtrl.text);
+      final r = await repo.qcRejectSendBack(
+        session,
+        j,
+        // What QC checked, and what actually travels — a faulty part can be
+        // taken out of a rejected item, so the two differ.
+        partid: sbQcPartId,
+        sendbackpartid: sbPartId,
+        rejectqty: sbRejectQty > 0 ? sbRejectQty : qty,
+        sendbackqty: qty,
+        fixstageid: sbFixStageId,
+        redostageids: sbRedoIds.toList(),
+        faultstageid: sbFaultStageId,
+        reason: sbReasonCtrl.text.trim(),
+        remarks: qcRemarksCtrl.text.trim(),
+        imageKeys: keys,
+        gatePass: sbViaLoader
+            ? GatePass(
+                loadername: sbLoaderCtrl.text.trim(),
+                issuedAt: DateTime.now(),
+                remarks: sbReasonCtrl.text.trim(),
+                receiptKeys: const [],
+                itemKeys: keys,
+              )
+            : null,
+      );
+      if (!r.ok) {
+        opSnack('Not sent back', r.message);
+        return false;
+      }
+      qcHistoryDirty = true;
+      opSnack('Rejected and sent back', r.message);
+      resetSendBackForm();
+      sbFromQc = false;
+      sbQcPartId = 0;
+      qcRejectAction = 'here';
+      await loadJobs();
+      return true;
+    } catch (e) {
+      opSnack('Photo upload failed', '$e');
+      return false;
+    } finally {
+      saving = false;
+      update();
+    }
+  }
+
+  // ── Hand several parts over in one go ─────────────────────────────────
+  //
+  // A stage often finishes three or four parts that all travel to the same
+  // next stage on the same loader. Issuing them one at a time means typing
+  // the loader, the date and the receipt photo three or four times for what
+  // is physically one consignment.
+
+  /// Parts ready to go, grouped by where they go. The plan fixes each part's
+  /// destination, so parts bound for different stages can never share a
+  /// hand-over however convenient it would look.
+  Map<int, List<JobSubItem>> get partsReadyByDestination {
+    final j = job;
+    final out = <int, List<JobSubItem>>{};
+    if (j == null) return out;
+    for (final p in j.subitems) {
+      if (p.canissueqty <= 0) continue;
+      out.putIfAbsent(p.nextstageid, () => []).add(p);
+    }
+    return out;
+  }
+
+  /// The one destination that has 2+ parts waiting, if there is exactly one
+  /// such group — the only case where "send them together" is unambiguous.
+  /// Null when nothing qualifies, and the per-part buttons stand alone.
+  MapEntry<int, List<JobSubItem>>? get batchIssueGroup {
+    final groups = partsReadyByDestination.entries
+        .where((e) => e.value.length > 1)
+        .toList();
+    return groups.length == 1 ? groups.first : null;
+  }
+
+  /// Hand several parts to the same next stage under ONE gate pass.
+  ///
+  /// The API has no multi-part call, so this is one `issue` per part with
+  /// the same loader, time and photos — the same approach as a shared split
+  /// (`issueSharedForward`). That makes it **not atomic**: it stops at the
+  /// first refusal and reloads, leaving whatever already went through in
+  /// place rather than guessing at a rollback. The server's own message for
+  /// the part that failed is shown, so the operator can see which one.
+  Future<bool> issuePartsTogether(
+    Map<JobSubItem, double> qtyByPart, {
+    required String loadername,
+    required DateTime issuedAt,
+    String remarks = '',
+    List<PickedAttachment> receiptPhotos = const [],
+    List<PickedAttachment> itemPhotos = const [],
+  }) async {
+    final j = job;
+    if (j == null || saving) return false;
+    final wanted = qtyByPart.entries.where((e) => e.value > 0).toList();
+    if (wanted.isEmpty) {
+      opSnack('Check qty', 'Enter a qty for at least one part.');
+      return false;
+    }
+    for (final e in wanted) {
+      if (e.value > e.key.canissueqty) {
+        opSnack(
+          'Check qty',
+          'Only ${fmtQty(e.key.canissueqty)} ${e.key.partname} are QC-passed '
+              'and not sent yet.',
+        );
+        return false;
+      }
+    }
+    if (loadername.trim().isEmpty) {
+      opSnack('Loader name', 'Enter the loader name.');
+      return false;
+    }
+    if (receiptPhotos.isEmpty) {
+      opSnack('Issue receipt', 'Attach the signed issue receipt photo.');
+      return false;
+    }
+    _rememberLoader(loadername);
+    saving = true;
+    update();
+    List<String> receiptKeys, itemKeys;
+    try {
+      // Uploaded ONCE and attached to every part's entry — it is one
+      // physical consignment with one signed receipt.
+      receiptKeys = await _uploadKeys(receiptPhotos);
+      itemKeys = await _uploadKeys(itemPhotos);
+    } catch (e) {
+      saving = false;
+      update();
+      opSnack('Photo upload failed', '$e');
+      return false;
+    }
+    final pass = GatePass(
+      loadername: loadername.trim(),
+      issuedAt: issuedAt,
+      remarks: remarks.trim(),
+      receiptKeys: receiptKeys,
+      itemKeys: itemKeys,
+    );
+    final done = <String>[];
+    try {
+      for (final e in wanted) {
+        final r = await repo.issue(
+          session,
+          j,
+          e.value,
+          partid: e.key.partid,
+          returnid: j.returnid,
+          to: NextStage(stageid: e.key.nextstageid, stagename: e.key.nextstage),
+          gatePass: pass,
+        );
+        if (!r.ok) {
+          opSnack(
+            done.isEmpty ? 'Not handed over' : 'Stopped part-way',
+            done.isEmpty
+                ? r.message
+                : '${done.join(', ')} went. ${e.key.partname}: ${r.message}',
+          );
+          return false;
+        }
+        done.add('${fmtQty(e.value)} ${e.key.partname}');
+      }
+      opSnack(
+        'Handed over',
+        '${done.join(' · ')} → ${_titleCase(wanted.first.key.nextstage)}.',
+      );
+      return true;
+    } finally {
+      saving = false;
+      update();
+      await loadJobs();
+      final fresh = jobs.where((x) => x.key == j.key).firstOrNull;
+      if (fresh != null) await openJob(fresh);
+    }
+  }
+
+  String _titleCase(String s) => s.isEmpty
+      ? s
+      : s
+            .split(' ')
+            .map(
+              (w) => w.isEmpty
+                  ? w
+                  : w[0].toUpperCase() + w.substring(1).toLowerCase(),
+            )
+            .join(' ');
+
+  // ── Packing ───────────────────────────────────────────────────────────
+  //
+  // At PACKING there is no Produce: the operator says how many pieces went
+  // into boxes and what is in each one. The save is what records them as
+  // made at PACKING, so QC and dispatch work exactly as before.
+
+  PackJob? packJob;
+  bool packLoading = false;
+  String packError = '';
+
+  /// Boxes typed but not saved yet.
+  List<PackBoxDraft> packDrafts = [];
+
+  final packQtyCtrl = TextEditingController();
+
+  /// One id per Save tap, reused on a retry so a timeout cannot pack the
+  /// same pieces twice. Cleared only once the server has accepted.
+  String _packToken = '';
+
+  PackItem get packItem => packJob?.item ?? const PackItem();
+
+  /// The most pieces this save may pack.
+  double get packMax => packItem.topack;
+
+  double get packQty => double.tryParse(packQtyCtrl.text.trim()) ?? 0;
+
+  /// Boxes that are complete enough to send.
+  List<PackBoxDraft> get packReadyDrafts =>
+      packDrafts.where((b) => b.isValid).toList();
+
+  Future<void> loadPackJob(OperatorJob j) async {
+    packLoading = true;
+    packError = '';
+    packDrafts = [];
+    _packToken = '';
+    update();
+    try {
+      final r = await repo.packJob(
+        session,
+        challanid: j.challanid,
+        itemid: j.itemid,
+      );
+      packJob = r.data;
+      if (!r.ok) packError = r.message;
+      // Default to everything that can still be packed — the common case is
+      // one save for the whole lot.
+      packQtyCtrl.text = packMax > 0 ? fmtQty(packMax) : '';
+    } finally {
+      packLoading = false;
+      update();
+    }
+  }
+
+  void addPackBox(PackBoxDraft b) {
+    packDrafts = [...packDrafts, b];
+    update();
+  }
+
+  void replacePackBox(int index, PackBoxDraft b) {
+    if (index < 0 || index >= packDrafts.length) return;
+    final l = [...packDrafts];
+    l[index] = b;
+    packDrafts = l;
+    update();
+  }
+
+  void removePackBox(int index) {
+    if (index < 0 || index >= packDrafts.length) return;
+    packDrafts = [...packDrafts]..removeAt(index);
+    update();
+  }
+
+  void setPackQty(double q) {
+    packQtyCtrl.text = fmtQty(q.clamp(0, packMax));
+    update();
+  }
+
+  /// Save the pieces and their boxes. Every limit here is also enforced by
+  /// the server, whose message is shown as it comes.
+  Future<bool> savePacking() async {
+    final j = job;
+    if (j == null || saving) return false;
+    final qty = packQty;
+    if (qty <= 0) {
+      opSnack('Pieces packed', 'Enter how many pieces are packed.');
+      return false;
+    }
+    if (qty > packMax) {
+      opSnack(
+        'Pieces packed',
+        'Only ${fmtQty(packMax)} left to pack at ${j.stagename}.',
+      );
+      return false;
+    }
+    final boxes = packReadyDrafts;
+    if (boxes.isEmpty) {
+      opSnack('Boxes', 'Add at least one box — what is inside and how many.');
+      return false;
+    }
+    saving = true;
+    update();
+    try {
+      // The same tap keeps its token, so a retry after a timeout is matched
+      // to the first attempt instead of packing twice.
+      if (_packToken.isEmpty) _packToken = _newToken();
+      final wire = <Map<String, dynamic>>[];
+      for (final b in boxes) {
+        // Each box's photos are uploaded first; the server wants the
+        // returned filepaths, not the files.
+        final keys = b.photos.isEmpty
+            ? <String>[]
+            : await _uploadKeys(b.photos);
+        wire.add(b.toJson(keys));
+      }
+      final r = await repo.packSave(
+        session,
+        challanid: j.challanid,
+        itemid: j.itemid,
+        qty: qty,
+        boxes: wire,
+        clienttoken: _packToken,
+      );
+      if (!r.ok) {
+        opSnack('Not saved', r.message);
+        return false;
+      }
+      _packToken = '';
+      packDrafts = [];
+      opSnack('Packed', r.message);
+      await loadPackJob(j);
+      await loadJobs();
+      return true;
+    } catch (e) {
+      opSnack('Photo upload failed', '$e');
+      return false;
+    } finally {
+      saving = false;
+      update();
+    }
+  }
+
+  /// Undo a whole save. Its boxes go; the pieces stay made at PACKING and
+  /// can be packed again.
+  Future<bool> removePack(int packid) async {
+    final j = job;
+    if (j == null || saving) return false;
+    saving = true;
+    update();
+    try {
+      final r = await repo.packRemove(session, packid: packid);
+      if (!r.ok) {
+        opSnack('Not removed', r.message);
+        return false;
+      }
+      opSnack('Removed', r.message);
+      await loadPackJob(j);
+      await loadJobs();
+      return true;
+    } finally {
+      saving = false;
+      update();
+    }
+  }
+
+  /// A unique-enough token for one Save tap. No uuid package in this app,
+  /// and the server only needs it to recognise a retry of the same tap.
+  String _newToken() {
+    final r = Random();
+    final hex = List.generate(
+      16,
+      (_) => r.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+    return '${session.userid}-${DateTime.now().microsecondsSinceEpoch}-$hex';
+  }
+
+  // ── How much is still to pack ─────────────────────────────────────────
+  //
+  // A PACKING row's own figures say nothing about packing: every live one
+  // reads "Done, balance 0" because the pieces were produced here, while
+  // `topack` is still 1 or 2 — they have been made but not boxed. Only
+  // `pack/job` knows, and it is per item, so the answer is fetched in the
+  // background after the list is drawn (same as `_loadIssuable`).
+
+  /// job.key → pieces still to pack. Missing = not asked yet.
+  final Map<String, double> _packLeft = {};
+
+  /// Pieces still to pack, or null while unknown.
+  double? packLeftFor(OperatorJob j) => _packLeft[j.key];
+
+  /// Packing jobs worth showing: everything still to pack, plus the ones we
+  /// have not resolved yet — never hide work because an answer is pending.
+  List<OperatorJob> get packJobs =>
+      jobs.where((j) => j.isPackStage && (packLeftFor(j) ?? 1) > 0).toList();
+
+  /// Total pieces waiting to be boxed — the number on the Home tile.
+  double get packQtyLeft =>
+      packJobs.fold<double>(0, (a, j) => a + (packLeftFor(j) ?? 0));
+
+  Future<void> _loadPackLeft() async {
+    final todo = jobs
+        .where((j) => j.isPackStage && !_packLeft.containsKey(j.key))
+        .toList();
+    if (todo.isEmpty) return;
+    final s = session;
+    await Future.wait(
+      todo.map((j) async {
+        try {
+          final r = await repo.packJob(
+            s,
+            challanid: j.challanid,
+            itemid: j.itemid,
+          );
+          _packLeft[j.key] = r.data?.item.topack ?? 0;
+        } catch (_) {
+          // Leave it unknown; the next load asks again.
+        }
+      }),
+    );
+    update();
+  }
+}
+
+/// A box the operator is filling in but has not saved yet.
+///
+/// It lives here rather than in the models file because it holds picked
+/// FILES — the model layer describes what the server sends, not what the
+/// camera produced.
+class PackBoxDraft {
+  String contents;
+  double count;
+  List<PickedAttachment> photos;
+
+  PackBoxDraft({this.contents = '', this.count = 0, List<PickedAttachment>? p})
+    : photos = p ?? [];
+
+  bool get isValid => contents.trim().isNotEmpty && count > 0;
+
+  /// The wire shape `pack/save` wants. [keys] are the uploaded filepaths,
+  /// resolved by the controller before this is called.
+  Map<String, dynamic> toJson(List<String> keys) => {
+    'contents': contents.trim(),
+    'count': count,
+    if (keys.isNotEmpty) 'photos': keys,
+  };
 }

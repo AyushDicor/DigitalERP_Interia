@@ -168,6 +168,9 @@ class AppConst {
   /// this build has its own appcast and a store listing to match.
   static const bool checkForUpdates = false;
 
+  /// Hindi switch — ON for INTERIA: its operators are shop floor staff.
+  static const bool offerHindi = true;
+
   static String appCastUrl =
       'https://raw.githubusercontent.com/Reyparmar/appxml/main/digitalerpappcast.xml';
 }

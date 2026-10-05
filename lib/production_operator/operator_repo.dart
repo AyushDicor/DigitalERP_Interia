@@ -67,11 +67,15 @@ abstract class OperatorRepo {
   );
 
   /// Next stage for THIS challan (routing is per challan since 2026-09-22).
+  /// The stages this one feeds. Since 2026-09-28 the answer carries a
+  /// `nextstages[]` list, so a split returns every destination with its own
+  /// plan / sent / remaining qty. [itemid] is required for a per-item route.
   Future<OperatorResult<NextStage>> nextStage(
     OperatorSession s,
     int stageid,
-    int challanid,
-  );
+    int challanid, {
+    int itemid = 0,
+  });
   Future<OperatorResult<List<ProgressRow>>> progressGet(
     OperatorSession s,
     int challanid,
@@ -87,10 +91,15 @@ abstract class OperatorRepo {
   /// `entrydate` lets the operator back-date an entry (e.g. yesterday's
   /// pieces entered this morning). Sent as yyyy-MM-dd; the backend must
   /// honour it instead of stamping "now".
+  /// [partid] records ONE part of the job instead of the whole item, and
+  /// the qty is then in part units. 0 (the default) = item-level, as always.
+  /// The same applies to qcPass, qcReject, issue and receive.
   Future<OperatorWriteResult> produce(
     OperatorSession s,
     OperatorJob job,
     double producedqty, {
+    int partid = 0,
+    int returnid = 0,
     DateTime? entrydate,
     String remarks = '',
   });
@@ -113,14 +122,21 @@ abstract class OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double qcqty, {
+    int partid = 0,
+    int returnid = 0,
+    String remarks = '',
     DateTime? entrydate,
   });
   Future<OperatorWriteResult> qcReject(
     OperatorSession s,
     OperatorJob job,
     double rejectqty, {
+    int partid = 0,
+    int returnid = 0,
     required String disposition,
     required String reason,
+    int faultstageid = 0,
+    int faultpartid = 0,
     String remarks = '',
     String imagepath = '',
     DateTime? entrydate,
@@ -149,6 +165,98 @@ abstract class OperatorRepo {
     int itemid,
   );
 
+  /// What can be sent back from [stageid], and which earlier stages it may
+  /// go to. Ask again with a [partid] when the operator picks a different
+  /// good — the route is per part, not per stage.
+  Future<OperatorResult<SendBackOptions>> sendBackOptions(
+    OperatorSession s, {
+    required int challanid,
+    required int stageid,
+    int partid = 0,
+  });
+
+  /// Send pieces back to an earlier stage. [worked] 1 = pieces this stage
+  /// already worked on (they are rejected here first, capped by the good's
+  /// `qcqty`); 0 = pieces that arrived and were never touched (`stageqty`).
+  /// [redostageids] are stages to redo on the way home; empty = straight
+  /// back. Answers with `data.returnid`.
+  Future<OperatorWriteResult> sendBack(
+    OperatorSession s, {
+    required int challanid,
+    required int stageid,
+    required int partid,
+    required double qty,
+    required int fixstageid,
+    required String reason,
+    int worked = 0,
+    List<int> redostageids = const [],
+    int faultstageid = 0,
+    List<String> imageKeys = const [],
+    GatePass? gatePass,
+  });
+
+  /// Every send back on a challan, plus the rework counted against each
+  /// stage whose work was faulty.
+  Future<OperatorResult<ChallanReturns>> challanReturns(
+    OperatorSession s, {
+    required int challanid,
+    int itemid = 0,
+  });
+
+  /// The item to pack, how many pieces are still packable, and the boxes
+  /// already saved against it.
+  Future<OperatorResult<PackJob>> packJob(
+    OperatorSession s, {
+    required int challanid,
+    required int itemid,
+  });
+
+  /// Record [qty] pieces packed into [boxes]. This is what makes them
+  /// "produced" at PACKING — there is no separate produce call.
+  ///
+  /// [clienttoken] must be a fresh id per Save tap and the SAME id on a
+  /// retry: the server answers "Already saved." with the same box numbers
+  /// rather than packing the pieces twice.
+  Future<OperatorWriteResult> packSave(
+    OperatorSession s, {
+    required int challanid,
+    required int itemid,
+    required double qty,
+    required List<Map<String, dynamic>> boxes,
+    required String clienttoken,
+    DateTime? entrydate,
+  });
+
+  /// Undo one save (its `packid`). The boxes go; the pieces stay made at
+  /// PACKING and can be packed again.
+  Future<OperatorWriteResult> packRemove(
+    OperatorSession s, {
+    required int packid,
+  });
+
+  /// QC rejects AND sends the pieces back to an earlier stage, in one call.
+  ///
+  /// Different from [sendBack]: the rejection is recorded here and now, and
+  /// the rework at THIS stage only opens as the pieces come home. [partid]
+  /// is what was checked (0 = the item); [sendbackpartid] is what actually
+  /// travels, which may be a part taken out of the rejected item.
+  /// Answers with `data.returnid`.
+  Future<OperatorWriteResult> qcRejectSendBack(
+    OperatorSession s,
+    OperatorJob job, {
+    required double rejectqty,
+    required int fixstageid,
+    required String reason,
+    int partid = 0,
+    int sendbackpartid = 0,
+    double sendbackqty = 0,
+    List<int> redostageids = const [],
+    int faultstageid = 0,
+    String remarks = '',
+    List<String> imageKeys = const [],
+    GatePass? gatePass,
+  });
+
   /// Issue QC-passed qty to the next stage. With [gatePass] the consignment
   /// travels via loader: extra fields go in the same call and the next stage
   /// sees it under `incoming` until they Accept / Reject it.
@@ -156,6 +264,8 @@ abstract class OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double issueqty, {
+    int partid = 0,
+    int returnid = 0,
     NextStage? to,
     String batchno = '',
     GatePass? gatePass,
@@ -172,6 +282,8 @@ abstract class OperatorRepo {
   Future<OperatorWriteResult> receive(
     OperatorSession s,
     Consignment cn, {
+    int partid = 0,
+    int returnid = 0,
     required String loadername,
     required DateTime receivedAt,
     required double qtyaccepted,
@@ -220,6 +332,12 @@ class ApiOperatorRepo implements OperatorRepo {
   static const _progress = 'interia/progress';
   static const _progressget = 'interia/progressget';
   static const _uploadimage = 'interia/uploadimage';
+  static const _sendbackoptions = 'interia/sendback/options';
+  static const _sendback = 'interia/sendback';
+  static const _returns = 'interia/returns';
+  static const _packjob = 'interia/pack/job';
+  static const _packsave = 'interia/pack/save';
+  static const _packremove = 'interia/pack/remove';
 
   static final _dt = DateFormat('yyyy-MM-dd HH:mm');
   static final _d = DateFormat('yyyy-MM-dd');
@@ -315,12 +433,14 @@ class ApiOperatorRepo implements OperatorRepo {
   Future<OperatorResult<NextStage>> nextStage(
     OperatorSession s,
     int stageid,
-    int challanid,
-  ) async {
+    int challanid, {
+    int itemid = 0,
+  }) async {
     final env = await _post(_nextstage, {
       'compid': s.compid,
       'stageid': stageid,
       'challanid': challanid,
+      if (itemid > 0) 'itemid': itemid,
     });
     final d = env['data'];
     return OperatorResult(
@@ -365,11 +485,15 @@ class ApiOperatorRepo implements OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double producedqty, {
+    int partid = 0,
+    int returnid = 0,
     DateTime? entrydate,
     String remarks = '',
   }) async => OperatorWriteResult.fromEnvelope(
     await _post(_produce, {
       ...s.common,
+      if (partid > 0) 'partid': partid,
+      if (returnid > 0) 'returnid': returnid,
       ..._jobCtx(job),
       'producedqty': producedqty,
       'entrydate': _d.format(entrydate ?? DateTime.now()),
@@ -410,14 +534,22 @@ class ApiOperatorRepo implements OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double qcqty, {
+    int partid = 0,
+    int returnid = 0,
+    String remarks = '',
     DateTime? entrydate,
   }) async => OperatorWriteResult.fromEnvelope(
     await _post(_qc, {
       ...s.common,
+      if (partid > 0) 'partid': partid,
+      if (returnid > 0) 'returnid': returnid,
       ..._jobCtx(job),
       'qcqty': qcqty,
       'rejectqty': 0,
       'entrydate': _d.format(entrydate ?? DateTime.now()),
+      // The endpoint takes remarks; without this a QC pass note was typed
+      // and silently thrown away.
+      'remarks': remarks,
     }),
   );
 
@@ -426,18 +558,26 @@ class ApiOperatorRepo implements OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double rejectqty, {
+    int partid = 0,
+    int returnid = 0,
     required String disposition,
     required String reason,
+    int faultstageid = 0,
+    int faultpartid = 0,
     String remarks = '',
     String imagepath = '',
     DateTime? entrydate,
   }) async => OperatorWriteResult.fromEnvelope(
     await _post(_qcreject, {
       ...s.common,
+      if (partid > 0) 'partid': partid,
+      if (returnid > 0) 'returnid': returnid,
       ..._jobCtx(job),
       'rejectqty': rejectqty,
       'disposition': disposition,
       'reason': reason,
+      if (faultstageid > 0) 'faultstageid': faultstageid,
+      if (faultpartid > 0) 'faultpartid': faultpartid,
       'remarks': remarks,
       'imagepath': imagepath,
       'entrydate': _d.format(entrydate ?? DateTime.now()),
@@ -487,16 +627,203 @@ class ApiOperatorRepo implements OperatorRepo {
   }
 
   @override
+  Future<OperatorResult<SendBackOptions>> sendBackOptions(
+    OperatorSession s, {
+    required int challanid,
+    required int stageid,
+    int partid = 0,
+  }) async {
+    final env = await _post(_sendbackoptions, {
+      'compid': s.compid,
+      'challanid': challanid,
+      'stageid': stageid,
+      if (partid > 0) 'partid': partid,
+    });
+    final d = env['data'];
+    return OperatorResult(
+      ok: env['success'] == true,
+      message: (env['message'] ?? '').toString(),
+      data: d is Map
+          ? SendBackOptions.fromJson(Map<String, dynamic>.from(d))
+          : null,
+    );
+  }
+
+  @override
+  Future<OperatorWriteResult> sendBack(
+    OperatorSession s, {
+    required int challanid,
+    required int stageid,
+    required int partid,
+    required double qty,
+    required int fixstageid,
+    required String reason,
+    int worked = 0,
+    List<int> redostageids = const [],
+    int faultstageid = 0,
+    List<String> imageKeys = const [],
+    GatePass? gatePass,
+  }) async => OperatorWriteResult.fromEnvelope(
+    await _post(_sendback, {
+      ...s.common,
+      'challanid': challanid,
+      'stageid': stageid,
+      // 0 is a real value here: it means the whole item, so it always goes.
+      'partid': partid,
+      'qty': qty,
+      'worked': worked,
+      'fixstageid': fixstageid,
+      'redostageids': redostageids,
+      if (faultstageid > 0) 'faultstageid': faultstageid,
+      'reason': reason,
+      'imagepath': imageKeys.join(','),
+      'vialoader': gatePass == null ? 0 : 1,
+      if (gatePass != null) ...{
+        'loadername': gatePass.loadername,
+        'issuedate': _d.format(gatePass.issuedAt),
+        'issuetime': DateFormat('HH:mm').format(gatePass.issuedAt),
+        'remarks': gatePass.remarks,
+        'receiptimages': gatePass.receiptKeys,
+        'itemimages': gatePass.itemKeys,
+      },
+    }),
+  );
+
+  @override
+  Future<OperatorResult<ChallanReturns>> challanReturns(
+    OperatorSession s, {
+    required int challanid,
+    int itemid = 0,
+  }) async {
+    final env = await _post(_returns, {
+      'compid': s.compid,
+      'challanid': challanid,
+      if (itemid > 0) 'itemid': itemid,
+    });
+    final d = env['data'];
+    return OperatorResult(
+      ok: env['success'] == true,
+      message: (env['message'] ?? '').toString(),
+      data: d is Map
+          ? ChallanReturns.fromJson(Map<String, dynamic>.from(d))
+          : const ChallanReturns(),
+    );
+  }
+
+  @override
+  Future<OperatorResult<PackJob>> packJob(
+    OperatorSession s, {
+    required int challanid,
+    required int itemid,
+  }) async {
+    final env = await _post(_packjob, {
+      'compid': s.compid,
+      'challanid': challanid,
+      'itemid': itemid,
+    });
+    final d = env['data'];
+    return OperatorResult(
+      ok: env['success'] == true,
+      message: (env['message'] ?? '').toString(),
+      data: d is Map
+          ? PackJob.fromJson(Map<String, dynamic>.from(d))
+          : const PackJob(),
+    );
+  }
+
+  @override
+  Future<OperatorWriteResult> packSave(
+    OperatorSession s, {
+    required int challanid,
+    required int itemid,
+    required double qty,
+    required List<Map<String, dynamic>> boxes,
+    required String clienttoken,
+    DateTime? entrydate,
+  }) async => OperatorWriteResult.fromEnvelope(
+    await _post(_packsave, {
+      ...s.common,
+      'challanid': challanid,
+      'itemid': itemid,
+      'qty': qty,
+      // A JSON array, one entry per box.
+      'boxes': boxes,
+      // Makes the save idempotent across a retry.
+      'clienttoken': clienttoken,
+      'entrydate': _d.format(entrydate ?? DateTime.now()),
+    }),
+  );
+
+  @override
+  Future<OperatorWriteResult> packRemove(
+    OperatorSession s, {
+    required int packid,
+  }) async => OperatorWriteResult.fromEnvelope(
+    await _post(_packremove, {
+      'compid': s.compid,
+      'userid': s.userid,
+      'packid': packid,
+    }),
+  );
+
+  @override
+  Future<OperatorWriteResult> qcRejectSendBack(
+    OperatorSession s,
+    OperatorJob job, {
+    required double rejectqty,
+    required int fixstageid,
+    required String reason,
+    int partid = 0,
+    int sendbackpartid = 0,
+    double sendbackqty = 0,
+    List<int> redostageids = const [],
+    int faultstageid = 0,
+    String remarks = '',
+    List<String> imageKeys = const [],
+    GatePass? gatePass,
+  }) async => OperatorWriteResult.fromEnvelope(
+    await _post(_qcreject, {
+      ...s.common,
+      ..._jobCtx(job),
+      // The fork: the same endpoint rejects in place without this.
+      'action': 'sendback',
+      // 0 is meaningful (the item), so both always go.
+      'partid': partid,
+      'sendbackpartid': sendbackpartid > 0 ? sendbackpartid : partid,
+      'rejectqty': rejectqty,
+      'sendbackqty': sendbackqty > 0 ? sendbackqty : rejectqty,
+      'fixstageid': fixstageid,
+      'redostageids': redostageids,
+      if (faultstageid > 0) 'faultstageid': faultstageid,
+      'reason': reason,
+      'remarks': remarks,
+      'imagepath': imageKeys.join(','),
+      'vialoader': gatePass == null ? 0 : 1,
+      if (gatePass != null) ...{
+        'loadername': gatePass.loadername,
+        'issuedate': _d.format(gatePass.issuedAt),
+        'issuetime': DateFormat('HH:mm').format(gatePass.issuedAt),
+        'receiptimages': gatePass.receiptKeys,
+        'itemimages': gatePass.itemKeys,
+      },
+    }),
+  );
+
+  @override
   Future<OperatorWriteResult> issue(
     OperatorSession s,
     OperatorJob job,
     double issueqty, {
+    int partid = 0,
+    int returnid = 0,
     NextStage? to,
     String batchno = '',
     GatePass? gatePass,
   }) async => OperatorWriteResult.fromEnvelope(
     await _post(_issue, {
       ...s.common,
+      if (partid > 0) 'partid': partid,
+      if (returnid > 0) 'returnid': returnid,
       'challanid': job.challanid,
       'orderrefid': job.orderrefid,
       'itemid': job.itemid,
@@ -534,6 +861,8 @@ class ApiOperatorRepo implements OperatorRepo {
   Future<OperatorWriteResult> receive(
     OperatorSession s,
     Consignment cn, {
+    int partid = 0,
+    int returnid = 0,
     required String loadername,
     required DateTime receivedAt,
     required double qtyaccepted,
@@ -545,6 +874,8 @@ class ApiOperatorRepo implements OperatorRepo {
   }) async => OperatorWriteResult.fromEnvelope(
     await _post(_receive, {
       ...s.common,
+      if (partid > 0) 'partid': partid,
+      if (returnid > 0) 'returnid': returnid,
       'consignmentid': cn.consignmentid,
       'issueid': cn.issueid,
       'challanid': cn.challanid,
@@ -927,13 +1258,36 @@ class MockOperatorRepo implements OperatorRepo {
   Future<OperatorResult<NextStage>> nextStage(
     OperatorSession s,
     int stageid,
-    int challanid,
-  ) async {
+    int challanid, {
+    int itemid = 0,
+  }) async {
     final i = _stages.indexWhere((x) => x.stageid == stageid);
-    final next = (i >= 0 && i + 1 < _stages.length)
-        ? _stages[i + 1]
-        : const NextStage(stageid: 0, stagename: '');
-    return OperatorResult(ok: true, message: 'OK', data: next);
+    if (i < 0 || i + 1 >= _stages.length) {
+      return const OperatorResult(
+        ok: true,
+        message: 'OK',
+        data: NextStage(stageid: 0, stagename: ''),
+      );
+    }
+    // The demo route is linear — one destination, owed everything.
+    final n = _stages[i + 1];
+    return OperatorResult(
+      ok: true,
+      message: 'OK',
+      data: NextStage(
+        stageid: n.stageid,
+        stagename: n.stagename,
+        stages: [
+          NextStageOption(
+            stageid: n.stageid,
+            stagename: n.stagename,
+            planqty: 10,
+            remainingqty: 10,
+            splitmode: 'Full',
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -985,6 +1339,8 @@ class MockOperatorRepo implements OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double producedqty, {
+    int partid = 0,
+    int returnid = 0,
     DateTime? entrydate,
     String remarks = '',
   }) async {
@@ -1035,6 +1391,9 @@ class MockOperatorRepo implements OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double qcqty, {
+    int partid = 0,
+    int returnid = 0,
+    String remarks = '',
     DateTime? entrydate,
   }) async {
     await _lag();
@@ -1059,8 +1418,12 @@ class MockOperatorRepo implements OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double rejectqty, {
+    int partid = 0,
+    int returnid = 0,
     required String disposition,
     required String reason,
+    int faultstageid = 0,
+    int faultpartid = 0,
     String remarks = '',
     String imagepath = '',
     DateTime? entrydate,
@@ -1106,6 +1469,8 @@ class MockOperatorRepo implements OperatorRepo {
   Future<OperatorWriteResult> receive(
     OperatorSession s,
     Consignment cn, {
+    int partid = 0,
+    int returnid = 0,
     required String loadername,
     required DateTime receivedAt,
     required double qtyaccepted,
@@ -1127,6 +1492,8 @@ class MockOperatorRepo implements OperatorRepo {
     OperatorSession s,
     OperatorJob job,
     double issueqty, {
+    int partid = 0,
+    int returnid = 0,
     NextStage? to,
     String batchno = '',
     GatePass? gatePass,
@@ -1288,6 +1655,119 @@ class MockOperatorRepo implements OperatorRepo {
   ) async {
     await _lag();
     return const OperatorResult(ok: true, message: 'demo', data: JobDesign());
+  }
+
+  @override
+  Future<OperatorResult<SendBackOptions>> sendBackOptions(
+    OperatorSession s, {
+    required int challanid,
+    required int stageid,
+    int partid = 0,
+  }) async {
+    await _lag();
+    return const OperatorResult(
+      ok: true,
+      message: 'Nothing here can be sent back.',
+      data: SendBackOptions(),
+    );
+  }
+
+  @override
+  Future<OperatorWriteResult> sendBack(
+    OperatorSession s, {
+    required int challanid,
+    required int stageid,
+    required int partid,
+    required double qty,
+    required int fixstageid,
+    required String reason,
+    int worked = 0,
+    List<int> redostageids = const [],
+    int faultstageid = 0,
+    List<String> imageKeys = const [],
+    GatePass? gatePass,
+  }) async {
+    await _lag();
+    return OperatorWriteResult(
+      ok: true,
+      id: _nextId++,
+      message: '${fmtQty(qty)} sent back.',
+    );
+  }
+
+  @override
+  Future<OperatorResult<ChallanReturns>> challanReturns(
+    OperatorSession s, {
+    required int challanid,
+    int itemid = 0,
+  }) async {
+    await _lag();
+    return const OperatorResult(
+      ok: true,
+      message: 'demo',
+      data: ChallanReturns(),
+    );
+  }
+
+  @override
+  Future<OperatorResult<PackJob>> packJob(
+    OperatorSession s, {
+    required int challanid,
+    required int itemid,
+  }) async {
+    await _lag();
+    return const OperatorResult(ok: true, message: 'demo', data: PackJob());
+  }
+
+  @override
+  Future<OperatorWriteResult> packSave(
+    OperatorSession s, {
+    required int challanid,
+    required int itemid,
+    required double qty,
+    required List<Map<String, dynamic>> boxes,
+    required String clienttoken,
+    DateTime? entrydate,
+  }) async {
+    await _lag();
+    return OperatorWriteResult(
+      ok: true,
+      id: _nextId++,
+      message: 'Packed ${fmtQty(qty)} in ${boxes.length} box(es).',
+    );
+  }
+
+  @override
+  Future<OperatorWriteResult> packRemove(
+    OperatorSession s, {
+    required int packid,
+  }) async {
+    await _lag();
+    return OperatorWriteResult(ok: true, id: packid, message: 'Pack removed.');
+  }
+
+  @override
+  Future<OperatorWriteResult> qcRejectSendBack(
+    OperatorSession s,
+    OperatorJob job, {
+    required double rejectqty,
+    required int fixstageid,
+    required String reason,
+    int partid = 0,
+    int sendbackpartid = 0,
+    double sendbackqty = 0,
+    List<int> redostageids = const [],
+    int faultstageid = 0,
+    String remarks = '',
+    List<String> imageKeys = const [],
+    GatePass? gatePass,
+  }) async {
+    await _lag();
+    return OperatorWriteResult(
+      ok: true,
+      id: _nextId++,
+      message: 'Rejected ${fmtQty(rejectqty)} and sent back.',
+    );
   }
 
   @override

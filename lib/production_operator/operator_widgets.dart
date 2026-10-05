@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart' show DateFormat;
+import 'package:newdigitalerp/l10n/app_lang.dart';
 import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:newdigitalerp/utils/attachment_picker.dart';
 
@@ -36,6 +37,13 @@ const opGradient = LinearGradient(
 );
 const opGreenGradient = LinearGradient(
   colors: [opGreen, Color(0xFF34C07D)],
+  begin: Alignment.centerLeft,
+  end: Alignment.centerRight,
+);
+// Sending work backwards is not the green "forward" action — amber marks it
+// as an exception everywhere it appears.
+const opAmberGradient = LinearGradient(
+  colors: [Color(0xFFC2410C), opAmber],
   begin: Alignment.centerLeft,
   end: Alignment.centerRight,
 );
@@ -146,6 +154,11 @@ class SoftPill extends StatelessWidget {
 Widget jobStatePill(OperatorJob j) {
   if (j.isRework && !j.isDone) {
     return const SoftPill('Rework', color: opRed, bg: opRedBg);
+  }
+  // A joining stage short of parts: it cannot start, whatever the balance
+  // says, so this outranks To produce / Running.
+  if (j.isWaitingForParts) {
+    return const SoftPill('Waiting for parts', color: opAmber, bg: opAmberBg);
   }
   switch (j.state) {
     case OperatorJobState.done:
@@ -467,15 +480,98 @@ class JobCard extends StatelessWidget {
               const SizedBox(height: 7),
               StagePill(j.stagename),
             ],
+            // Pieces this stage sent back to an earlier one and has not got
+            // returned. They are already out of balanceqty, so without this
+            // the job simply looks smaller than the operator remembers.
+            if (j.hasSentBack) ...[
+              const SizedBox(height: 6),
+              SoftPill(
+                '${fmtQty(j.sentbackqty)} sent back',
+                color: opAmber,
+                bg: opAmberBg,
+              ),
+            ],
+            // The parts this stage makes or receives — one line, written
+            // by the server so the wording stays in step with tracking.
+            if (j.subitemstext.isNotEmpty) ...[
+              const SizedBox(height: 5),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.category_outlined,
+                    size: 12,
+                    color: newTextHint,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      j.subitemstext,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: newTextSecondary,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            // What each earlier stage has handed over. Grey dashed = still
+            // missing, which is what holds this stage up.
+            if (j.parts.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  const Text(
+                    'PARTS',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      color: newTextSecondary,
+                    ),
+                  ),
+                  for (final p in j.parts)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: p.arrived ? opGreenBg : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: p.arrived ? opGreenBg : newTextHint,
+                          style: p.arrived
+                              ? BorderStyle.solid
+                              : BorderStyle.none,
+                        ),
+                      ),
+                      child: Text(
+                        '${p.stagename} ${fmtQty(p.qty)}',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: p.arrived ? opGreen : newTextSecondary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
             // Approved drawings / client materials exist for this item —
             // the job screen shows them under "Drawings & Details".
             if (j.hasdesign && j.designChipLabel.isNotEmpty) ...[
               const SizedBox(height: 7),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: opBlueBg,
                   borderRadius: BorderRadius.circular(100),
@@ -1132,13 +1228,60 @@ class OperatorHeader extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                DateFormat('EEEE, d MMM yyyy').format(DateTime.now()),
+                // Pinned to Latin digits: the labels may be Hindi, the date
+                // and the numbers never are.
+                DateFormat(
+                  'EEEE, d MMM yyyy',
+                  latinLocale,
+                ).format(DateTime.now()),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              // The language switch lives here because this header is the
+              // first thing on the operator's home screen — a worker who
+              // cannot read the app must not have to hunt through settings.
+              if (AppConst.offerHindi) ...[
+                const Spacer(),
+                InkWell(
+                  borderRadius: BorderRadius.circular(100),
+                  onTap: AppLang.toggle,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.translate_rounded,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          AppLang.isHindi ? 'English' : 'हिन्दी',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ],
@@ -1421,7 +1564,7 @@ Future<int?> askQtyDialog(
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+              child: Text('Cancel'.tr),
             ),
             FilledButton(
               onPressed: over ? null : () => Navigator.of(ctx).pop(v),

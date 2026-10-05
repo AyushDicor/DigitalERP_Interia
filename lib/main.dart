@@ -1,4 +1,4 @@
-// import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 // import 'package:flutter/services.dart';
 // import 'package:get/get.dart';
 // import 'package:newdigitalerp/app_routes/app_pages.dart';
@@ -36,6 +36,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:newdigitalerp/l10n/app_lang.dart';
+import 'package:newdigitalerp/utils/app_constant_new.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:newdigitalerp/services/notification/task_notification_service.dart';
@@ -46,7 +48,7 @@ import 'package:newdigitalerp/home/home_contoller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Connect to the Firebase project (DigitalERP Interia). Must run before any
+  // Connect to the Firebase project (DigitalERP Dicor). Must run before any
   // Firebase API (e.g. FCM) is used.
   // Firebase (FCM push) may not be configured for every platform (e.g. a web/desktop
   // test build has no DefaultFirebaseOptions). Don't let that crash the whole app —
@@ -84,6 +86,11 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6366F1)),
         useMaterial3: true,
       ),
+      // Keys are the English sentences, so an untranslated string simply
+      // shows in English instead of breaking.
+      translations: AppTranslations(),
+      locale: AppConst.offerHindi ? AppLang.current : enLocale,
+      fallbackLocale: enLocale,
       initialRoute: AppRoutes.splash,
       getPages: AppPages.routes,
     );

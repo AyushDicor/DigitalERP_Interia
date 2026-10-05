@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-
 /// Per-item editable state
 class QcItemState {
   final TextEditingController receivedCtrl;
@@ -19,12 +18,13 @@ class QcItemState {
     required double initialReceived,
     required int actualQty,
     String initialReason = '',
-  })  : receivedQty = initialReceived,
-        rejectedQty = actualQty - initialReceived.toInt(),
-        isSaved = false,
-        receivedCtrl =
-        TextEditingController(text: initialReceived.toInt().toString()),
-        reasonCtrl = TextEditingController(text: initialReason);
+  }) : receivedQty = initialReceived,
+       rejectedQty = actualQty - initialReceived.toInt(),
+       isSaved = false,
+       receivedCtrl = TextEditingController(
+         text: initialReceived.toInt().toString(),
+       ),
+       reasonCtrl = TextEditingController(text: initialReason);
 
   void dispose() {
     receivedCtrl.dispose();
@@ -37,8 +37,9 @@ class MrnQcScreenController extends AppBaseController {
 
   // ── State ──────────────────────────────────────────────────────────────────
   MrnQcDetail? detail;
-  bool isQcLoading = false;  // renamed: AppBaseController already has RxBool isLoading
-  bool isQcSaving = false;   // renamed: keep naming consistent
+  bool isQcLoading =
+      false; // renamed: AppBaseController already has RxBool isLoading
+  bool isQcSaving = false; // renamed: keep naming consistent
   bool get isCompleted => documentName == 'qc';
 
   // The MrnQcListItem passed as argument
@@ -51,10 +52,9 @@ class MrnQcScreenController extends AppBaseController {
   DateTime qcDate = DateTime.now();
   String get qcDateDisplay => DateFormat('dd MMM yyyy').format(qcDate);
   // Use whichever field UserData exposes — fullname, name, or userName
-  String get checkedBy =>
-      checkedByCtrl.text.isNotEmpty
-          ? checkedByCtrl.text
-          : homeController.currentUserData?.name ?? 'Unknown';
+  String get checkedBy => checkedByCtrl.text.isNotEmpty
+      ? checkedByCtrl.text
+      : homeController.currentUserData?.name ?? 'Unknown';
 
   // Per-item states: index → QcItemState
   final Map<int, QcItemState> itemStates = {};
@@ -75,7 +75,7 @@ class MrnQcScreenController extends AppBaseController {
   @override
   void onClose() {
     remarksCtrl.dispose();
-    checkedByCtrl.dispose();  // ← ADD
+    checkedByCtrl.dispose(); // ← ADD
     for (final s in itemStates.values) {
       s.dispose();
     }
@@ -161,12 +161,16 @@ class MrnQcScreenController extends AppBaseController {
     final received = double.tryParse(state.receivedCtrl.text) ?? 0;
     if (received > item.actualqty) {
       ShowMessage.showSnackBar(
-          'Invalid', 'Received qty cannot exceed actual qty (${item.actualqty.toInt()})');
+        'Invalid',
+        'Received qty cannot exceed actual qty (${item.actualqty.toInt()})',
+      );
       return;
     }
     if (state.rejectedQty > 0 && state.reasonCtrl.text.trim().isEmpty) {
       ShowMessage.showSnackBar(
-          'Reason Required', 'Please enter a reason for rejected items');
+        'Reason Required',
+        'Please enter a reason for rejected items',
+      );
       return;
     }
 
@@ -182,7 +186,10 @@ class MrnQcScreenController extends AppBaseController {
     expandedItemIndex = -1; // collapse
     update();
 
-    ShowMessage.showSnackBar('Updated', '${item.itemname} updated successfully');
+    ShowMessage.showSnackBar(
+      'Updated',
+      '${item.itemname} updated successfully',
+    );
   }
 
   // ── Pick QC Date ───────────────────────────────────────────────────────────
@@ -237,10 +244,17 @@ class MrnQcScreenController extends AppBaseController {
       final res = await api.saveQcEntry(req);
 
       if (res.status == 200 || res.success == true) {
-        ShowMessage.showSnackBar('Success', 'QC Entry saved successfully');
+        // Show the server's own words. When the MRN carried goods bought for
+        // a production part, it appends " Sent to the production stages." —
+        // the only sign the checker gets that the qty left the store.
+        final msg = (res.message ?? '').trim();
+        ShowMessage.showSnackBar(
+          'Success',
+          msg.isNotEmpty ? msg : 'QC Entry saved successfully',
+        );
 
         Get.offNamed('/mrnQcList'); // replaces current route with the list
-      }else {
+      } else {
         ShowMessage.showSnackBar('Error', res.message ?? 'Failed to save');
       }
     } catch (e) {

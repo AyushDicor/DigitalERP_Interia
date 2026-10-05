@@ -259,7 +259,11 @@ class QcHistoryPane extends StatelessWidget {
               c.qcSearchCtrl.clear();
               c.setQcSearch('');
             },
-            child: const Icon(Icons.close_rounded, size: 16, color: newTextHint),
+            child: const Icon(
+              Icons.close_rounded,
+              size: 16,
+              color: newTextHint,
+            ),
           ),
       ],
     ),
@@ -419,11 +423,7 @@ class _QcEntryCard extends StatelessWidget {
               const SizedBox(height: 9),
               Row(
                 children: [
-                  SoftPill(
-                    e.resultLabel,
-                    color: tone.fg,
-                    bg: tone.bg,
-                  ),
+                  SoftPill(e.resultLabel, color: tone.fg, bg: tone.bg),
                   const SizedBox(width: 9),
                   if (e.producedby.isNotEmpty)
                     Expanded(

@@ -33,10 +33,16 @@ class ConsignmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final photos = [...cn.receiptimages, ...cn.itemimages];
+
+    /// Work coming BACK to be fixed reads differently from new work
+    /// arriving, so the whole card switches to amber and says so.
+    final back = cn.isSendBack;
+    final accent = back ? opAmber : opGreen;
+    final accentBg = back ? opAmberBg : opGreenBg;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: opCard(border: opGreen.withValues(alpha: 0.45)),
+      decoration: opCard(border: accent.withValues(alpha: 0.45)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -45,7 +51,10 @@ class ConsignmentCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${cn.challanno.isNotEmpty ? '${cn.challanno} · ' : ''}${cn.itemname}',
+                  // A part consignment carries one part, and two of them can
+                  // be in transit for the same item — name the part or the
+                  // cards read identically.
+                  '${cn.challanno.isNotEmpty ? '${cn.challanno} · ' : ''}${cn.itemname}${cn.partname.isEmpty ? '' : ' · ${cn.partname}'}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -55,7 +64,11 @@ class ConsignmentCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const SoftPill('IN TRANSIT', color: opGreen, bg: opGreenBg),
+              SoftPill(
+                back ? 'SENT BACK' : 'IN TRANSIT',
+                color: accent,
+                bg: accentBg,
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -82,6 +95,71 @@ class ConsignmentCard extends StatelessWidget {
               ),
             ],
           ),
+
+          /// Why it is here. On a send back this is the fault the sending
+          /// stage wrote down, and it is the whole point of the card — the
+          /// operator cannot fix what they cannot see. On a forward issue it
+          /// is the gate-pass note, shown the same way when there is one.
+          if (back || cn.remarks.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: accentBg,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: accent.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    back ? Icons.undo_rounded : Icons.sticky_note_2_outlined,
+                    size: 14,
+                    color: accent,
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          back
+                              ? 'Sent back by ${_t(cn.sentBackFrom)} to be fixed'
+                              : 'Note from ${_t(cn.fromstagename)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: accent,
+                          ),
+                        ),
+                        if (cn.remarks.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            cn.remarks,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: newTextPrimary,
+                              height: 1.3,
+                            ),
+                          ),
+                        ] else
+                          const Text(
+                            'No reason recorded',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: newTextSecondary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -187,8 +265,8 @@ class ConsignmentCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: onReject,
                     icon: const Icon(Icons.close_rounded, size: 16),
-                    label: const Text(
-                      'Reject',
+                    label: Text(
+                      'Reject'.tr,
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
@@ -415,12 +493,12 @@ Future<String?> askRejectReason(BuildContext context) async {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
             style: TextButton.styleFrom(foregroundColor: opRed),
-            child: const Text('Reject'),
+            child: Text('Reject'.tr),
           ),
         ],
       ),
@@ -438,7 +516,7 @@ Future<void> rejectConsignment(
 ) async {
   final reason = await askRejectReason(context);
   if (reason == null) return;
-  await c.receiveConsignment(
+  final ok = await c.receiveConsignment(
     cn,
     loadername: cn.loadername,
     receivedAt: DateTime.now(),
@@ -446,6 +524,7 @@ Future<void> rejectConsignment(
     qtyrejected: cn.qty,
     reason: reason,
   );
+  if (ok) c.backToJobsHome();
 }
 
 /// Receive from Loader — gate pass on the receiving side: loader name,
@@ -581,6 +660,7 @@ class _OperatorReceiveViewState extends State<OperatorReceiveView> {
       remarks: remarksCtrl.text,
     );
     if (ok && mounted) Navigator.of(context).pop();
+    if (ok) c.backToJobsHome();
   }
 
   /// Reject the whole consignment straight from this screen.
@@ -662,7 +742,7 @@ class _OperatorReceiveViewState extends State<OperatorReceiveView> {
                               ),
                             ),
                             Text(
-                              '${cn.itemname} · ${fmtQty(cn.qty)} PCS · from ${_t(cn.fromstagename)}',
+                              '${cn.partname.isEmpty ? cn.itemname : '${cn.itemname} · ${cn.partname}'} · ${fmtQty(cn.qty)} PCS · from ${_t(cn.fromstagename)}',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(

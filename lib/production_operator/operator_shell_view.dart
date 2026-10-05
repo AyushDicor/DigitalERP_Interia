@@ -10,6 +10,7 @@ import 'operator_qc_view.dart';
 import 'operator_rework_view.dart';
 import 'operator_incoming_view.dart';
 import 'operator_models.dart';
+import 'operator_sendback_view.dart';
 import 'operator_stoppage_sheet.dart';
 import 'operator_widgets.dart';
 
@@ -33,12 +34,7 @@ class OperatorShellView extends StatelessWidget {
           // Index order is fixed so [OperatorController.logTab] stays valid;
           // the nav bar below shows QC before Log, which is where a QC hand
           // expects it.
-          children: const [
-            _HomeTab(),
-            _MyWorkTab(),
-            _LogTab(),
-            _QcTab(),
-          ],
+          children: const [_HomeTab(), _MyWorkTab(), _LogTab(), _QcTab()],
         ),
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
@@ -212,6 +208,16 @@ class _HomeTab extends StatelessWidget {
                       ),
                       ...c.incoming.map((cn) => _consignmentCard(c, cn)),
                     ],
+                    // Work sent BACK to this stage to be fixed. It sits
+                    // above the tiles: it blocks another stage's job, so it
+                    // is the most urgent thing on the screen.
+                    if (c.sendBackJobs.isNotEmpty) ...[
+                      SectionHeader(
+                        'Sent back to fix',
+                        count: c.sendBackJobs.length,
+                      ),
+                      ...c.sendBackJobs.map((j) => _sendBackCard(c, j)),
+                    ],
                     GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
@@ -275,6 +281,28 @@ class _HomeTab extends StatelessWidget {
                               wipNote: c.wipNote(j),
                               ctaLabel: 'Continue',
                               onCta: () => _openJob(c, j),
+                            ),
+                          ),
+                    ],
+                    // Finished and QC-passed, still waiting to be handed to
+                    // the next stage — otherwise invisible under Done.
+                    if (c.toIssueJobs.isNotEmpty) ...[
+                      SectionHeader(
+                        'Ready to issue',
+                        count: c.toIssueJobs.length,
+                        trailing: '${fmtQty(c.toIssueQty)} pcs',
+                      ),
+                      ...c.toIssueJobs
+                          .take(3)
+                          .map(
+                            (j) => JobCard(
+                              job: j,
+                              onTap: () => _openJob(c, j),
+                              ctaLabel:
+                                  'Issue ${fmtQty(c.pendingIssueQty(j))} →',
+                              ctaColor: opGreen,
+                              onCta: () => _openJob(c, j),
+                              showParty: false,
                             ),
                           ),
                     ],
@@ -406,7 +434,10 @@ class _HomeTab extends StatelessWidget {
 
 void _openJob(OperatorController c, OperatorJob j) {
   // A QC assignment has nothing to produce — go straight to the QC screen.
-  if (j.isQcJob) {
+  // Except when the stage records parts: there the check is per part, and
+  // the server refuses an item-level QC without a partid. Those open the
+  // workspace, where the part cards carry their own QC buttons.
+  if (j.isQcJob && !j.isPartMode) {
     _openQc(c, j);
     return;
   }
@@ -427,10 +458,46 @@ void _openRework(OperatorController c, OperatorJob j) {
 /// One card for any job in a filtered list: rework card, QC lot (Do QC) or
 /// production job (Start / Continue).
 Widget _workCard(OperatorController c, OperatorJob j) {
+  if (j.isSendBack) return _sendBackCard(c, j);
   if (j.isReworkJob) {
     return ReworkJobCard(job: j, onTap: () => _openRework(c, j));
   }
+  // QC-passed and still here: the useful action is the hand-off, not
+  // "Continue" on a job whose balance is already 0.
+  if (c.readyToIssue(j) && !j.canqc) {
+    return JobCard(
+      job: j,
+      onTap: () => _openJob(c, j),
+      ctaLabel: 'Issue ${fmtQty(c.pendingIssueQty(j))} →',
+      ctaColor: opGreen,
+      onCta: () => _openJob(c, j),
+    );
+  }
+  // A packing job never says "Start production" — the operator packs.
+  // A packing job ALWAYS offers Pack, whatever its produced/balance figures
+  // say. Pieces made here with the old Produce button still have to be given
+  // boxes: every live PACKING row reads "Done, balance 0" while `topack` is
+  // 1 or 2. Only `pack/job` knows what is left, and that is a per-item call —
+  // so the button opens the screen and the screen states the truth.
+  if (j.isPackStage) {
+    final left = c.packLeftFor(j);
+    return JobCard(
+      job: j,
+      onTap: () => _openJob(c, j),
+      // Once the background probe answers, say how many are still to box —
+      // the card's own numbers cannot show it.
+      wipNote: left == null ? '' : '${fmtQty(left)} to pack',
+      ctaLabel: left == null ? 'Pack' : 'Pack ${fmtQty(left)}',
+      ctaColor: opGreen,
+      onCta: () => _openJob(c, j),
+    );
+  }
   final qc = j.canqc && j.qcPending > 0;
+  // Nothing to start on a joining stage that is short of parts — the card
+  // still opens, so the operator can see which stage they are waiting on.
+  if (j.isWaitingForParts) {
+    return JobCard(job: j, onTap: () => _openJob(c, j));
+  }
   return JobCard(
     job: j,
     onTap: () => _openJob(c, j),
@@ -446,6 +513,17 @@ Widget _workCard(OperatorController c, OperatorJob j) {
     onCta: qc ? () => _openQc(c, j) : () => _openJob(c, j),
   );
 }
+
+/// A send back leg. Each button is offered only when the server says there
+/// is qty for it, and QC only on a login the server flagged `canqc` — the
+/// operator must never check the piece they just reworked.
+Widget _sendBackCard(OperatorController c, OperatorJob j) => SendBackJobCard(
+  job: j,
+  onTap: () => _openJob(c, j),
+  onRework: j.canReworkHere ? () => _openJob(c, j) : null,
+  onQc: j.canQcHere ? () => _openQc(c, j) : null,
+  onSendOn: j.canSendOn ? () => _openJob(c, j) : null,
+);
 
 Widget _consignmentCard(OperatorController c, Consignment cn) => Builder(
   builder: (ctx) => ConsignmentCard(
@@ -479,6 +557,8 @@ Widget _workChips(OperatorController c) {
   final chips = <(String, String, int, Color)>[
     ('all', 'All', c.workJobs.length + c.qcDueJobs.length, opPrimary),
     if (c.qcDueJobs.isNotEmpty) ('qc', 'QC', c.qcDueJobs.length, opPurple),
+    if (c.toIssueJobs.isNotEmpty)
+      ('toissue', 'To issue', c.toIssueJobs.length, opGreen),
     if (c.incoming.isNotEmpty)
       ('incoming', 'Incoming', c.incoming.length, opGreen),
     if (c.reworkJobs.isNotEmpty)
@@ -524,6 +604,15 @@ Widget _workChips(OperatorController c) {
 }
 
 void _openQc(OperatorController c, OperatorJob j) {
+  // A stage that records its parts is QC'd part by part: the server refuses
+  // an item-level QC there ("QC each part (send partid)"). Every Do-QC entry
+  // point comes through here, so the redirect lives here rather than at each
+  // button.
+  if (j.isPartMode) {
+    c.openJob(j);
+    Get.to(() => const OperatorJobView());
+    return;
+  }
   c.openQc(j);
   Get.to(() => const OperatorQcView());
 }
@@ -734,7 +823,6 @@ class _ToQcPane extends StatelessWidget {
   );
 }
 
-
 // ── 4 · Downtime / bottleneck log ────────────────────────────────────────────
 
 class _LogTab extends StatelessWidget {
@@ -795,7 +883,7 @@ class _LogTab extends StatelessWidget {
         backgroundColor: opPrimary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Log', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: Text('Log'.tr, style: TextStyle(fontWeight: FontWeight.w800)),
         onPressed: () => _pickType(context, c),
       ),
     ),

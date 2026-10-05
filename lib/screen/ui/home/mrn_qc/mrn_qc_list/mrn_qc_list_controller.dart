@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
-
 import '../mrn_qc_filter/mrn_qc_filter_sheet.dart';
 
 enum MrnQcTab { pending, completed }
@@ -18,7 +17,6 @@ class MrnQcListController extends AppBaseController {
   // ── Tab state ──────────────────────────────────────────────────────────────
   MrnQcTab activeTab = MrnQcTab.pending;
   MrnQcFilter activeFilter = const MrnQcFilter();
-
 
   // ── Separate lists per tab ─────────────────────────────────────────────────
   List<MrnQcListItem> pendingItems = [];
@@ -50,7 +48,6 @@ class MrnQcListController extends AppBaseController {
     fromDateCtrl.text = DateFormat('yyyy-MM-dd').format(from);
     toDateCtrl.text = DateFormat('yyyy-MM-dd').format(today);
     fetchMrnQcList(); // fetch active tab on init
-
   }
 
   @override
@@ -78,7 +75,6 @@ class MrnQcListController extends AppBaseController {
     activeFilter = const MrnQcFilter();
     update();
   }
-
 
   // ── Fetch for current active tab ───────────────────────────────────────────
   Future<void> fetchMrnQcList() async {
@@ -113,8 +109,9 @@ class MrnQcListController extends AppBaseController {
         }
       } else {
         ShowMessage.showSnackBar(
-            isPending ? 'Pending QC' : 'QC List',
-            res.message ?? 'Failed to load');
+          isPending ? 'Pending QC' : 'QC List',
+          res.message ?? 'Failed to load',
+        );
       }
     } catch (e) {
       ShowMessage.showSnackBar('Error', '$e');

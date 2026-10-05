@@ -25,7 +25,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-
 // ═══════════════════════════════════════════════════════════════
 // FILTER MODEL
 // ═══════════════════════════════════════════════════════════════
@@ -47,10 +46,10 @@ class MrnQcFilter {
 
   bool get isActive =>
       partyNames.isNotEmpty ||
-          siteNames.isNotEmpty ||
-          jobTypes.isNotEmpty ||
-          minAmount != null ||
-          maxAmount != null;
+      siteNames.isNotEmpty ||
+      jobTypes.isNotEmpty ||
+      minAmount != null ||
+      maxAmount != null;
 
   int get activeCount {
     int n = 0;
@@ -142,10 +141,7 @@ class _MrnQcFilterSheetState extends State<MrnQcFilterSheet> {
     'amount': false,
   };
 
-  final Map<String, String> _search = {
-    'party': '',
-    'site': '',
-  };
+  final Map<String, String> _search = {'party': '', 'site': ''};
 
   @override
   void initState() {
@@ -159,31 +155,28 @@ class _MrnQcFilterSheetState extends State<MrnQcFilterSheet> {
   void _buildOptions() {
     final items = widget.allItems;
 
-    _partyOptions = items
-        .map((e) => e.partyName)
-        .where((s) => s.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    _partyOptions =
+        items
+            .map((e) => e.partyName)
+            .where((s) => s.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
 
-    _siteOptions = items
-        .map((e) => e.siteName)
-        .where((s) => s.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    _siteOptions =
+        items.map((e) => e.siteName).where((s) => s.isNotEmpty).toSet().toList()
+          ..sort();
 
-    _jobTypeOptions = items
-        .map((e) => e.jobType)
-        .where((s) => s.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    _jobTypeOptions =
+        items.map((e) => e.jobType).where((s) => s.isNotEmpty).toSet().toList()
+          ..sort();
 
     _dataMaxAmount = items
-        .map((e) => widget.isCompleted && e.grandTotal > 0
-        ? e.grandTotal
-        : e.totalAmt)
+        .map(
+          (e) => widget.isCompleted && e.grandTotal > 0
+              ? e.grandTotal
+              : e.totalAmt,
+        )
         .fold(0.0, (a, b) => a > b ? a : b);
   }
 
@@ -194,8 +187,7 @@ class _MrnQcFilterSheetState extends State<MrnQcFilterSheet> {
     super.dispose();
   }
 
-  void _toggle(String key, bool val) =>
-      setState(() => _expanded[key] = val);
+  void _toggle(String key, bool val) => setState(() => _expanded[key] = val);
 
   void _toggleItem(Set<String> current, String item, String field) {
     final next = Set<String>.from(current);
@@ -251,95 +243,96 @@ class _MrnQcFilterSheetState extends State<MrnQcFilterSheet> {
         color: Color(0xFFF7F8FC),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(children: [
-        _buildHeader(activeCount),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            children: [
-              // ── Party Name ──────────────────────────────────────────
-              _MrnAccordion(
-                title: 'Party Name',
-                icon: Icons.business_outlined,
-                selectedCount: _draft.partyNames.length,
-                expanded: _expanded['party']!,
-                onToggle: (v) => _toggle('party', v),
-                child: _MrnChecklist(
-                  options: _partyOptions,
-                  selected: _draft.partyNames,
-                  search: _search['party']!,
-                  onSearchChanged: (v) =>
-                      setState(() => _search['party'] = v),
-                  onToggle: (item) =>
-                      _toggleItem(_draft.partyNames, item, 'party'),
-                  showSearch: _partyOptions.length > 5,
+      child: Column(
+        children: [
+          _buildHeader(activeCount),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              children: [
+                // ── Party Name ──────────────────────────────────────────
+                _MrnAccordion(
+                  title: 'Party Name',
+                  icon: Icons.business_outlined,
+                  selectedCount: _draft.partyNames.length,
+                  expanded: _expanded['party']!,
+                  onToggle: (v) => _toggle('party', v),
+                  child: _MrnChecklist(
+                    options: _partyOptions,
+                    selected: _draft.partyNames,
+                    search: _search['party']!,
+                    onSearchChanged: (v) =>
+                        setState(() => _search['party'] = v),
+                    onToggle: (item) =>
+                        _toggleItem(_draft.partyNames, item, 'party'),
+                    showSearch: _partyOptions.length > 5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              // ── Site Name ───────────────────────────────────────────
-              _MrnAccordion(
-                title: 'Site Name',
-                icon: Icons.location_on_outlined,
-                selectedCount: _draft.siteNames.length,
-                expanded: _expanded['site']!,
-                onToggle: (v) => _toggle('site', v),
-                child: _MrnChecklist(
-                  options: _siteOptions,
-                  selected: _draft.siteNames,
-                  search: _search['site']!,
-                  onSearchChanged: (v) =>
-                      setState(() => _search['site'] = v),
-                  onToggle: (item) =>
-                      _toggleItem(_draft.siteNames, item, 'site'),
-                  showSearch: _siteOptions.length > 5,
+                // ── Site Name ───────────────────────────────────────────
+                _MrnAccordion(
+                  title: 'Site Name',
+                  icon: Icons.location_on_outlined,
+                  selectedCount: _draft.siteNames.length,
+                  expanded: _expanded['site']!,
+                  onToggle: (v) => _toggle('site', v),
+                  child: _MrnChecklist(
+                    options: _siteOptions,
+                    selected: _draft.siteNames,
+                    search: _search['site']!,
+                    onSearchChanged: (v) => setState(() => _search['site'] = v),
+                    onToggle: (item) =>
+                        _toggleItem(_draft.siteNames, item, 'site'),
+                    showSearch: _siteOptions.length > 5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              // ── Job Type ────────────────────────────────────────────
-              _MrnAccordion(
-                title: 'Job Type',
-                icon: Icons.work_outline_rounded,
-                selectedCount: _draft.jobTypes.length,
-                expanded: _expanded['jobType']!,
-                onToggle: (v) => _toggle('jobType', v),
-                child: _MrnChecklist(
-                  options: _jobTypeOptions,
-                  selected: _draft.jobTypes,
-                  search: '',
-                  onSearchChanged: (_) {},
-                  onToggle: (item) =>
-                      _toggleItem(_draft.jobTypes, item, 'jobType'),
-                  showSearch: false,
-                  jobTypeMode: true,
+                // ── Job Type ────────────────────────────────────────────
+                _MrnAccordion(
+                  title: 'Job Type',
+                  icon: Icons.work_outline_rounded,
+                  selectedCount: _draft.jobTypes.length,
+                  expanded: _expanded['jobType']!,
+                  onToggle: (v) => _toggle('jobType', v),
+                  child: _MrnChecklist(
+                    options: _jobTypeOptions,
+                    selected: _draft.jobTypes,
+                    search: '',
+                    onSearchChanged: (_) {},
+                    onToggle: (item) =>
+                        _toggleItem(_draft.jobTypes, item, 'jobType'),
+                    showSearch: false,
+                    jobTypeMode: true,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 8),
 
-              // ── Amount ──────────────────────────────────────────────
-              _MrnAccordion(
-                title: 'Amount',
-                icon: Icons.currency_rupee_rounded,
-                selectedCount:
-                (_draft.minAmount != null || _draft.maxAmount != null)
-                    ? 1
-                    : 0,
-                expanded: _expanded['amount']!,
-                onToggle: (v) => _toggle('amount', v),
-                child: _MrnAmountPanel(
-                  minCtrl: _minCtrl,
-                  maxCtrl: _maxCtrl,
-                  dataMax: _dataMaxAmount,
+                // ── Amount ──────────────────────────────────────────────
+                _MrnAccordion(
+                  title: 'Amount',
+                  icon: Icons.currency_rupee_rounded,
+                  selectedCount:
+                      (_draft.minAmount != null || _draft.maxAmount != null)
+                      ? 1
+                      : 0,
+                  expanded: _expanded['amount']!,
+                  onToggle: (v) => _toggle('amount', v),
+                  child: _MrnAmountPanel(
+                    minCtrl: _minCtrl,
+                    maxCtrl: _maxCtrl,
+                    dataMax: _dataMaxAmount,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-        ),
-        _buildBottomBar(activeCount),
-        SizedBox(height: mq.padding.bottom),
-      ]),
+          _buildBottomBar(activeCount),
+          SizedBox(height: mq.padding.bottom),
+        ],
+      ),
     );
   }
 
@@ -351,55 +344,76 @@ class _MrnQcFilterSheetState extends State<MrnQcFilterSheet> {
         border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
-      child: Column(children: [
-        Center(
-          child: Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
+      child: Column(
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 14),
-        Row(children: [
-          const Icon(Icons.filter_list_rounded, size: 20, color: newBlueColor),
-          const SizedBox(width: 8),
-          Text('Filter',
-              style: GoogleFonts.dmSans(
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Icon(
+                Icons.filter_list_rounded,
+                size: 20,
+                color: newBlueColor,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Filter',
+                style: GoogleFonts.dmSans(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1A2E))),
-          if (activeCount > 0) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                  color: newBlueColor,
-                  borderRadius: BorderRadius.circular(20)),
-              child: Text('$activeCount',
-                  style: GoogleFonts.dmSans(
+                  color: const Color(0xFF1A1A2E),
+                ),
+              ),
+              if (activeCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: newBlueColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$activeCount',
+                    style: GoogleFonts.dmSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Colors.white)),
-            ),
-          ],
-          const Spacer(),
-          if (activeCount > 0)
-            TextButton(
-              onPressed: _reset,
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red.shade600,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-              child: Text('Clear All',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13, fontWeight: FontWeight.w600)),
-            ),
-        ]),
-      ]),
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+              const Spacer(),
+              if (activeCount > 0)
+                TextButton(
+                  onPressed: _reset,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red.shade600,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                  child: Text(
+                    'Clear All',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -410,44 +424,54 @@ class _MrnQcFilterSheetState extends State<MrnQcFilterSheet> {
         border: Border(top: BorderSide(color: Color(0xFFEEEEEE))),
       ),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Row(children: [
-        Expanded(
-          flex: 2,
-          child: OutlinedButton(
-            onPressed: _reset,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(color: Colors.grey.shade300),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              foregroundColor: Colors.grey.shade700,
-            ),
-            child: Text('Reset',
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: OutlinedButton(
+              onPressed: _reset,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: BorderSide(color: Colors.grey.shade300),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                foregroundColor: Colors.grey.shade700,
+              ),
+              child: Text(
+                'Reset',
                 style: GoogleFonts.dmSans(
-                    fontSize: 14, fontWeight: FontWeight.w600)),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 3,
-          child: ElevatedButton(
-            onPressed: _apply,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: newBlueColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(
-              activeCount > 0 ? 'Apply ($activeCount)' : 'Apply',
-              style: GoogleFonts.dmSans(
-                  fontSize: 14, fontWeight: FontWeight.w700),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
-        ),
-      ]),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
+            child: ElevatedButton(
+              onPressed: _apply,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: newBlueColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                activeCount > 0 ? 'Apply ($activeCount)' : 'Apply',
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -486,58 +510,76 @@ class _MrnAccordion extends StatelessWidget {
               : const Color(0xFFEEEEEE),
         ),
       ),
-      child: Column(children: [
-        InkWell(
-          onTap: () => onToggle(!expanded),
-          borderRadius: BorderRadius.circular(14),
-          child: Padding(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(children: [
-              Icon(icon, size: 18, color: newBlueColor),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(title,
-                    style: GoogleFonts.dmSans(
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => onToggle(!expanded),
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(icon, size: 18, color: newBlueColor),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: GoogleFonts.dmSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1A1A2E))),
-              ),
-              if (selectedCount > 0) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                      color: newBlueColor,
-                      borderRadius: BorderRadius.circular(20)),
-                  child: Text('$selectedCount',
-                      style: GoogleFonts.dmSans(
+                        color: const Color(0xFF1A1A2E),
+                      ),
+                    ),
+                  ),
+                  if (selectedCount > 0) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: newBlueColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$selectedCount',
+                        style: GoogleFonts.dmSans(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white)),
-                ),
-                const SizedBox(width: 8),
-              ],
-              AnimatedRotation(
-                turns: expanded ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 20, color: Colors.grey.shade400),
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  AnimatedRotation(
+                    turns: expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 20,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                ],
               ),
-            ]),
+            ),
           ),
-        ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox.shrink(),
-          secondChild: Column(children: [
-            const Divider(height: 1, color: Color(0xFFF0F0F0)),
-            child,
-          ]),
-          crossFadeState:
-          expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 200),
-        ),
-      ]),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Column(
+              children: [
+                const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                child,
+              ],
+            ),
+            crossFadeState: expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -570,59 +612,75 @@ class _MrnChecklist extends StatelessWidget {
     final filtered = search.isEmpty
         ? options
         : options
-        .where((o) => o.toLowerCase().contains(search.toLowerCase()))
-        .toList();
+              .where((o) => o.toLowerCase().contains(search.toLowerCase()))
+              .toList();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (showSearch) ...[
-          TextField(
-            onChanged: onSearchChanged,
-            style: GoogleFonts.dmSans(fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Search...',
-              hintStyle: GoogleFonts.dmSans(
-                  fontSize: 13, color: Colors.grey.shade400),
-              prefixIcon: Icon(Icons.search,
-                  size: 18, color: Colors.grey.shade400),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 10),
-              filled: true,
-              fillColor: const Color(0xFFF8F8F8),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (showSearch) ...[
+            TextField(
+              onChanged: onSearchChanged,
+              style: GoogleFonts.dmSans(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                hintStyle: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  color: Colors.grey.shade400,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  size: 18,
+                  color: Colors.grey.shade400,
+                ),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF8F8F8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-        ],
-        if (filtered.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text('No options found',
+            const SizedBox(height: 10),
+          ],
+          if (filtered.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No options found',
                 style: GoogleFonts.dmSans(
-                    fontSize: 13, color: Colors.grey.shade400)),
-          )
-        else
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 220),
-            child: SingleChildScrollView(
-              child: Column(
-                children: filtered
-                    .map((opt) => _MrnCheckItem(
-                  label: opt,
-                  selected: selected.contains(opt),
-                  onToggle: () => onToggle(opt),
-                  jobTypeMode: jobTypeMode,
-                ))
-                    .toList(),
+                  fontSize: 13,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 220),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: filtered
+                      .map(
+                        (opt) => _MrnCheckItem(
+                          label: opt,
+                          selected: selected.contains(opt),
+                          onToggle: () => onToggle(opt),
+                          jobTypeMode: jobTypeMode,
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
             ),
-          ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -670,48 +728,50 @@ class _MrnCheckItem extends StatelessWidget {
       onTap: onToggle,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding:
-        const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        child: Row(children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              color: selected ? newBlueColor : Colors.transparent,
-              borderRadius: BorderRadius.circular(5),
-              border: Border.all(
-                color: selected ? newBlueColor : Colors.grey.shade300,
-                width: 1.5,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: selected ? newBlueColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(
+                  color: selected ? newBlueColor : Colors.grey.shade300,
+                  width: 1.5,
+                ),
+              ),
+              child: selected
+                  ? const Icon(Icons.check, size: 13, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            if (jobTypeMode && dotColor != null)
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            Expanded(
+              child: Text(
+                label,
+                style: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected
+                      ? const Color(0xFF1A1A2E)
+                      : Colors.grey.shade700,
+                ),
               ),
             ),
-            child: selected
-                ? const Icon(Icons.check, size: 13, color: Colors.white)
-                : null,
-          ),
-          const SizedBox(width: 12),
-          if (jobTypeMode && dotColor != null)
-            Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.only(right: 8),
-              decoration:
-              BoxDecoration(color: dotColor, shape: BoxShape.circle),
-            ),
-          Expanded(
-            child: Text(
-              label,
-              style: GoogleFonts.dmSans(
-                fontSize: 13,
-                fontWeight:
-                selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected
-                    ? const Color(0xFF1A1A2E)
-                    : Colors.grey.shade700,
-              ),
-            ),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -736,29 +796,42 @@ class _MrnAmountPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (dataMax > 0)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              'Range in data: ₹0 – ₹${dataMax.toStringAsFixed(0)}',
-              style: GoogleFonts.dmSans(
-                  fontSize: 11, color: Colors.grey.shade500),
-            ),
-          ),
-        Row(children: [
-          Expanded(
-              child: _MrnAmountField(controller: minCtrl, hint: 'Min ₹')),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text('–',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (dataMax > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                'Range in data: ₹0 – ₹${dataMax.toStringAsFixed(0)}',
                 style: GoogleFonts.dmSans(
-                    fontSize: 16, color: Colors.grey.shade400)),
+                  fontSize: 11,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ),
+          Row(
+            children: [
+              Expanded(
+                child: _MrnAmountField(controller: minCtrl, hint: 'Min ₹'),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  '–',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 16,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: _MrnAmountField(controller: maxCtrl, hint: 'Max ₹'),
+              ),
+            ],
           ),
-          Expanded(
-              child: _MrnAmountField(controller: maxCtrl, hint: 'Max ₹')),
-        ]),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -767,8 +840,7 @@ class _MrnAmountField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
 
-  const _MrnAmountField(
-      {required this.controller, required this.hint});
+  const _MrnAmountField({required this.controller, required this.hint});
 
   @override
   Widget build(BuildContext context) {
@@ -778,11 +850,15 @@ class _MrnAmountField extends StatelessWidget {
       style: GoogleFonts.dmSans(fontSize: 13, color: Colors.black87),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle:
-        GoogleFonts.dmSans(fontSize: 13, color: Colors.grey.shade400),
+        hintStyle: GoogleFonts.dmSans(
+          fontSize: 13,
+          color: Colors.grey.shade400,
+        ),
         isDense: true,
-        contentPadding:
-        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
         filled: true,
         fillColor: newBlueLightColor,
         border: OutlineInputBorder(

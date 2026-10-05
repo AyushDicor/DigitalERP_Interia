@@ -5,6 +5,7 @@ import 'package:newdigitalerp/utils/app_constant_new.dart';
 
 import 'operator_controller.dart';
 import 'operator_models.dart';
+import 'operator_sendback_form.dart';
 import 'operator_widgets.dart';
 
 const qcRejectReasons = [
@@ -45,8 +46,8 @@ class OperatorQcView extends StatelessWidget {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Quality Check',
+              Text(
+                'Quality Check'.tr,
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
               ),
               Text(
@@ -201,9 +202,32 @@ class OperatorQcView extends StatelessWidget {
                       ],
                     ),
                   ),
+                  // A rejection no longer has one outcome: it can be fixed
+                  // at this stage, or go back to whichever earlier stage
+                  // caused it. The choice comes before everything else,
+                  // because "send back" hands the rest of the form over.
+                  if (rej > 0) ...[
+                    const SizedBox(height: 12),
+                    const FieldLabel('The rejected pieces: what now?'),
+                    _rejectRoute(
+                      c,
+                      'here',
+                      'Fix it here',
+                      'Touch-up or repair at ${_title(j.stagename)}. Nothing moves.',
+                      Icons.build_rounded,
+                    ),
+                    const SizedBox(height: 8),
+                    _rejectRoute(
+                      c,
+                      'back',
+                      'Send it back',
+                      'To any earlier stage it came through, then back here.',
+                      Icons.keyboard_return_rounded,
+                    ),
+                  ],
                   // Every rejection is a Rework while [kAllowScrap] is off —
                   // nothing to choose, so nothing is asked.
-                  if (rej > 0 && kAllowScrap) ...[
+                  if (rej > 0 && kAllowScrap && !c.qcSendsBack) ...[
                     const SizedBox(height: 12),
                     // Disposition inline (per backend's UI): Rework sends the
                     // pieces back to the operator as a Rework job; Scrap
@@ -300,25 +324,38 @@ class OperatorQcView extends StatelessWidget {
                   ),
                   const SizedBox(height: 13),
                   BigButton(
-                    rej > 0
-                        ? (kAllowScrap
+                    rej <= 0
+                        ? 'Save QC'
+                        : c.qcSendsBack
+                        ? 'Next: where to send it'
+                        : (kAllowScrap
                               ? 'Record Reject → ${c.qcDisposition}'
-                              : 'Record Reject → Rework')
-                        : 'Save QC',
+                              : 'Record Reject → Rework'),
                     icon: rej > 0
                         ? Icons.arrow_forward_rounded
                         : Icons.check_rounded,
                     busy: c.saving,
-                    gradient: rej > 0 ? null : opGreenGradient,
-                    color: rej > 0
+                    gradient: rej > 0
+                        ? (c.qcSendsBack ? opAmberGradient : null)
+                        : opGreenGradient,
+                    color: rej > 0 && !c.qcSendsBack
                         ? (c.qcDisposition == 'Scrap' ? opRed : opAmber)
                         : null,
-                    onTap: () => _save(context, c),
+                    // Sending back is one call with the rejection, so nothing
+                    // is written until the next screen is submitted.
+                    onTap: c.qcSendsBack && rej > 0
+                        ? () async {
+                            await c.openQcSendBack();
+                            Get.to(() => const OperatorSendBackForm());
+                          }
+                        : () => _save(context, c),
                   ),
                   if (rej > 0) ...[
                     const SizedBox(height: 8),
                     Text(
-                      c.qcDisposition == 'Rework'
+                      c.qcSendsBack
+                          ? 'Next you pick the stage that fixes it and how it comes back. Nothing is saved until then.'
+                          : c.qcDisposition == 'Rework'
                           ? '${fmtQty(rej)} pcs go back to the operator as a Rework job; passed pcs move on.'
                           : '${fmtQty(rej)} pcs are written off; passed pcs move on.',
                       textAlign: TextAlign.center,
@@ -346,10 +383,83 @@ class OperatorQcView extends StatelessWidget {
     if (needsReject == null) return; // validation / API failure shown
     if (!needsReject) {
       if (context.mounted) Navigator.of(context).pop();
+      c.backToJobsHome();
       return;
     }
     final ok = await c.saveQcReject(c.qcDisposition);
     if (ok && context.mounted) Navigator.of(context).pop();
+    if (ok) c.backToJobsHome();
+  }
+
+  /// One of the two outcomes for a rejected piece. Drawn as a radio row
+  /// rather than a chip: they are not interchangeable — one keeps the piece
+  /// here, the other moves it to another department.
+  Widget _rejectRoute(
+    OperatorController c,
+    String value,
+    String title,
+    String sub,
+    IconData icon,
+  ) {
+    final on = c.qcRejectAction == value;
+    return InkWell(
+      borderRadius: BorderRadius.circular(11),
+      onTap: () => c.setQcRejectAction(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        decoration: BoxDecoration(
+          color: on ? opAmberBg : newSurfaceColor,
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: on ? opAmber : newBorderColor,
+            width: on ? 1.6 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 17,
+              height: 17,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                border: Border.all(
+                  color: on ? opAmber : newTextHint,
+                  width: on ? 5 : 1.6,
+                ),
+              ),
+            ),
+            const SizedBox(width: 11),
+            Icon(icon, size: 15, color: on ? opAmber : newTextSecondary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: newTextPrimary,
+                    ),
+                  ),
+                  Text(
+                    sub,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: newTextSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _dispChip(

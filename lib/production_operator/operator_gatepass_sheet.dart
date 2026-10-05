@@ -108,9 +108,14 @@ class _GatePassSheetState extends State<_GatePassSheet> {
     final j = c.job;
     // The card's qty field is the source of truth; fall back to what is
     // still issuable so the header never reads "0 PCS".
+    final shared = c.isSharedSplit && c.sharedQty.isNotEmpty;
     final typed = double.tryParse(c.issueQtyCtrl.text.trim()) ?? 0;
-    final qty = typed > 0 ? typed : c.toIssue;
-    final to = c.next?.stagename ?? 'next stage';
+    final qty = shared ? c.sharedEntered : (typed > 0 ? typed : c.toIssue);
+    // On a full-qty split the header names the stage whose Issue button was
+    // tapped, not the API's "most owed" default.
+    final to = shared
+        ? '${c.nextOptions.length} stages'
+        : (c.issueTarget?.stagename ?? c.next?.stagename ?? 'next stage');
     final media = MediaQuery.of(context);
     // Height must come off what is LEFT once the keyboard is up, otherwise
     // the sheet keeps its full height, gets pushed up and runs off the top
@@ -211,6 +216,107 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                 ],
               ),
               const SizedBox(height: 14),
+              // Shared split: one box per destination. The stages divide the
+              // QC-passed qty, so the TOTAL is what is capped.
+              if (shared) ...[
+                const FieldLabel('Qty per stage'),
+                for (final o in c.nextOptions)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 9,
+                          height: 9,
+                          decoration: BoxDecoration(
+                            color: stageColor(o.stagename),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _t(o.stagename),
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: newTextPrimary,
+                                ),
+                              ),
+                              Text(
+                                'Plan ${fmtQty(o.planqty)} · sent ${fmtQty(o.sentqty)}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: newTextSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 78,
+                          child: TextField(
+                            controller: c.sharedQty[o.stageid],
+                            onChanged: (_) => c.sharedQtyChanged(),
+                            textAlign: TextAlign.center,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            inputFormatters: [
+                              MaxQtyFormatter(c.sharedRemaining),
+                            ],
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            decoration: opInput(hint: '0'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: c.sharedEntered > c.sharedRemaining
+                        ? opRedBg
+                        : opGreenBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'Total ${fmtQty(c.sharedEntered)} of ${fmtQty(c.sharedRemaining)} left'
+                    '${c.sharedEntered > c.sharedRemaining ? ' — too many' : ''}',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: c.sharedEntered > c.sharedRemaining
+                          ? opRed
+                          : opGreen,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'One hand-off is created per stage, all with the loader '
+                  'details below.',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: newTextHint,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 13),
+              ],
               const FieldLabel('Loader name'),
               TextField(
                 controller: loaderCtrl,
@@ -254,7 +360,7 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                 ],
               ),
               const SizedBox(height: 11),
-              const FieldLabel('Issue receipt photo(s)'),
+              const FieldLabel('Issue receipt photo(s) — required'),
               PhotoStrip(
                 photos: receipt,
                 onAdd: () => _pick(true),
@@ -298,8 +404,8 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                             borderRadius: BorderRadius.circular(11),
                           ),
                         ),
-                        child: const Text(
-                          'Cancel',
+                        child: Text(
+                          'Cancel'.tr,
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w800,
@@ -310,20 +416,31 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: BigButton(
-                        'Issue to ${_t(to)}',
+                        shared
+                            ? 'Issue ${fmtQty(c.sharedEntered)} to ${c.nextOptions.length} stages'
+                            : 'Issue to ${_t(to)}',
                         icon: Icons.send_rounded,
                         busy: ctrl.saving,
                         gradient: opGreenGradient,
                         onTap: () async {
-                          final ok = await c.issueViaLoader(
-                            loadername: loaderCtrl.text,
-                            issuedAt: issuedAt,
-                            remarks: remarksCtrl.text,
-                            receiptPhotos: receipt,
-                            itemPhotos: items,
-                          );
+                          final ok = shared
+                              ? await c.issueSharedViaLoader(
+                                  loadername: loaderCtrl.text,
+                                  issuedAt: issuedAt,
+                                  remarks: remarksCtrl.text,
+                                  receiptPhotos: receipt,
+                                  itemPhotos: items,
+                                )
+                              : await c.issueViaLoader(
+                                  loadername: loaderCtrl.text,
+                                  issuedAt: issuedAt,
+                                  remarks: remarksCtrl.text,
+                                  receiptPhotos: receipt,
+                                  itemPhotos: items,
+                                );
                           if (ok && context.mounted) {
                             Navigator.of(context).pop(true);
+                            c.backToJobsHome();
                           }
                         },
                       ),

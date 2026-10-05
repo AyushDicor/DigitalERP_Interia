@@ -94,6 +94,7 @@ class ShopFloorController extends GetxController {
       if (res.ok) jobs = res.data ?? [];
       final inc = await _ops.incoming(s);
       if (inc.ok) incoming = inc.data ?? [];
+      await _loadIssuable(s);
     } catch (_) {
       // A dashboard card must never break the dashboard; it just stays empty.
     } finally {
@@ -119,6 +120,44 @@ class ShopFloorController extends GetxController {
     }
   }
 
+  /// job key → does this stage feed another one? A lot QC has passed still
+  /// needs handing on, but its balance is already 0, so it looks Done. The
+  /// last stage looks identical and never needs issuing, so each candidate is
+  /// checked against `nextstage` once rather than guessed at.
+  final Map<String, bool> _hasNextStage = {};
+
+  double pendingIssueQty(OperatorJob j) =>
+      (j.qcqty - j.issuedfwdqty).clamp(0, double.infinity).toDouble();
+
+  bool _issueCandidate(OperatorJob j) =>
+      pendingIssueQty(j) > 0 && !j.isInTransit && !j.isQcJob;
+
+  bool readyToIssue(OperatorJob j) =>
+      _issueCandidate(j) && (_hasNextStage[j.key] ?? false);
+
+  List<OperatorJob> get toIssueJobs => jobs.where(readyToIssue).toList();
+
+  Future<void> _loadIssuable(OperatorSession s) async {
+    final todo = jobs
+        .where((j) => _issueCandidate(j) && !_hasNextStage.containsKey(j.key))
+        .toList();
+    if (todo.isEmpty) return;
+    await Future.wait(
+      todo.map((j) async {
+        try {
+          final r = await _ops.nextStage(
+            s,
+            j.stageid,
+            j.challanid,
+            itemid: j.itemid,
+          );
+          final n = r.data;
+          _hasNextStage[j.key] = n != null && !n.isLast;
+        } catch (_) {}
+      }),
+    );
+  }
+
   // ── My Jobs counts (same rules the module itself uses) ──
 
   List<OperatorJob> get _work =>
@@ -141,20 +180,31 @@ class ShopFloorController extends GetxController {
 
   /// Nothing at all waiting for this person.
   bool get jobsAllClear =>
-      toDo == 0 && running == 0 && rework == 0 && qcDue == 0 &&
-      incomingCount == 0;
+      toDo == 0 &&
+      running == 0 &&
+      rework == 0 &&
+      qcDue == 0 &&
+      incomingCount == 0 &&
+      toIssueJobs.isEmpty;
 
   /// The jobs actually worth naming on the dashboard, in the order they
   /// deserve attention: rework first (QC sent it back), then work not
   /// started, then work in progress. Finished jobs are left out — the Done
   /// count above already says how many there were.
   List<OperatorJob> get actionableJobs => [
-    ..._work.where((j) => j.isReworkJob),
+    ...toIssueJobs,
+    ..._work.where((j) => j.isReworkJob && !readyToIssue(j)),
     ..._work.where(
-      (j) => !j.isReworkJob && j.state == OperatorJobState.pending,
+      (j) =>
+          !j.isReworkJob &&
+          !readyToIssue(j) &&
+          j.state == OperatorJobState.pending,
     ),
     ..._work.where(
-      (j) => !j.isReworkJob && j.state == OperatorJobState.running,
+      (j) =>
+          !j.isReworkJob &&
+          !readyToIssue(j) &&
+          j.state == OperatorJobState.running,
     ),
   ];
 
@@ -252,19 +302,13 @@ class ShopFloorSummary extends StatelessWidget {
             _stat('Running', c.running, const Color(0xFF2F6FED)),
             // Only QC logins get a QC number — for everyone else the slot goes
             // to rework, which is what they actually act on.
+            // QC-passed and still sitting here — the one that used to hide
+            // under Done.
+            _stat('To issue', c.toIssueJobs.length, const Color(0xFF12A150)),
             if (c.canQc)
               _stat('To QC', c.qcDue, const Color(0xFF7C5CFF))
             else
               _stat('Rework', c.rework, const Color(0xFFE5890A)),
-            _stat(
-              c.canQc ? 'Rework' : 'Done',
-              c.canQc
-                  ? c.rework
-                  : c._work
-                        .where((j) => j.state == OperatorJobState.done)
-                        .length,
-              c.canQc ? const Color(0xFFE5890A) : const Color(0xFF12A150),
-            ),
           ],
         ),
         if (c.incomingCount > 0) ...[
@@ -288,7 +332,15 @@ class ShopFloorSummary extends StatelessWidget {
         if (c.actionableJobs.isNotEmpty) ...[
           const SizedBox(height: 12),
           _listHead('Your work', c.actionableJobs.length),
-          ...c.actionableJobs.take(3).map((j) => _jobRow(j)),
+          ...c.actionableJobs
+              .take(3)
+              .map(
+                (j) => _jobRow(
+                  j,
+                  ready: c.readyToIssue(j),
+                  readyQty: c.pendingIssueQty(j),
+                ),
+              ),
           if (c.actionableJobs.length > 3) _more(c.actionableJobs.length - 3),
         ],
       ],
@@ -410,9 +462,16 @@ class ShopFloorSummary extends StatelessWidget {
   );
 
   /// One job: what it is, where it is, and how much of it is left.
-  Widget _jobRow(OperatorJob j, {bool isQc = false}) {
+  Widget _jobRow(
+    OperatorJob j, {
+    bool isQc = false,
+    bool ready = false,
+    double readyQty = 0,
+  }) {
     final (label, tone) = isQc
         ? ('${fmtQty(j.qcPending)} to check', const Color(0xFF7C5CFF))
+        : ready
+        ? ('${fmtQty(readyQty)} to issue', const Color(0xFF12A150))
         : j.isReworkJob
         ? ('${fmtQty(j.balanceqty)} rework', const Color(0xFFE5890A))
         : j.state == OperatorJobState.running

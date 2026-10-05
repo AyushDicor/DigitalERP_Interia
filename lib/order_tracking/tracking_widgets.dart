@@ -308,12 +308,16 @@ class TrkPill extends StatelessWidget {
   final Color fg;
   final Color bg;
   final double size;
+
+  /// Optional leading glyph — the lock on "Waiting for parts".
+  final IconData? icon;
   const TrkPill(
     this.text, {
     super.key,
     required this.fg,
     required this.bg,
     this.size = 10,
+    this.icon,
   });
 
   @override
@@ -323,10 +327,30 @@ class TrkPill extends StatelessWidget {
       color: bg,
       borderRadius: BorderRadius.circular(100),
     ),
-    child: Text(
-      text,
-      style: TextStyle(fontSize: size, fontWeight: FontWeight.w800, color: fg),
-    ),
+    child: icon == null
+        ? Text(
+            text,
+            style: TextStyle(
+              fontSize: size,
+              fontWeight: FontWeight.w800,
+              color: fg,
+            ),
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: size + 2, color: fg),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: size,
+                  fontWeight: FontWeight.w800,
+                  color: fg,
+                ),
+              ),
+            ],
+          ),
   );
 }
 

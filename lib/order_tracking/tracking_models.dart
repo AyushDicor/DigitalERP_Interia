@@ -218,6 +218,44 @@ class PipelineStage {
   /// good / itemqty, capped at 100.
   final int completionpct;
 
+  // ── Parallel route (live 2026-09-28). All empty / 0 on a linear challan,
+  // so the screen keeps its old shape without special-casing anything. ──
+
+  /// 0-based step. Stages sharing a column run side by side.
+  final int column;
+
+  /// Stage ids this one waits for, and their names joined by " + ".
+  final List<int> dependson;
+  final String waitsfor;
+
+  /// Next stage names joined by " + ". Empty on the last stage.
+  final String nextstages;
+
+  /// Ready to show: "After GLASS + PAINT" or "Starts on challan date".
+  final String startslabel;
+
+  /// Planned dates, yyyy-MM-dd.
+  final String startdate;
+  final String targetdate;
+
+  /// Past its target date and not finished.
+  final bool overdue;
+
+  /// All (every part must arrive) | Sum (shared qty joining again).
+  final String joinmode;
+
+  /// Full | Share — see [NextStageOption] on the operator side.
+  final String splitmode;
+
+  /// Joining stage: what it can build from the parts already in hand.
+  final double canmake;
+
+  /// Joining stage only (2+ entries), one per earlier stage.
+  final List<StagePart> parts;
+
+  /// Parts made at, or arriving into, this stage (live 2026-09-29).
+  final List<StageSubItem> subitems;
+
   const PipelineStage({
     required this.step,
     required this.stageid,
@@ -233,6 +271,19 @@ class PipelineStage {
     required this.completionpct,
     this.good = 0,
     this.rework = 0,
+    this.column = 0,
+    this.dependson = const [],
+    this.waitsfor = '',
+    this.nextstages = '',
+    this.startslabel = '',
+    this.startdate = '',
+    this.targetdate = '',
+    this.overdue = false,
+    this.joinmode = '',
+    this.splitmode = '',
+    this.canmake = 0,
+    this.parts = const [],
+    this.subitems = const [],
   });
 
   factory PipelineStage.fromJson(Map<String, dynamic> j) => PipelineStage(
@@ -255,6 +306,33 @@ class PipelineStage {
     state: _str(j['state']),
     statelabel: _str(j['statelabel']),
     completionpct: _int(j['completionpct']),
+    // An old build sends no column — step − 1 keeps every stage in its own
+    // group, which draws as today's plain stepper.
+    column: j['column'] != null ? _int(j['column']) : _int(j['step']) - 1,
+    dependson: j['dependson'] is List
+        ? (j['dependson'] as List).map(_int).where((e) => e > 0).toList()
+        : const [],
+    waitsfor: _str(j['waitsfor']),
+    nextstages: _str(j['nextstages']),
+    startslabel: _str(j['startslabel']),
+    startdate: _str(j['startdate']),
+    targetdate: _str(j['targetdate']),
+    overdue: j['overdue'] == true,
+    joinmode: _str(j['joinmode']),
+    splitmode: _str(j['splitmode']),
+    canmake: _dbl(j['canmake']),
+    parts: j['parts'] is List
+        ? (j['parts'] as List)
+              .whereType<Map>()
+              .map((e) => StagePart.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+        : const [],
+    subitems: j['subitems'] is List
+        ? (j['subitems'] as List)
+              .whereType<Map>()
+              .map((e) => StageSubItem.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+        : const [],
   );
 
   /// A stage is finished ONLY when the server says `done` — work waiting to
@@ -262,6 +340,34 @@ class PipelineStage {
   bool get isDone => state == 'done';
   bool get isActive => state == 'active';
   bool get isRework => state == 'rework';
+
+  /// A joining stage that cannot start: some parts have not arrived.
+  bool get isWaiting => state == 'waiting';
+
+  /// "Due 06 Oct" / "Overdue · 06 Oct" — empty when the plan has no date.
+  String get dueLabel {
+    if (targetdate.isEmpty) return '';
+    final d = DateTime.tryParse(targetdate);
+    final when = d == null
+        ? targetdate
+        : '${d.day.toString().padLeft(2, '0')} ${_months[d.month - 1]}';
+    return overdue ? 'Overdue · $when' : 'Due $when';
+  }
+
+  static const _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   /// "0 / 1 · QC 2 · Rej 1" — good against planned, then the extras.
   String get qtyLabel {
@@ -445,6 +551,19 @@ class TrackDetail {
   final List<TrailDay> trail;
   final List<TrailEntry> trailflat;
 
+  /// How the challan is routed. [TrackRoute.branched] is the switch that
+  /// decides whether the pipeline is grouped into steps or drawn as the
+  /// plain vertical stepper it has always been.
+  final TrackRoute route;
+
+  /// One ready-made sentence per joining stage that is short of parts, e.g.
+  /// "ASSEBMLY is waiting for GLASS (QC-passed 1, not sent yet)."
+  final List<String> waitnotes;
+
+  /// One row per part, with a cell per pipeline stage. Empty on a challan
+  /// planned without parts.
+  final List<SubItemGridRow> subitemgrid;
+
   const TrackDetail({
     this.orderid = 0,
     this.challanid = 0,
@@ -460,6 +579,9 @@ class TrackDetail {
     this.trailcount = 0,
     this.trail = const [],
     this.trailflat = const [],
+    this.route = const TrackRoute(),
+    this.waitnotes = const [],
+    this.subitemgrid = const [],
   });
 
   factory TrackDetail.fromJson(Map<String, dynamic> j) {
@@ -492,8 +614,120 @@ class TrackDetail {
       trailcount: _int(j['trailcount']),
       trail: list(j['trail'], TrailDay.fromJson),
       trailflat: list(j['trailflat'], TrailEntry.fromJson),
+      route: j['route'] is Map
+          ? TrackRoute.fromJson(Map<String, dynamic>.from(j['route']))
+          : const TrackRoute(),
+      subitemgrid: j['subitemgrid'] is List
+          ? (j['subitemgrid'] as List)
+                .whereType<Map>()
+                .map(
+                  (e) => SubItemGridRow.fromJson(Map<String, dynamic>.from(e)),
+                )
+                .toList()
+          : const [],
+      waitnotes: j['waitnotes'] is List
+          ? (j['waitnotes'] as List)
+                .map((e) => _str(e))
+                .where((e) => e.isNotEmpty)
+                .toList()
+          : const [],
     );
   }
+}
+
+/// How this challan is routed (`track/detail.route`).
+class TrackRoute {
+  /// 1 when the challan was planned with "Waits for". 0 on old challans.
+  final int isroute;
+
+  /// **The switch for the layout.** True when stages run side by side — a
+  /// split, a join, or a second start stage. False draws the old stepper.
+  final bool branched;
+
+  /// Number of steps when branched, number of stages otherwise.
+  final int columns;
+
+  /// stage id → stage id, with whether the earlier one has finished. Only
+  /// needed to draw connecting lines, which the phone layout does without.
+  final List<RouteEdge> edges;
+
+  const TrackRoute({
+    this.isroute = 0,
+    this.branched = false,
+    this.columns = 0,
+    this.edges = const [],
+  });
+
+  factory TrackRoute.fromJson(Map<String, dynamic> j) => TrackRoute(
+    isroute: _int(j['isroute']),
+    branched: j['branched'] == true,
+    columns: _int(j['columns']),
+    edges: j['edges'] is List
+        ? (j['edges'] as List)
+              .whereType<Map>()
+              .map((e) => RouteEdge.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+        : const [],
+  );
+}
+
+class RouteEdge {
+  final int from;
+  final int to;
+  final bool done;
+  const RouteEdge({this.from = 0, this.to = 0, this.done = false});
+
+  factory RouteEdge.fromJson(Map<String, dynamic> j) => RouteEdge(
+    from: _int(j['from']),
+    to: _int(j['to']),
+    done: j['done'] == true,
+  );
+}
+
+/// One earlier stage a joining stage is waiting on (`pipeline[].parts[]`).
+class StagePart {
+  final String stagename;
+  final double received;
+  final double intransit;
+  final double made;
+  final double qc;
+
+  /// received | intransit | notsent | waitingqc | notmade.
+  final String state;
+
+  /// Ready to show — "received 1", "QC-passed 1, not sent yet", …
+  /// The server writes it, so the app never builds this sentence itself.
+  final String text;
+
+  /// green | blue | amber | gray.
+  final String tone;
+
+  /// This part is what is holding the stage up.
+  final bool waitingfor;
+
+  const StagePart({
+    this.stagename = '',
+    this.received = 0,
+    this.intransit = 0,
+    this.made = 0,
+    this.qc = 0,
+    this.state = '',
+    this.text = '',
+    this.tone = '',
+    this.waitingfor = false,
+  });
+
+  factory StagePart.fromJson(Map<String, dynamic> j) => StagePart(
+    stagename: _str(j['stagename']),
+    received: _dbl(j['received']),
+    intransit: _dbl(j['intransit']),
+    made: _dbl(j['made']),
+    qc: _dbl(j['qc']),
+    state: _str(j['state']),
+    text: _str(j['text']),
+    tone: _str(j['tone']),
+    waitingfor: j['waitingfor'] == true,
+  );
 }
 
 /// Envelope of a read call.
@@ -585,4 +819,104 @@ class TrackStoppage {
   /// "12:02" out of "2026-09-21 12:02".
   String get startTime =>
       fromtime.length >= 16 ? fromtime.substring(11, 16) : '';
+}
+
+/// One part at one stage (`pipeline[].subitems[]`, and every non-null cell of
+/// [SubItemGridRow]). Phase 1 is display only — `text` and `tone` are written
+/// by the server so the wording matches the operator app.
+class StageSubItem {
+  final int partid;
+
+  /// `made` = made at this stage, `in` = arrives from [fromstage].
+  final String kind;
+  final String partname;
+  final double qtyperpiece;
+  final double totalqty;
+  final String fromstage;
+  final String nextstage;
+  final String path;
+
+  /// How many are actually here / done.
+  final double qty;
+
+  /// Ready to show: "Made 4 / 8", "Received 1 / 1", "Waiting", "Not made yet".
+  final String text;
+
+  /// green | blue | amber | gray.
+  final String tone;
+
+  const StageSubItem({
+    this.partid = 0,
+    this.kind = '',
+    this.partname = '',
+    this.qtyperpiece = 0,
+    this.totalqty = 0,
+    this.fromstage = '',
+    this.nextstage = '',
+    this.path = '',
+    this.qty = 0,
+    this.text = '',
+    this.tone = '',
+  });
+
+  factory StageSubItem.fromJson(Map<String, dynamic> j) => StageSubItem(
+    partid: _int(j['partid']),
+    kind: _str(j['kind']),
+    partname: _str(j['partname']),
+    qtyperpiece: _dbl(j['qtyperpiece']),
+    totalqty: _dbl(j['totalqty']),
+    fromstage: _str(j['fromstage']),
+    nextstage: _str(j['nextstage']),
+    path: _str(j['path']),
+    qty: _dbl(j['qty']),
+    text: _str(j['text']),
+    tone: _str(j['tone']),
+  );
+}
+
+/// One row of `subitemgrid`: a part, and where it has got to at each stage.
+/// [cells] lines up with `pipeline` in the same order; a null cell means the
+/// part does not pass that stage and is drawn as "—".
+class SubItemGridRow {
+  final String partname;
+  final double qtyperpiece;
+  final double totalqty;
+  final String path;
+
+  /// The stage that makes it.
+  final String madeat;
+  final List<StageSubItem?> cells;
+
+  const SubItemGridRow({
+    this.partname = '',
+    this.qtyperpiece = 0,
+    this.totalqty = 0,
+    this.path = '',
+    this.madeat = '',
+    this.cells = const [],
+  });
+
+  factory SubItemGridRow.fromJson(Map<String, dynamic> j) => SubItemGridRow(
+    partname: _str(j['partname']),
+    qtyperpiece: _dbl(j['qtyperpiece']),
+    totalqty: _dbl(j['totalqty']),
+    path: _str(j['path']),
+    madeat: _str(j['madeat']),
+    cells: j['cells'] is List
+        ? (j['cells'] as List)
+              .map(
+                (e) => e is Map
+                    ? StageSubItem.fromJson(Map<String, dynamic>.from(e))
+                    : null,
+              )
+              .toList()
+        : const [],
+  );
+
+  /// Only the stages this part actually passes through, paired with their
+  /// name — the phone shows these as lines instead of a wide grid.
+  List<(String, StageSubItem)> steps(List<String> stagenames) => [
+    for (var i = 0; i < cells.length && i < stagenames.length; i++)
+      if (cells[i] != null) (stagenames[i], cells[i]!),
+  ];
 }

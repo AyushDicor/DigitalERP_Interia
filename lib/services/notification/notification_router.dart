@@ -56,6 +56,19 @@ class NotificationRouter {
     'purchaseorder': _Target.listOnly(AppRoutes.purchaseOrder),
     'saleorder': _Target.listOnly(AppRoutes.performaInvoice),
     'lead': _Target.listOnly(AppRoutes.leadManagement),
+
+    // ── INTERIA shop floor ──
+    // Every shop-floor push lands on My Jobs, which opens on the operator's
+    // own stage: the job, the QC queue and the send back rows are all there,
+    // and each is only reachable once its list has loaded, so an id alone
+    // cannot open one. `challanid` is still sent — it is what the operator
+    // matches the notification against, and it is what a future detail
+    // entry point would use.
+    'myjobs': _Target.listOnly(AppRoutes.productionOperator),
+    'qc': _Target.listOnly(AppRoutes.productionOperator),
+    'sendback': _Target.listOnly(AppRoutes.productionOperator),
+    'ordertracking': _Target.listOnly(AppRoutes.orderTracking),
+    'attendance': _Target.listOnly(AppRoutes.attendance),
   };
 
   /// Modules the current build understands. Handy for logging/diagnostics.

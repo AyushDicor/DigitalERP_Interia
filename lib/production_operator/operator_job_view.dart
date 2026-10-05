@@ -7,7 +7,10 @@ import 'package:newdigitalerp/utils/app_constant_new.dart';
 
 import 'operator_controller.dart';
 import 'operator_design_view.dart';
+import 'operator_parts_view.dart';
 import 'operator_models.dart';
+import 'operator_pack_view.dart';
+import 'operator_sendback_form.dart';
 import 'operator_qc_view.dart';
 import 'operator_gatepass_sheet.dart';
 import 'operator_incoming_view.dart';
@@ -45,7 +48,12 @@ class OperatorJobView extends StatelessWidget {
                 ),
               ),
               Text(
-                '${_title(j.stagename)} · ${j.boqno}',
+                // The QC user's row comes back without a boqno, so the
+                // separator is dropped rather than left dangling.
+                [
+                  _title(j.stagename),
+                  if (j.boqno.isNotEmpty) j.boqno,
+                ].join(' · '),
                 style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w600,
@@ -62,15 +70,48 @@ class OperatorJobView extends StatelessWidget {
                 children: [
                   if (c.demoMode) const DemoBanner(),
                   _summary(c, j),
+                  // This is not forward work: say so before anything else,
+                  // or the operator reads the numbers as their own job's.
+                  if (j.isSendBack) _sendBackBanner(j),
+                  // Found a fault in what arrived? Send it back to whichever
+                  // earlier stage caused it. Hidden on a send back leg —
+                  // pieces already going back cannot be sent back again —
+                  // and hidden from a QC login, whose route is the reject
+                  // fork on the QC screen: that records the rejection in the
+                  // same call, which this one does not.
+                  if (!j.isSendBack && !j.canqc) _sendBackButton(context, c, j),
+                  // Where this stage sits in the challan's route — only
+                  // drawn when the challan actually has one.
+                  _routeLine(c, j),
+                  // The read-only chips, for a stage that shows parts but
+                  // does not record them (the assembling stage).
+                  if (!j.isPartMode) _partsCard(j),
                   // Approved drawings, client materials and BOM files —
                   // above Produce/QC because they are what the operator
                   // needs before touching the piece.
                   const JobDesignSection(),
-                  if (c.pendingConsignmentFor(j) != null) ...[
+                  // A stage planned with parts records each one separately —
+                  // the item's own produce and issue cards would double-count.
+                  // Packing is checked FIRST. The server states it outright
+                  // with `packstage`, and if the stage ever also carried
+                  // parts, an earlier branch would swallow it and the Pack
+                  // button would silently never appear.
+                  if (j.isPackStage) ...[
+                    const _Label('Packing'),
+                    _packCard(context, c, j),
+                  ] else if (j.isPartMode) ...[
+                    const _Label('Parts'),
+                    const JobPartsSection(),
+                  ] else if (c.pendingConsignmentFor(j) != null) ...[
                     const _Label('Add production'),
                     _lockedByConsignment(c, c.pendingConsignmentFor(j)!),
-                  ] else if (j.balanceqty > 0 || c.producedDelta > 0) ...[
+                  ] else if (j.isWaitingForParts) ...[
                     const _Label('Add production'),
+                    _waitingForParts(j),
+                  ] else if (j.balanceqty > 0 || c.producedDelta > 0) ...[
+                    // On a send back leg the same entry IS the rework —
+                    // calling it "Add production" would read as new work.
+                    _Label(j.isSendBack ? 'Rework here' : 'Add production'),
                     _entry(context, c, j),
                   ] else ...[
                     const _Label('Production'),
@@ -110,12 +151,21 @@ class OperatorJobView extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (j.qcPending > 0) ...[
+                  // In part mode the check is per part, on the cards
+                  // above — the item-level card would offer a QC the server
+                  // refuses without a partid.
+                  if (j.qcPending > 0 && !j.isPartMode) ...[
                     const _Label('Quality check'),
                     _qcCard(c, j),
                   ],
-                  const _Label('Issue to next stage'),
-                  _issueCard(context, c, j),
+                  if (!j.isPartMode) ...[
+                    _Label(
+                      c.isSplit
+                          ? 'Issue to next stages'
+                          : 'Issue to next stage',
+                    ),
+                    _issueCard(context, c, j),
+                  ],
                   // No stage trail: an operator sees only his own stage, not
                   // the whole route of the job (client rule, 2026-09-23).
                   // The trail is still fetched — it backs the issue lock.
@@ -910,8 +960,318 @@ class OperatorJobView extends StatelessWidget {
 
   // ── Issue forward ──
 
+  /// Opens the send back form. Whether anything can actually go back is the
+  /// server's call (`sendback/options`), so the button always shows and the
+  /// form says "nothing here can be sent back" when the answer is empty —
+  /// better than a button that silently is not there.
+  Widget _sendBackButton(
+    BuildContext context,
+    OperatorController c,
+    OperatorJob j,
+  ) {
+    // Only what is still in this stage's hands can go back. Once a part has
+    // been handed on it belongs to the next stage, which is the one that can
+    // return it — so a stage that has sent everything on sees why, rather
+    // than a button leading to an empty form.
+    final nothing = c.sbNothingToSend;
+    final n = c.sbAvailableCount;
+    final accent = nothing ? newTextHint : const Color(0xFFC2410C);
+    return Padding(
+      padding: const EdgeInsets.only(top: 11),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(11),
+        onTap: nothing
+            ? null
+            : () {
+                c.resetSendBackForm();
+                c.loadSendBackOptions();
+                Get.to(() => const OperatorSendBackForm());
+              },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: nothing ? newSurfaceColor : Colors.white,
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(
+              color: nothing ? newBorderColor : opAmber.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.keyboard_return_rounded, size: 16, color: accent),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nothing
+                          ? 'Nothing here to send back'
+                          : n > 1
+                          ? 'Send back · $n to choose from'
+                          : 'Send back',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: accent,
+                      ),
+                    ),
+                    Text(
+                      nothing
+                          ? 'Only what is still at ${_title(j.stagename)} can go back. '
+                                'Anything handed on is sent back by the stage that has it.'
+                          : 'Found a fault? Send it to any earlier stage it came through.',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: newTextSecondary,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!nothing)
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: newTextHint,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The way into the Pack screen. Packing replaces production here, so the
+  /// card carries the same figures Produce would have shown.
+  Widget _packCard(BuildContext context, OperatorController c, OperatorJob j) =>
+      Container(
+        padding: const EdgeInsets.all(13),
+        decoration: opCard(border: opGreen.withValues(alpha: 0.4), radius: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.inventory_2_rounded, size: 16, color: opGreen),
+                const SizedBox(width: 7),
+                const Expanded(
+                  child: Text(
+                    'Pack this item',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: newTextPrimary,
+                    ),
+                  ),
+                ),
+                SoftPill(
+                  '${fmtQty(j.balanceqty)} left',
+                  color: opGreen,
+                  bg: opGreenBg,
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            const Text(
+              'Say how many pieces are packed and what is inside each box. '
+              'Saving records them as made at Packing — there is no separate '
+              'production entry here.',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: newTextSecondary,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 11),
+            BigButton(
+              'Pack',
+              icon: Icons.inventory_2_outlined,
+              busy: c.saving,
+              gradient: opGreenGradient,
+              onTap: () async {
+                await c.loadPackJob(j);
+                Get.to(() => const OperatorPackView());
+              },
+            ),
+          ],
+        ),
+      );
+
+  /// Says plainly that these pieces came back to be fixed, who sent them and
+  /// why, and where they go afterwards.
+  Widget _sendBackBanner(OperatorJob j) => Container(
+    margin: const EdgeInsets.only(top: 11),
+    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+    decoration: BoxDecoration(
+      color: opAmberBg,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: opAmber.withValues(alpha: 0.45)),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.keyboard_return_rounded,
+          size: 16,
+          color: Color(0xFF8A4B06),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                j.returnfromstage.isEmpty
+                    ? 'Sent back to be fixed here'
+                    : 'Sent back by ${_title(j.returnfromstage)} to be fixed here',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF8A4B06),
+                ),
+              ),
+              if (j.rejectreason.isNotEmpty || j.faultstage.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  [
+                    if (j.rejectreason.isNotEmpty) j.rejectreason,
+                    if (j.faultstage.isNotEmpty) 'Fault: ${j.faultstage}',
+                  ].join(' · '),
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF8A4B06),
+                  ),
+                ),
+              ],
+              if (j.returnway.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  j.returnway,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF8A4B06),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  /// Send a fixed send back leg on its way. The destination is the ticket's,
+  /// not the plan's, and part of a leg may go now with the rest following.
+  Widget _sendOnCard(
+    BuildContext context,
+    OperatorController c,
+    OperatorJob j,
+  ) {
+    final max = j.cansendqty;
+    final where = j.returnnextstage.isEmpty
+        ? j.returnfromstage
+        : j.returnnextstage;
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: opCard(border: opGreen.withValues(alpha: 0.4), radius: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.keyboard_return_rounded,
+                size: 16,
+                color: opGreen,
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  'Send on → ${where.isEmpty ? 'back' : _title(where)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: newTextPrimary,
+                  ),
+                ),
+              ),
+              SoftPill('${fmtQty(max)} ready', color: opGreen, bg: opGreenBg),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const FieldLabel('Qty to send on'),
+          TextField(
+            controller: c.issueQtyCtrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [MaxQtyFormatter(max)],
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+            decoration: opInput(hint: '0').copyWith(
+              suffixText: 'max ${fmtQty(max)}',
+              suffixStyle: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+                color: newTextHint,
+              ),
+            ),
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 12,
+                color: newTextHint,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  j.returnway.isEmpty
+                      ? 'Part of it can go now; the rest follows when it is ready.'
+                      : '${j.returnway} · part of it can go now, the rest follows.',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: newTextSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 11),
+          BigButton(
+            'Send on',
+            icon: Icons.local_shipping_outlined,
+            busy: c.saving,
+            gradient: opGreenGradient,
+            onTap: () => showGatePassSheet(context, c),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _issueCard(BuildContext context, OperatorController c, OperatorJob j) {
     final next = c.next;
+    // A send back leg goes where the ticket says, not where the plan says,
+    // and only the server's cansendqty may move. Everything below this
+    // (last stage, QC lock, split) is forward-flow reasoning.
+    if (j.isSendBack) {
+      if (j.cansendqty <= 0) {
+        return _lockedCard(
+          Icons.lock_outline_rounded,
+          j.canqcqty > 0
+              ? 'Reworked — waiting for QC. It can go on once QC passes it.'
+              : 'Nothing QC-passed to send on yet. Rework it, then QC.',
+        );
+      }
+      return _sendOnCard(context, c, j);
+    }
     if (next != null && next.isLast) {
       return _lockedCard(
         Icons.flag_outlined,
@@ -924,6 +1284,9 @@ class OperatorJobView extends StatelessWidget {
         'Locked until QC passes at least one piece. Only QC-passed qty can move to the next stage.',
       );
     }
+    // Two or more destinations need their own card — each with its own
+    // sent / left and its own button.
+    if (c.isSplit) return _splitIssueCard(context, c, j);
     final max = c.toIssue;
     return Container(
       padding: const EdgeInsets.all(13),
@@ -1060,7 +1423,7 @@ class OperatorJobView extends StatelessWidget {
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text('Cancel'),
+                            child: Text('Cancel'.tr),
                           ),
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(true),
@@ -1332,6 +1695,9 @@ class OperatorJobView extends StatelessWidget {
       icon = Icons.send_rounded;
       what = 'Issued ${fmtQty(e.qty)} forward';
     }
+    // Name the part when the entry was recorded against one — otherwise
+    // "Produced 1" says nothing about which of the five things it was.
+    final label = e.partname.isEmpty ? what : '$what · ${e.partname}';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Column(
@@ -1343,7 +1709,7 @@ class OperatorJobView extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  what,
+                  label,
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
@@ -1526,6 +1892,462 @@ class OperatorJobView extends StatelessWidget {
         ),
       ],
     ),
+  );
+
+  /// Issue card for a stage whose work goes to two or more stages.
+  ///
+  /// Full qty: every destination owes its own full qty, so each gets its own
+  /// row and its own Issue button, and sending to one does not reduce the
+  /// others. Shared qty: the destinations divide the QC-passed qty, so one
+  /// button opens a sheet with a box per stage.
+  Widget _splitIssueCard(
+    BuildContext context,
+    OperatorController c,
+    OperatorJob j,
+  ) {
+    final opts = c.nextOptions;
+    final shared = c.isSharedSplit;
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: opCard(border: opGreen.withValues(alpha: 0.4), radius: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.call_split_rounded, size: 16, color: opGreen),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  'Work splits into ${opts.length} stages',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: newTextPrimary,
+                  ),
+                ),
+              ),
+              SoftPill(
+                shared ? 'Shared qty' : 'Full qty each',
+                color: opPrimary,
+                bg: opPurpleBg,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _tri(fmtQty(j.producedqty), 'Produced'),
+              _tri(fmtQty(j.qcqty), 'QC passed', color: opGreen),
+              _tri(
+                fmtQty(shared ? c.sharedRemaining : c.toIssue),
+                'To issue',
+                color: opGreen,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          for (final o in opts) ...[
+            _splitRow(context, c, o, shared: shared),
+            const SizedBox(height: 8),
+          ],
+          if (shared) ...[
+            const SizedBox(height: 2),
+            BigButton(
+              'Issue to stages',
+              icon: Icons.send_rounded,
+              gradient: opGreenGradient,
+              onTap: c.sharedRemaining <= 0
+                  ? null
+                  : () {
+                      c.prepareSharedQty();
+                      showGatePassSheet(context, c);
+                    },
+            ),
+          ],
+          const SizedBox(height: 9),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 12,
+                color: newTextHint,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  shared
+                      ? 'Each piece takes one route, so the stages share the '
+                            '${fmtQty(j.qcqty)} QC-passed pcs between them.'
+                      : 'Each next stage needs its own ${fmtQty(j.qcqty)}. '
+                            'Sending to one does not reduce the others.',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: newTextSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _splitRow(
+    BuildContext context,
+    OperatorController c,
+    NextStageOption o, {
+    required bool shared,
+  }) {
+    final tone = stageColor(o.stagename);
+    final done = o.allSent || c.maxIssuableTo(o) <= 0;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(11, 9, 9, 9),
+      decoration: BoxDecoration(
+        color: done ? opGreenBg.withValues(alpha: 0.45) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: done ? opGreen.withValues(alpha: 0.35) : newBorderColor,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 9,
+            height: 9,
+            decoration: BoxDecoration(
+              color: tone,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _title(o.stagename),
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: newTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  o.sentLabel,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: done ? opGreen : newTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Shared mode issues every stage together, so no per-row button.
+          if (done)
+            const SoftPill('All sent', color: opGreen, bg: opGreenBg)
+          else if (!shared)
+            SmallButton(
+              'Issue',
+              color: opGreen,
+              icon: Icons.arrow_forward_rounded,
+              onTap: () {
+                c.beginIssueTo(o);
+                showGatePassSheet(context, c);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// The route line: what this stage waits for and what it feeds.
+  Widget _routeLine(OperatorController c, OperatorJob j) {
+    final here = c.trail.where((r) => r.stageid == j.stageid).firstOrNull;
+    final waits = here?.waitsfor ?? j.waitsfor;
+    final next = here?.nextstages ?? j.nextstages;
+    if (waits.isEmpty && next.isEmpty) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 13),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
+      decoration: opCard(radius: 13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ROUTE',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: newTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (waits.isNotEmpty) ...[
+                for (final s in waits.split('+').map((s) => s.trim()))
+                  _routeChip(s, faded: true),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 13,
+                  color: newTextHint,
+                ),
+              ],
+              _routeChip(j.stagename, here: true),
+              if (next.isNotEmpty) ...[
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 13,
+                  color: newTextHint,
+                ),
+                for (final s in next.split('+').map((s) => s.trim()))
+                  _routeChip(s),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _routeChip(String name, {bool here = false, bool faded = false}) {
+    final tone = stageColor(name);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: here ? tone : tone.withValues(alpha: faded ? 0.08 : 0.14),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        _title(name),
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w800,
+          color: here ? Colors.white : tone,
+        ),
+      ),
+    );
+  }
+
+  /// A joining stage that has made everything it can: the missing parts are
+  /// named so the operator knows who to chase, not just that it is locked.
+  Widget _waitingForParts(OperatorJob j) {
+    final missing = j.parts.where((p) => !p.arrived).toList();
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: opCard(border: opAmber.withValues(alpha: 0.45), radius: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.lock_outline_rounded, size: 16, color: opAmber),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Waiting for parts'.tr,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: newTextPrimary,
+                  ),
+                ),
+              ),
+              if (j.waitsfor.isNotEmpty)
+                SoftPill(j.waitsfor, color: opAmber, bg: opAmberBg),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Text(
+            missing.isEmpty
+                ? 'Everything that can be made from the parts received is '
+                      'done. Production opens again when more arrive.'
+                : 'Still to come: ${missing.map((p) => _title(p.stagename)).join(', ')}. '
+                      'Production opens again as soon as they hand over.',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: newTextSecondary,
+              height: 1.4,
+            ),
+          ),
+          if (j.parts.isNotEmpty) ...[
+            const SizedBox(height: 11),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (final p in j.parts)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: p.arrived ? opGreenBg : opBg,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: p.arrived ? opGreenBg : newBorderColor,
+                      ),
+                    ),
+                    child: Text(
+                      '${_title(p.stagename)} ${fmtQty(p.qty)}',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: p.arrived ? opGreen : newTextHint,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Parts at this stage. Display only — the operator still records the whole
+  /// item, so there is deliberately no qty box or button per part.
+  Widget _partsCard(OperatorJob j) {
+    if (j.subitems.isEmpty) return const SizedBox.shrink();
+    final made = j.madeHere, incoming = j.comesIn;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 13),
+      padding: const EdgeInsets.fromLTRB(13, 12, 13, 13),
+      decoration: opCard(radius: 13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: opPurpleBg,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: const Icon(
+                  Icons.category_outlined,
+                  size: 15,
+                  color: opPrimary,
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  'Parts'.tr,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: newTextPrimary,
+                  ),
+                ),
+              ),
+              if (j.buildsFinishedItem)
+                const SoftPill(
+                  '→ finished item',
+                  color: opGreen,
+                  bg: opGreenBg,
+                ),
+            ],
+          ),
+          if (incoming.isNotEmpty) ...[
+            const SizedBox(height: 11),
+            const FieldLabel('Comes in'),
+            _partChips(incoming, made: false),
+          ],
+          if (made.isNotEmpty) ...[
+            SizedBox(height: incoming.isEmpty ? 11 : 10),
+            const FieldLabel('Make here'),
+            _partChips(made, made: true),
+          ],
+          const SizedBox(height: 9),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 12,
+                color: newTextHint,
+              ),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text(
+                  'Quantities are per finished piece. Record production for '
+                  'the whole item as usual — parts are not counted separately.',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: newTextSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _partChips(List<JobSubItem> parts, {required bool made}) => Wrap(
+    spacing: 7,
+    runSpacing: 7,
+    children: [
+      for (final p in parts)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: made ? opPrimary : newSurfaceColor,
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: made ? opPrimary : newBorderColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                p.label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: made ? Colors.white : newTextPrimary,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                made
+                    ? '${fmtQty(p.totalqty)} for this job'
+                    // A vendor part has no origin stage — "Vendor" is the
+                    // whole answer, and its stage id is 0.
+                    : p.isVendor
+                    ? 'from Vendor'
+                    : 'from ${_title(p.originLabel)}',
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600,
+                  color: made
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : newTextSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+    ],
   );
 }
 

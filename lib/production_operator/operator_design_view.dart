@@ -571,10 +571,7 @@ class _DesignGalleryViewState extends State<DesignGalleryView> {
               widget.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
             ),
             Text(
               widget.files.length == 1

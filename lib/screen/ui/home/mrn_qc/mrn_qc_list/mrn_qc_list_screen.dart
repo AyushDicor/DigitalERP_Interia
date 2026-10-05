@@ -46,11 +46,14 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
               icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
               onPressed: () => Get.back(),
             ),
-            title: const Text('MRN QC',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: newTextPrimary)),
+            title: const Text(
+              'MRN QC',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: newTextPrimary,
+              ),
+            ),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(1),
               child: Container(height: 1, color: newBorderColor),
@@ -70,8 +73,11 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
                     alignment: Alignment.topRight,
                     children: [
                       const Center(
-                        child: Icon(Icons.filter_list_rounded,
-                            color: purpleColor, size: 20),
+                        child: Icon(
+                          Icons.filter_list_rounded,
+                          color: purpleColor,
+                          size: 20,
+                        ),
                       ),
                       if (ctrl.hasActiveFilter)
                         Positioned(
@@ -81,7 +87,9 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
                             width: 8,
                             height: 8,
                             decoration: const BoxDecoration(
-                                color: newOrangeColor, shape: BoxShape.circle),
+                              color: newOrangeColor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
                     ],
@@ -101,41 +109,45 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
           //   elevation: 4,
           //   child: const Icon(Icons.add, color: Colors.white, size: 32),
           // ),
-          body: Column(children: [
-            _filterBar(context, ctrl),
-            _tabBar(ctrl), // ← NEW tab bar
-            const SizedBox(height: 6),
-            Expanded(child: _tabContent(ctrl)), // ← NEW tab content
-          ]),
+          body: Column(
+            children: [
+              _filterBar(context, ctrl),
+              _tabBar(ctrl), // ← NEW tab bar
+              const SizedBox(height: 6),
+              Expanded(child: _tabContent(ctrl)), // ← NEW tab content
+            ],
+          ),
         );
       },
     );
   }
 
-// ── Tab bar ────────────────────────────────────────────────────────────────
+  // ── Tab bar ────────────────────────────────────────────────────────────────
   Widget _tabBar(MrnQcListController ctrl) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-      child: Row(children: [
-        _tabChip(
-          label: 'Pending',
-          icon: Icons.hourglass_top_rounded,
-          isActive: ctrl.activeTab == MrnQcTab.pending,
-          activeColor: newOrangeColor,
-          activeBg: newOrangeLightColor,
-          onTap: () => ctrl.switchTab(MrnQcTab.pending),
-        ),
-        const SizedBox(width: 10),
-        _tabChip(
-          label: 'Completed',
-          icon: Icons.check_circle_outline_rounded,
-          isActive: ctrl.activeTab == MrnQcTab.completed,
-          activeColor: newGreenColor,
-          activeBg: newGreenLightColor,
-          onTap: () => ctrl.switchTab(MrnQcTab.completed),
-        ),
-      ]),
+      child: Row(
+        children: [
+          _tabChip(
+            label: 'Pending',
+            icon: Icons.hourglass_top_rounded,
+            isActive: ctrl.activeTab == MrnQcTab.pending,
+            activeColor: newOrangeColor,
+            activeBg: newOrangeLightColor,
+            onTap: () => ctrl.switchTab(MrnQcTab.pending),
+          ),
+          const SizedBox(width: 10),
+          _tabChip(
+            label: 'Completed',
+            icon: Icons.check_circle_outline_rounded,
+            isActive: ctrl.activeTab == MrnQcTab.completed,
+            activeColor: newGreenColor,
+            activeBg: newGreenLightColor,
+            onTap: () => ctrl.switchTab(MrnQcTab.completed),
+          ),
+        ],
+      ),
     );
   }
 
@@ -161,22 +173,31 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
               width: isActive ? 1.5 : 1,
             ),
           ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon,
-                size: 14, color: isActive ? activeColor : newTextSecondary),
-            const SizedBox(width: 6),
-            Text(label,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: isActive ? activeColor : newTextSecondary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
                 style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isActive ? activeColor : newTextSecondary)),
-          ]),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isActive ? activeColor : newTextSecondary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-// ── Tab content ────────────────────────────────────────────────────────────
+  // ── Tab content ────────────────────────────────────────────────────────────
   Widget _tabContent(MrnQcListController ctrl) {
     if (ctrl.isLoadingList) return _shimmer();
     if (ctrl.filteredItems.isEmpty) return _emptyState();
@@ -199,11 +220,15 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
             isCompleted: ctrl.activeTab == MrnQcTab.completed, // ← NEW
             onTap: () {
               if (ctrl.activeTab == MrnQcTab.pending) {
-                Get.to(() => const MrnQcScreen(),
-                    arguments: {'item': item, 'docname': 'mrn'});
+                Get.to(
+                  () => const MrnQcScreen(),
+                  arguments: {'item': item, 'docname': 'mrn'},
+                );
               } else {
-                Get.to(() => const MrnQcScreen(),
-                    arguments: {'item': item, 'docname': 'qc'});
+                Get.to(
+                  () => const MrnQcScreen(),
+                  arguments: {'item': item, 'docname': 'qc'},
+                );
               }
             },
           );
@@ -257,38 +282,60 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
-      child: Row(children: [
-        _chip(
+      child: Row(
+        children: [
+          _chip(
             Icons.receipt_long_rounded,
             '${ctrl.filteredItems.length} Records',
             newBlueLightColor,
-            newBlueColor),
-        const SizedBox(width: 8),
-        _chip(Icons.inventory_2_outlined, '${totalQty.toInt()} Items',
-            newGreenLightColor, newGreenColor),
-        const SizedBox(width: 8),
-        _chip(Icons.currency_rupee_rounded, _inr(totalAmt), newOrangeLightColor,
-            newOrangeColor),
-      ]),
+            newBlueColor,
+          ),
+          const SizedBox(width: 8),
+          _chip(
+            Icons.inventory_2_outlined,
+            '${totalQty.toInt()} Items',
+            newGreenLightColor,
+            newGreenColor,
+          ),
+          const SizedBox(width: 8),
+          _chip(
+            Icons.currency_rupee_rounded,
+            _inr(totalAmt),
+            newOrangeLightColor,
+            newOrangeColor,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _chip(IconData icon, String label, Color bg, Color fg) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration:
-              BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 13, color: fg),
-            const SizedBox(width: 5),
-            Flexible(
-                child: Text(label,
-                    style: TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.w700, color: fg),
-                    overflow: TextOverflow.ellipsis)),
-          ]),
-        ),
-      );
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: fg),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: fg,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   static String _inr(double v) {
     if (v >= 10000000) return '₹${(v / 10000000).toStringAsFixed(1)}Cr';
@@ -301,38 +348,52 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      child: Row(children: [
-        Expanded(
+      child: Row(
+        children: [
+          Expanded(
             child: _dateField(
-                label: 'From',
-                controller: ctrl.fromDateCtrl,
-                onTap: () => ctrl.pickFromDate(context))),
-        const SizedBox(width: 10),
-        Expanded(
-            child: _dateField(
-                label: 'To',
-                controller: ctrl.toDateCtrl,
-                onTap: () => ctrl.pickToDate(context))),
-        const SizedBox(width: 10),
-        GestureDetector(
-          onTap: ctrl.fetchMrnQcList,
-          child: Container(
-            height: 44,
-            width: 44,
-            decoration: BoxDecoration(
-                color: newBlueColor, borderRadius: BorderRadius.circular(10)),
-            alignment: Alignment.center,
-            child: ctrl.isLoadingList
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2))
-                : const Icon(Icons.search_rounded,
-                    color: Colors.white, size: 20),
+              label: 'From',
+              controller: ctrl.fromDateCtrl,
+              onTap: () => ctrl.pickFromDate(context),
+            ),
           ),
-        ),
-      ]),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _dateField(
+              label: 'To',
+              controller: ctrl.toDateCtrl,
+              onTap: () => ctrl.pickToDate(context),
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: ctrl.fetchMrnQcList,
+            child: Container(
+              height: 44,
+              width: 44,
+              decoration: BoxDecoration(
+                color: newBlueColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: ctrl.isLoadingList
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.search_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -351,57 +412,79 @@ class _MrnQcListScreenState extends State<MrnQcListScreen> {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: newBorderColor),
         ),
-        child: Row(children: [
-          const Icon(Icons.calendar_today_outlined,
-              size: 14, color: newTextSecondary),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Column(
+        child: Row(
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 14,
+              color: newTextSecondary,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(label,
-                      style: const TextStyle(
-                          fontSize: 9,
-                          color: newTextSecondary,
-                          fontWeight: FontWeight.w600)),
-                  Text(controller.text,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: newTextPrimary)),
-                ]),
-          ),
-        ]),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      color: newTextSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    controller.text,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: newTextPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _emptyState() => Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.inventory_2_outlined, size: 56, color: newBorderColor),
-          const SizedBox(height: 12),
-          const Text('No MRN records found',
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: newTextSecondary)),
-          const SizedBox(height: 4),
-          const Text('Try adjusting the date range',
-              style: TextStyle(fontSize: 12, color: newTextSecondary)),
-        ]),
-      );
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.inventory_2_outlined, size: 56, color: newBorderColor),
+        const SizedBox(height: 12),
+        const Text(
+          'No MRN records found',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: newTextSecondary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Try adjusting the date range',
+          style: TextStyle(fontSize: 12, color: newTextSecondary),
+        ),
+      ],
+    ),
+  );
 
   Widget _shimmer() => ListView.separated(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 100),
-        itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (_, __) => Container(
-          height: 60,
-          decoration: BoxDecoration(
-              color: newBorderColor, borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+    padding: const EdgeInsets.fromLTRB(14, 14, 14, 100),
+    itemCount: 5,
+    separatorBuilder: (_, __) => const SizedBox(height: 10),
+    itemBuilder: (_, __) => Container(
+      height: 60,
+      decoration: BoxDecoration(
+        color: newBorderColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+    ),
+  );
 
   void _showFilterSheet(BuildContext context, MrnQcListController ctrl) {
     showModalBottomSheet(
@@ -453,234 +536,334 @@ class _MrnCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: newBorderColor)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // ── Header ────────────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-            decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: newBorderColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ────────────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+              decoration: BoxDecoration(
                 color: newBlueLightColor,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(13))),
-            child: Row(children: [
-              const Icon(Icons.receipt_long_rounded,
-                  size: 15, color: newBlueColor),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(item.MrnNo,
-                    style: const TextStyle(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(13),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.receipt_long_rounded,
+                    size: 15,
+                    color: newBlueColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.MrnNo,
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: newBlueColor,
-                        letterSpacing: .2)),
-              ),
-              // ── Show QC badge for completed ──────────────────────────
-              if (isCompleted && item.qcNo.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(right: 6),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                      color: newGreenLightColor,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                          color: newGreenColor.withValues(alpha: 0.3))),
-                  child: Text('QC# ${item.qcNo}',
-                      style: const TextStyle(
+                        letterSpacing: .2,
+                      ),
+                    ),
+                  ),
+                  // ── Show QC badge for completed ──────────────────────────
+                  if (isCompleted && item.qcNo.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: newGreenLightColor,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: newGreenColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        'QC# ${item.qcNo}',
+                        style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: newGreenColor)),
-                ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6),
-                    border:
-                        Border.all(color: newBlueColor.withValues(alpha: 0.3))),
-                child: Text(
-                    // Show QC date for completed, MRN date for pending
-                    isCompleted && item.qcDate.isNotEmpty
-                        ? item.qcDate
-                        : item.MrnDate,
-                    style: const TextStyle(
+                          color: newGreenColor,
+                        ),
+                      ),
+                    ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: newBlueColor.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Text(
+                      // Show QC date for completed, MRN date for pending
+                      isCompleted && item.qcDate.isNotEmpty
+                          ? item.qcDate
+                          : item.MrnDate,
+                      style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: newBlueColor)),
+                        color: newBlueColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ]),
-          ),
+            ),
 
-          // ── Body (unchanged) ──────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(item.partyName,
-                  style: const TextStyle(
+            // ── Body (unchanged) ──────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.partyName,
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: newTextPrimary)),
-              const SizedBox(height: 8),
-              Row(children: [
-                _pill(Icons.location_on_outlined, item.siteName,
-                    newSurfaceColor, newTextSecondary),
-                const SizedBox(width: 6),
-                if (item.jobType.isNotEmpty)
-                  _pill(Icons.work_outline_rounded, item.jobType,
-                      newOrangeLightColor, newOrangeColor),
-              ]),
-              const SizedBox(height: 10),
-              Row(children: [
-                if (item.billNo.isNotEmpty) ...[
-                  const Icon(Icons.receipt_outlined,
-                      size: 12, color: newTextSecondary),
-                  const SizedBox(width: 4),
-                  Text('Bill: ${item.billNo}',
-                      style: const TextStyle(
-                          fontSize: 11, color: newTextSecondary)),
-                  const SizedBox(width: 12),
+                      color: newTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _pill(
+                        Icons.location_on_outlined,
+                        item.siteName,
+                        newSurfaceColor,
+                        newTextSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      if (item.jobType.isNotEmpty)
+                        _pill(
+                          Icons.work_outline_rounded,
+                          item.jobType,
+                          newOrangeLightColor,
+                          newOrangeColor,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      if (item.billNo.isNotEmpty) ...[
+                        const Icon(
+                          Icons.receipt_outlined,
+                          size: 12,
+                          color: newTextSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Bill: ${item.billNo}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: newTextSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      const Icon(
+                        Icons.inventory_2_outlined,
+                        size: 12,
+                        color: newTextSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${item.totalQty.toInt()} items',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: newTextSecondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      // Show grandTotal for completed, totalAmt for pending
+                      Text(
+                        '${item.displaySymbol}${_inr(isCompleted && item.grandTotal > 0 ? item.grandTotal : item.totalAmt)}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: newTextPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-                const Icon(Icons.inventory_2_outlined,
-                    size: 12, color: newTextSecondary),
-                const SizedBox(width: 4),
-                Text('${item.totalQty.toInt()} items',
-                    style:
-                        const TextStyle(fontSize: 11, color: newTextSecondary)),
-                const Spacer(),
-                // Show grandTotal for completed, totalAmt for pending
-                Text(
-                    '${item.displaySymbol}${_inr(isCompleted && item.grandTotal > 0 ? item.grandTotal : item.totalAmt)}',
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: newTextPrimary)),
-              ]),
-            ]),
-          ),
+              ),
+            ),
 
-          // ── Print button for COMPLETED items ─────────────────────────
-          if (isCompleted && item.printUrl.isNotEmpty)
-            Container(
-              decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: newBorderColor))),
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: GestureDetector(
-                onTap: () => _openUrl(item.printUrl),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
+            // ── Print button for COMPLETED items ─────────────────────────
+            if (isCompleted && item.printUrl.isNotEmpty)
+              Container(
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: newBorderColor)),
+                ),
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: GestureDetector(
+                  onTap: () => _openUrl(item.printUrl),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
                       color: newGreenLightColor,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: newGreenColor.withValues(alpha: 0.3))),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.print_rounded, size: 14, color: newGreenColor),
-                      SizedBox(width: 6),
-                      Text('Print QC Report',
+                        color: newGreenColor.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.print_rounded,
+                          size: 14,
+                          color: newGreenColor,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Print QC Report',
                           style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: newGreenColor)),
-                    ],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: newGreenColor,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
 
-          // ── Print buttons ────────────────────────────────────────────────
-          if (!isCompleted && item.withRateUrl.isNotEmpty ||
-              item.withoutRateUrl.isNotEmpty)
-            Container(
-              decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: newBorderColor))),
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-              child: Row(children: [
-                // With Rate
-                if (item.withRateUrl.isNotEmpty)
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _openUrl(item.withRateUrl),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                            color: newBlueLightColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: newBlueColor.withValues(alpha: 0.3))),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.print_rounded,
-                                size: 13, color: newBlueColor),
-                            SizedBox(width: 5),
-                            Text('With Rate',
-                                style: TextStyle(
+            // ── Print buttons ────────────────────────────────────────────────
+            if (!isCompleted && item.withRateUrl.isNotEmpty ||
+                item.withoutRateUrl.isNotEmpty)
+              Container(
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: newBorderColor)),
+                ),
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Row(
+                  children: [
+                    // With Rate
+                    if (item.withRateUrl.isNotEmpty)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _openUrl(item.withRateUrl),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: newBlueLightColor,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: newBlueColor.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.print_rounded,
+                                  size: 13,
+                                  color: newBlueColor,
+                                ),
+                                SizedBox(width: 5),
+                                Text(
+                                  'With Rate',
+                                  style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: newBlueColor)),
-                          ],
+                                    color: newBlueColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
 
-                if (item.withRateUrl.isNotEmpty &&
-                    item.withoutRateUrl.isNotEmpty)
-                  const SizedBox(width: 8),
+                    if (item.withRateUrl.isNotEmpty &&
+                        item.withoutRateUrl.isNotEmpty)
+                      const SizedBox(width: 8),
 
-                // Without Rate
-                if (item.withoutRateUrl.isNotEmpty)
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _openUrl(item.withoutRateUrl),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                            color: newGreenLightColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: newGreenColor.withValues(alpha: 0.3))),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.print_outlined,
-                                size: 13, color: newGreenColor),
-                            SizedBox(width: 5),
-                            Text('Without Rate',
-                                style: TextStyle(
+                    // Without Rate
+                    if (item.withoutRateUrl.isNotEmpty)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _openUrl(item.withoutRateUrl),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: newGreenLightColor,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: newGreenColor.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.print_outlined,
+                                  size: 13,
+                                  color: newGreenColor,
+                                ),
+                                SizedBox(width: 5),
+                                Text(
+                                  'Without Rate',
+                                  style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: newGreenColor)),
-                          ],
+                                    color: newGreenColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-              ]),
-            ),
-        ]),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _pill(IconData icon, String label, Color bg, Color fg) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration:
-            BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 11, color: fg),
-          const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w600, color: fg)),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 11, color: fg),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: fg,
+          ),
+        ),
+      ],
+    ),
+  );
 
   static String _inr(double v) {
     if (v >= 10000000) return '${(v / 10000000).toStringAsFixed(2)} Cr';
@@ -783,9 +966,10 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
             border: Border.all(color: newBorderColor),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2))
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
           child: ClipRRect(
@@ -794,7 +978,8 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width - 28),
+                  minWidth: MediaQuery.of(context).size.width - 28,
+                ),
                 child: Table(
                   defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                   columnWidths: _columnWidths(cols, context),
@@ -805,10 +990,13 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
                       children: [
                         // # column
                         _headerCell('#', null, null),
-                        ...cols.asMap().entries.map((e) => _headerCell(
+                        ...cols.asMap().entries.map(
+                          (e) => _headerCell(
                             _formatHeader(e.value),
                             e.key,
-                            () => _sortBy(e.key))),
+                            () => _sortBy(e.key),
+                          ),
+                        ),
                       ],
                     ),
                     // ── Data rows ────────────────────────────────────────
@@ -823,17 +1011,20 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
 
                       return TableRow(
                         decoration: BoxDecoration(
-                          color:
-                              isEven ? Colors.white : const Color(0xFFF8FAFC),
+                          color: isEven
+                              ? Colors.white
+                              : const Color(0xFFF8FAFC),
                           border: const Border(
-                              top: BorderSide(color: newBorderColor)),
+                            top: BorderSide(color: newBorderColor),
+                          ),
                         ),
                         children: [
                           // # cell
                           _indexCell(displayIdx + 1, item),
                           // Dynamic cells
                           ...cols.map(
-                              (col) => _dataCell(col, row.data[col], item)),
+                            (col) => _dataCell(col, row.data[col], item),
+                          ),
                         ],
                       );
                     }),
@@ -849,7 +1040,9 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
 
   // ── Column widths — smart based on header name ─────────────────────────
   Map<int, TableColumnWidth> _columnWidths(
-      List<String> cols, BuildContext ctx) {
+    List<String> cols,
+    BuildContext ctx,
+  ) {
     final Map<int, TableColumnWidth> widths = {
       0: const FixedColumnWidth(40), // # column
     };
@@ -881,28 +1074,34 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Flexible(
-            child: Text(label,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                label,
                 style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: newBlueColor),
-                overflow: TextOverflow.ellipsis),
-          ),
-          if (onTap != null) ...[
-            const SizedBox(width: 3),
-            Icon(
-              isSorted
-                  ? (_sortAsc
-                      ? Icons.arrow_upward_rounded
-                      : Icons.arrow_downward_rounded)
-                  : Icons.unfold_more_rounded,
-              size: 12,
-              color: isSorted ? newBlueColor : newTextSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: newBlueColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
+            if (onTap != null) ...[
+              const SizedBox(width: 3),
+              Icon(
+                isSorted
+                    ? (_sortAsc
+                          ? Icons.arrow_upward_rounded
+                          : Icons.arrow_downward_rounded)
+                    : Icons.unfold_more_rounded,
+                size: 12,
+                color: isSorted ? newBlueColor : newTextSecondary,
+              ),
+            ],
           ],
-        ]),
+        ),
       ),
     );
   }
@@ -920,13 +1119,18 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
           width: 26,
           height: 26,
           decoration: BoxDecoration(
-              color: newBlueLightColor, borderRadius: BorderRadius.circular(7)),
+            color: newBlueLightColor,
+            borderRadius: BorderRadius.circular(7),
+          ),
           alignment: Alignment.center,
-          child: Text('$n',
-              style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: newBlueColor)),
+          child: Text(
+            '$n',
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: newBlueColor,
+            ),
+          ),
         ),
       ),
     );
@@ -947,8 +1151,10 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
 
   Widget _renderValue(String col, dynamic value) {
     if (value == null || value.toString().isEmpty) {
-      return const Text('—',
-          style: TextStyle(color: newTextSecondary, fontSize: 12));
+      return const Text(
+        '—',
+        style: TextStyle(color: newTextSecondary, fontSize: 12),
+      );
     }
 
     final str = value.toString();
@@ -960,11 +1166,14 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
         colLower.contains('total') && !colLower.contains('qty')) {
       final num = double.tryParse(str);
       if (num != null) {
-        return Text('₹${_inrFull(num)}',
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: newTextPrimary));
+        return Text(
+          '₹${_inrFull(num)}',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: newTextPrimary,
+          ),
+        );
       }
     }
 
@@ -973,12 +1182,17 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-            color: newGreenLightColor, borderRadius: BorderRadius.circular(6)),
-        child: Text(str,
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: newGreenColor)),
+          color: newGreenLightColor,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          str,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: newGreenColor,
+          ),
+        ),
       );
     }
 
@@ -987,23 +1201,31 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
-            color: newBlueLightColor, borderRadius: BorderRadius.circular(6)),
-        child: Text(str,
-            style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: newBlueColor)),
+          color: newBlueLightColor,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          str,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: newBlueColor,
+          ),
+        ),
       );
     }
 
     // ── MRN No / Bill No ───────────────────────────────────────────────
     if (colLower.contains('MrnNo') || colLower.contains('mrn')) {
-      return Text(str,
-          style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: newBlueColor,
-              letterSpacing: .1));
+      return Text(
+        str,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: newBlueColor,
+          letterSpacing: .1,
+        ),
+      );
     }
 
     // ── Job Type ───────────────────────────────────────────────────────
@@ -1011,33 +1233,49 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
-            color: newOrangeLightColor, borderRadius: BorderRadius.circular(6)),
-        child: Text(str,
-            style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: newOrangeColor)),
+          color: newOrangeLightColor,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          str,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: newOrangeColor,
+          ),
+        ),
       );
     }
 
     // ── Site Name ──────────────────────────────────────────────────────
     if (colLower.contains('site')) {
-      return Row(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.location_on_outlined,
-            size: 11, color: newTextSecondary),
-        const SizedBox(width: 3),
-        Flexible(
-            child: Text(str,
-                style: const TextStyle(fontSize: 11, color: newTextSecondary),
-                overflow: TextOverflow.ellipsis)),
-      ]);
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.location_on_outlined,
+            size: 11,
+            color: newTextSecondary,
+          ),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              str,
+              style: const TextStyle(fontSize: 11, color: newTextSecondary),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
     }
 
     // ── Default ────────────────────────────────────────────────────────
-    return Text(str,
-        style: const TextStyle(fontSize: 12, color: newTextPrimary),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 2);
+    return Text(
+      str,
+      style: const TextStyle(fontSize: 12, color: newTextPrimary),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 2,
+    );
   }
 
   // ── Format header: "PartyName" → "Party Name", "TotalAmt" → "Total Amt"
@@ -1045,7 +1283,9 @@ class _DynamicMrnTableState extends State<_DynamicMrnTable> {
     return key
         .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
         .replaceAllMapped(
-            RegExp(r'([A-Z]+)([A-Z][a-z])'), (m) => '${m[1]} ${m[2]}');
+          RegExp(r'([A-Z]+)([A-Z][a-z])'),
+          (m) => '${m[1]} ${m[2]}',
+        );
   }
 
   static String _inrFull(double v) {
@@ -1135,7 +1375,8 @@ class _MrnTableState extends State<_MrnTable> {
               scrollDirection: Axis.horizontal,
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width - 28),
+                  minWidth: MediaQuery.of(context).size.width - 28,
+                ),
                 child: DataTable(
                   headingRowHeight: 44,
                   dataRowMinHeight: 52,
@@ -1165,97 +1406,149 @@ class _MrnTableState extends State<_MrnTable> {
                     final isEven = i % 2 == 0;
                     return DataRow(
                       color: WidgetStateProperty.all(
-                          isEven ? Colors.white : const Color(0xFFF8FAFC)),
-                      onSelectChanged: (_) => Get.to(
-                        () => const MrnEntryView(),
-                        arguments: item,
+                        isEven ? Colors.white : const Color(0xFFF8FAFC),
                       ),
+                      onSelectChanged: (_) =>
+                          Get.to(() => const MrnEntryView(), arguments: item),
                       cells: [
                         // # (row number)
-                        DataCell(Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
+                        DataCell(
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
                               color: newBlueLightColor,
-                              borderRadius: BorderRadius.circular(7)),
-                          alignment: Alignment.center,
-                          child: Text('${i + 1}',
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '${i + 1}',
                               style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: newBlueColor)),
-                        )),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: newBlueColor,
+                              ),
+                            ),
+                          ),
+                        ),
                         // MRN No
-                        DataCell(Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(item.MrnNo,
+                        DataCell(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                item.MrnNo,
                                 style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: newBlueColor,
-                                    letterSpacing: .1)),
-                            if (item.billNo.isNotEmpty)
-                              Text('Bill: ${item.billNo}',
-                                  style: const TextStyle(
-                                      fontSize: 10, color: newTextSecondary)),
-                          ],
-                        )),
-                        // Date
-                        DataCell(Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                              color: newBlueLightColor,
-                              borderRadius: BorderRadius.circular(6)),
-                          child: Text(item.MrnDate,
-                              style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: newBlueColor)),
-                        )),
-                        // Party
-                        DataCell(SizedBox(
-                          width: 130,
-                          child: Text(item.partyName,
-                              style: const TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: newTextPrimary),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis),
-                        )),
-                        // Site
-                        DataCell(_pill(Icons.location_on_outlined,
-                            item.siteName, newSurfaceColor, newTextSecondary)),
-                        // Job Type
-                        DataCell(item.jobType.isEmpty
-                            ? const Text('—',
-                                style: TextStyle(color: newTextSecondary))
-                            : _pill(Icons.work_outline_rounded, item.jobType,
-                                newOrangeLightColor, newOrangeColor)),
-                        // Qty
-                        DataCell(Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                              color: newGreenLightColor,
-                              borderRadius: BorderRadius.circular(6)),
-                          child: Text('${item.totalQty.toInt()}',
-                              style: const TextStyle(
-                                  fontSize: 11,
                                   fontWeight: FontWeight.w800,
-                                  color: newGreenColor)),
-                        )),
+                                  color: newBlueColor,
+                                  letterSpacing: .1,
+                                ),
+                              ),
+                              if (item.billNo.isNotEmpty)
+                                Text(
+                                  'Bill: ${item.billNo}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: newTextSecondary,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        // Date
+                        DataCell(
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: newBlueLightColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              item.MrnDate,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: newBlueColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Party
+                        DataCell(
+                          SizedBox(
+                            width: 130,
+                            child: Text(
+                              item.partyName,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: newTextPrimary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                        // Site
+                        DataCell(
+                          _pill(
+                            Icons.location_on_outlined,
+                            item.siteName,
+                            newSurfaceColor,
+                            newTextSecondary,
+                          ),
+                        ),
+                        // Job Type
+                        DataCell(
+                          item.jobType.isEmpty
+                              ? const Text(
+                                  '—',
+                                  style: TextStyle(color: newTextSecondary),
+                                )
+                              : _pill(
+                                  Icons.work_outline_rounded,
+                                  item.jobType,
+                                  newOrangeLightColor,
+                                  newOrangeColor,
+                                ),
+                        ),
+                        // Qty
+                        DataCell(
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: newGreenLightColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${item.totalQty.toInt()}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: newGreenColor,
+                              ),
+                            ),
+                          ),
+                        ),
                         // Amount
-                        DataCell(Text(
-                          '₹${_inr(item.totalAmt)}',
-                          style: const TextStyle(
+                        DataCell(
+                          Text(
+                            '₹${_inr(item.totalAmt)}',
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: newTextPrimary),
-                        )),
+                              color: newTextPrimary,
+                            ),
+                          ),
+                        ),
                       ],
                     );
                   }).toList(),
@@ -1271,25 +1564,36 @@ class _MrnTableState extends State<_MrnTable> {
   DataColumn _col(String label, int idx, VoidCallback onSort) {
     return DataColumn(
       onSort: (_, __) => onSort(),
-      label: Text(label,
-          style: const TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w800, color: newBlueColor)),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: newBlueColor,
+        ),
+      ),
     );
   }
 
   Widget _pill(IconData icon, String label, Color bg, Color fg) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-        decoration:
-            BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 10, color: fg),
-          const SizedBox(width: 3),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 9, fontWeight: FontWeight.w600, color: fg),
-              overflow: TextOverflow.ellipsis),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 10, color: fg),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: fg),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    ),
+  );
 
   // static String _inr(double v) {
   //   if (v >= 10000000) return '${(v / 10000000).toStringAsFixed(2)} Cr';

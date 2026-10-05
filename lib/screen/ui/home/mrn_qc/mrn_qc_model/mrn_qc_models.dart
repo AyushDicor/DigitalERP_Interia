@@ -53,7 +53,7 @@ class MrnQcListItem {
   final String qcNo;
   final String qcDate;
   final double grandTotal;
-  final String printUrl;   // ← from "printurl" in Qclist response
+  final String printUrl; // ← from "printurl" in Qclist response
 
   // Currency carried from the source MRN (₹ fallback for legacy/INR rows).
   final String currencySymbol;
@@ -81,16 +81,19 @@ class MrnQcListItem {
   factory MrnQcListItem.fromJson(Map<String, dynamic> json) {
     return MrnQcListItem(
       id: _parseId(json['ID'] ?? json['Id'] ?? json['id'] ?? json['stockid']),
-      MrnNo: json['Mrnno']?.toString() ??
+      MrnNo:
+          json['Mrnno']?.toString() ??
           json['MrnNo']?.toString() ??
-          json['ReceiptNo']?.toString() ??   // ← Qclist uses ReceiptNo
+          json['ReceiptNo']?.toString() ?? // ← Qclist uses ReceiptNo
           json['MRNNo']?.toString() ??
           json['mrnno']?.toString() ??
           '',
       billNo: json['BillNo']?.toString() ?? json['billno']?.toString() ?? '',
       MrnDate: json['Mrndate']?.toString() ?? json['mrndate']?.toString() ?? '',
-      partyName: json['PartyName']?.toString() ?? json['partyname']?.toString() ?? '',
-      siteName: json['SiteName']?.toString() ?? json['sitename']?.toString() ?? '',
+      partyName:
+          json['PartyName']?.toString() ?? json['partyname']?.toString() ?? '',
+      siteName:
+          json['SiteName']?.toString() ?? json['sitename']?.toString() ?? '',
       jobType: json['JobType']?.toString() ?? json['jobtype']?.toString() ?? '',
       totalQty: _parseDouble(json['TotalQty'] ?? json['totalqty']),
       totalAmt: _parseDouble(json['TotalAmt'] ?? json['totalamt']),
@@ -101,7 +104,8 @@ class MrnQcListItem {
       qcDate: json['QcDate']?.toString() ?? json['qcdate']?.toString() ?? '',
       grandTotal: _parseDouble(json['GrandTotal'] ?? json['grandtotal']),
       printUrl: json['printurl']?.toString() ?? '',
-      currencySymbol: json['CurrencySymbol']?.toString() ??
+      currencySymbol:
+          json['CurrencySymbol']?.toString() ??
           json['currencysymbol']?.toString() ??
           '',
     );
@@ -189,28 +193,34 @@ class MrnQcListResponse {
   static List<MrnQcListItem> _parseHtmlTable(String html) {
     final List<MrnQcListItem> result = [];
     try {
-      final tbodyMatch =
-      RegExp(r'<tbody>(.*?)</tbody>', dotAll: true).firstMatch(html);
+      final tbodyMatch = RegExp(
+        r'<tbody>(.*?)</tbody>',
+        dotAll: true,
+      ).firstMatch(html);
       if (tbodyMatch == null) return result;
-      final rowMatches =
-      RegExp(r'<tr>(.*?)</tr>', dotAll: true).allMatches(tbodyMatch.group(1)!);
+      final rowMatches = RegExp(
+        r'<tr>(.*?)</tr>',
+        dotAll: true,
+      ).allMatches(tbodyMatch.group(1)!);
       for (final row in rowMatches) {
         final cells = RegExp(r'<td>(.*?)</td>', dotAll: true)
             .allMatches(row.group(1)!)
             .map((m) => m.group(1)?.trim() ?? '')
             .toList();
         if (cells.length < 9) continue;
-        result.add(MrnQcListItem(
-          id: int.tryParse(cells[0]) ?? 0,
-          MrnNo: cells[1],
-          billNo: cells[2],
-          MrnDate: cells[3],
-          partyName: cells[4],
-          siteName: cells[5],
-          jobType: cells[6],
-          totalQty: double.tryParse(cells[7]) ?? 0,
-          totalAmt: double.tryParse(cells[8]) ?? 0,
-        ));
+        result.add(
+          MrnQcListItem(
+            id: int.tryParse(cells[0]) ?? 0,
+            MrnNo: cells[1],
+            billNo: cells[2],
+            MrnDate: cells[3],
+            partyName: cells[4],
+            siteName: cells[5],
+            jobType: cells[6],
+            totalQty: double.tryParse(cells[7]) ?? 0,
+            totalAmt: double.tryParse(cells[8]) ?? 0,
+          ),
+        );
       }
     } catch (_) {}
     return result;
@@ -254,6 +264,11 @@ class MrnQcItem {
   final String description;
   final String reason;
 
+  /// Where the passed qty is sent after QC, e.g.
+  /// "Challan 23 > ASSEMBLY (8)". Empty for an ordinary stock item —
+  /// only a line bought for a production part goes to a stage.
+  final String goesto;
+
   const MrnQcItem({
     required this.transid,
     required this.itemname,
@@ -265,6 +280,7 @@ class MrnQcItem {
     required this.amount,
     required this.description,
     required this.reason,
+    this.goesto = '',
   });
 
   factory MrnQcItem.fromJson(Map<String, dynamic> json) => MrnQcItem(
@@ -278,6 +294,7 @@ class MrnQcItem {
     amount: _pd(json['amount']),
     description: json['description'] ?? '',
     reason: json['reason'] ?? '',
+    goesto: json['goesto']?.toString() ?? '',
   );
 
   // shared safe parser — used by MrnQcDetail.fromJson too
@@ -299,25 +316,26 @@ class MrnQcItem {
     'amount': amount,
     'description': description,
     'reason': reason,
+    'goesto': goesto,
   };
 
   MrnQcItem copyWith({
     double? receiveqty,
     double? rejectedqty,
     String? reason,
-  }) =>
-      MrnQcItem(
-        transid: transid,
-        itemname: itemname,
-        itemid: itemid,
-        actualqty: actualqty,
-        receiveqty: receiveqty ?? this.receiveqty,
-        rejectedqty: rejectedqty ?? this.rejectedqty,
-        rate: rate,
-        amount: amount,
-        description: description,
-        reason: reason ?? this.reason,
-      );
+  }) => MrnQcItem(
+    transid: transid,
+    itemname: itemname,
+    itemid: itemid,
+    actualqty: actualqty,
+    receiveqty: receiveqty ?? this.receiveqty,
+    rejectedqty: rejectedqty ?? this.rejectedqty,
+    rate: rate,
+    amount: amount,
+    description: description,
+    reason: reason ?? this.reason,
+    goesto: goesto,
+  );
 }
 
 class MrnQcDetail {
@@ -343,6 +361,10 @@ class MrnQcDetail {
   final String billno;
   final int godownid;
   final String currencysymbol;
+
+  /// 1 when at least one line is sent on to a production stage after QC.
+  /// Absent on an older API build, which reads as 0.
+  final int outsource;
   String get displaySymbol => currencysymbol.isNotEmpty ? currencysymbol : '₹';
   List<MrnQcItem> qcitems; // mutable: patched in-memory per item save
 
@@ -369,6 +391,7 @@ class MrnQcDetail {
     required this.billno,
     required this.godownid,
     this.currencysymbol = '',
+    this.outsource = 0,
     required this.qcitems,
   });
 
@@ -392,15 +415,18 @@ class MrnQcDetail {
     userid: json['userid'] ?? 0,
     yearid: json['yearid']?.toString(),
     receiptdate:
-    DateTime.tryParse(json['receiptdate']?.toString() ?? '') ??
+        DateTime.tryParse(json['receiptdate']?.toString() ?? '') ??
         DateTime.now(),
     siteid: json['siteid'] ?? 0,
     jobtypeid: json['jobtypeid'] ?? 0,
     billno: json['billno'] ?? '',
     godownid: json['godownid'] ?? 0,
-    currencysymbol: json['currencysymbol']?.toString() ??
+    currencysymbol:
+        json['currencysymbol']?.toString() ??
         json['CurrencySymbol']?.toString() ??
         '',
+    // Missing on an older API build; absent must read as 0, not as an error.
+    outsource: int.tryParse(json['outsource']?.toString() ?? '') ?? 0,
     qcitems: (json['qcitems'] as List? ?? [])
         .map((e) => MrnQcItem.fromJson(e as Map<String, dynamic>))
         .toList(),
