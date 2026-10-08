@@ -252,7 +252,7 @@ class _StoppageSheetState extends State<_StoppageSheet> {
                 ),
               ],
               const SizedBox(height: 13),
-              const FieldLabel('Reason'),
+              FieldLabel('Reason'.tr),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
@@ -390,7 +390,7 @@ class _StoppageSheetState extends State<_StoppageSheet> {
                 ),
               ),
               const SizedBox(height: 11),
-              const FieldLabel('Photo'),
+              FieldLabel('Photo'.tr),
               PhotoStrip(
                 photos: photo == null ? const [] : [photo!],
                 onAdd: _pickPhoto,
@@ -416,8 +416,8 @@ class _StoppageSheetState extends State<_StoppageSheet> {
                             borderRadius: BorderRadius.circular(11),
                           ),
                         ),
-                        child: const Text(
-                          'Cancel',
+                        child: Text(
+                          'Cancel'.tr,
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w800,

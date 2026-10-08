@@ -118,7 +118,7 @@ class OperatorQcView extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _qtyField(
-                          'Passed',
+                          'Passed'.tr,
                           c.qcPassCtrl,
                           opGreen,
                           c.qcChanged,
@@ -127,7 +127,7 @@ class OperatorQcView extends StatelessWidget {
                       const SizedBox(width: 9),
                       Expanded(
                         child: _qtyField(
-                          'Rejected',
+                          'Rejected'.tr,
                           c.qcRejectCtrl,
                           opRed,
                           c.qcChanged,
@@ -208,11 +208,11 @@ class OperatorQcView extends StatelessWidget {
                   // because "send back" hands the rest of the form over.
                   if (rej > 0) ...[
                     const SizedBox(height: 12),
-                    const FieldLabel('The rejected pieces: what now?'),
+                    FieldLabel('The rejected pieces: what now?'.tr),
                     _rejectRoute(
                       c,
                       'here',
-                      'Fix it here',
+                      'Fix it here'.tr,
                       'Touch-up or repair at ${_title(j.stagename)}. Nothing moves.',
                       Icons.build_rounded,
                     ),
@@ -220,7 +220,7 @@ class OperatorQcView extends StatelessWidget {
                     _rejectRoute(
                       c,
                       'back',
-                      'Send it back',
+                      'Send it back'.tr,
                       'To any earlier stage it came through, then back here.',
                       Icons.keyboard_return_rounded,
                     ),
@@ -238,7 +238,7 @@ class OperatorQcView extends StatelessWidget {
                         Expanded(
                           child: _dispChip(
                             c,
-                            'Rework',
+                            'Rework'.tr,
                             Icons.replay_rounded,
                             opAmber,
                             opAmberBg,
@@ -257,7 +257,7 @@ class OperatorQcView extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    const FieldLabel('Reject reason (required)'),
+                    FieldLabel('Reject reason (required)'.tr),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
@@ -314,7 +314,9 @@ class OperatorQcView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 11),
-                  FieldLabel(rej > 0 ? 'Photo of defect (required)' : 'Photo'),
+                  FieldLabel(
+                    rej > 0 ? 'Photo of defect (required)' : 'Photo'.tr,
+                  ),
                   PhotoStrip(
                     photos: c.qcPhoto == null ? const [] : [c.qcPhoto!],
                     onAdd: c.pickQcPhoto,
@@ -355,7 +357,7 @@ class OperatorQcView extends StatelessWidget {
                     Text(
                       c.qcSendsBack
                           ? 'Next you pick the stage that fixes it and how it comes back. Nothing is saved until then.'
-                          : c.qcDisposition == 'Rework'
+                          : c.qcDisposition == 'Rework'.tr
                           ? '${fmtQty(rej)} pcs go back to the operator as a Rework job; passed pcs move on.'
                           : '${fmtQty(rej)} pcs are written off; passed pcs move on.',
                       textAlign: TextAlign.center,
@@ -555,15 +557,15 @@ class OperatorQcView extends StatelessWidget {
         const SizedBox(height: 10),
         Row(
           children: [
-            _tri(fmtQty(j.producedqty), 'Produced'),
+            _tri(fmtQty(j.producedqty), 'Produced'.tr),
             _tri(
               fmtQty(j.qcqty),
-              'Passed',
+              'Passed'.tr,
               color: j.qcqty > 0 ? opGreen : null,
             ),
             _tri(
               fmtQty(j.qcPending),
-              'Pending',
+              'Pending'.tr,
               color: j.qcPending > 0 ? opAmber : null,
             ),
           ],

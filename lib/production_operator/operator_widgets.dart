@@ -153,18 +153,18 @@ class SoftPill extends StatelessWidget {
 /// "To produce" / "Running" / "Awaiting QC" / "Done" / "Rework".
 Widget jobStatePill(OperatorJob j) {
   if (j.isRework && !j.isDone) {
-    return const SoftPill('Rework', color: opRed, bg: opRedBg);
+    return SoftPill('Rework'.tr, color: opRed, bg: opRedBg);
   }
   // A joining stage short of parts: it cannot start, whatever the balance
   // says, so this outranks To produce / Running.
   if (j.isWaitingForParts) {
-    return const SoftPill('Waiting for parts', color: opAmber, bg: opAmberBg);
+    return SoftPill('Waiting for parts'.tr, color: opAmber, bg: opAmberBg);
   }
   switch (j.state) {
     case OperatorJobState.done:
-      return const SoftPill('Done', color: opGreen, bg: opGreenBg);
+      return SoftPill('Done'.tr, color: opGreen, bg: opGreenBg);
     case OperatorJobState.running:
-      return const SoftPill('Running', color: opBlue, bg: opBlueBg);
+      return SoftPill('Running'.tr, color: opBlue, bg: opBlueBg);
     case OperatorJobState.pending:
       return const SoftPill('To produce', color: opAmber, bg: opAmberBg);
   }
@@ -1228,12 +1228,11 @@ class OperatorHeader extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                // Pinned to Latin digits: the labels may be Hindi, the date
-                // and the numbers never are.
-                DateFormat(
-                  'EEEE, d MMM yyyy',
-                  latinLocale,
-                ).format(DateTime.now()),
+                // No locale argument on purpose — see [AppLang]. Naming one
+                // needs initializeDateFormatting() for that locale, and
+                // without it DateFormat throws LocaleDataException on every
+                // build. The default is English, which is what we want.
+                DateFormat('EEEE, d MMM yyyy').format(DateTime.now()),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 11,
@@ -1366,14 +1365,14 @@ class ReworkJobCard extends StatelessWidget {
             const SizedBox(height: 10),
             Row(
               children: [
-                _mini(fmtQty(j.issuedqty), 'Issued'),
-                _mini(fmtQty(j.producedqty), 'Produced'),
+                _mini(fmtQty(j.issuedqty), 'Issued'.tr),
+                _mini(fmtQty(j.producedqty), 'Produced'.tr),
                 _mini(
                   fmtQty(j.qcqty),
-                  'Passed',
+                  'Passed'.tr,
                   color: j.qcqty > 0 ? opGreen : null,
                 ),
-                _mini(fmtQty(j.reworkQty), 'Rework', color: opAmber),
+                _mini(fmtQty(j.reworkQty), 'Rework'.tr, color: opAmber),
               ],
             ),
             const SizedBox(height: 10),

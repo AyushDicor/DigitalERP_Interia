@@ -45,7 +45,7 @@ class JobPartsSection extends StatelessWidget {
           if (batch != null && !(j.canqc))
             _batchIssueCard(context, c, batch.value),
           if (incoming.isNotEmpty) ...[
-            const _Label('Coming in'),
+            _Label('Coming in'.tr),
             ...incoming.map((p) => _PartCard(part: p)),
           ],
           if (made.isNotEmpty) ...[
@@ -178,14 +178,14 @@ class _PartCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                _fig('Need', p.needqty),
+                _fig('Need'.tr, p.needqty),
                 _fig(
-                  p.isMadeHere ? 'Made' : 'Done',
+                  p.isMadeHere ? 'Made' : 'Done'.tr,
                   p.isMadeHere ? p.madeqty : p.goodqty,
                   color: opPrimary,
                 ),
-                _fig('QC', p.qcqty, color: opGreen),
-                _fig('Sent', p.sentqty, color: opBlue),
+                _fig('QC'.tr, p.qcqty, color: opGreen),
+                _fig('Sent'.tr, p.sentqty, color: opBlue),
               ],
             ),
             // What has arrived, for a part this stage only works on.
@@ -350,16 +350,16 @@ void openPartProduceSheet(
     subtitle: '${fmtQty(part.canproduceqty)} left of ${fmtQty(part.needqty)}',
     accent: opPrimary,
     builder: (sheetContext, setSheet) => [
-      _qtyField(qtyCtrl, part.canproduceqty, 'Qty'),
+      _qtyField(qtyCtrl, part.canproduceqty, 'Qty'.tr),
       const SizedBox(height: 11),
-      const FieldLabel('Remarks (optional)'),
+      FieldLabel('Remarks (optional)'.tr),
       TextField(
         controller: remarksCtrl,
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         decoration: opInput(hint: 'e.g. 1 leg left to weld'),
       ),
       const SizedBox(height: 12),
-      const FieldLabel('Photo'),
+      FieldLabel('Photo'.tr),
       PhotoStrip(
         photos: photos,
         hint: 'Photo of the finished part (optional)',
@@ -373,7 +373,7 @@ void openPartProduceSheet(
         onRemove: (x) => setSheet(() => photos = [...photos]..remove(x)),
       ),
     ],
-    action: 'Save',
+    action: 'Save'.tr,
     onAction: (sheetContext) async {
       final ok = await c.producePart(
         part,
@@ -418,7 +418,7 @@ void openPartQcSheet(
               child: _qtyField(
                 passCtrl,
                 part.canqcqty,
-                'Passed',
+                'Passed'.tr,
                 onChanged: setSheet,
               ),
             ),
@@ -427,14 +427,14 @@ void openPartQcSheet(
               child: _qtyField(
                 rejectCtrl,
                 part.canqcqty,
-                'Rejected',
+                'Rejected'.tr,
                 onChanged: setSheet,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        const FieldLabel('Remarks (optional)'),
+        FieldLabel('Remarks (optional)'.tr),
         TextField(
           controller: remarksCtrl,
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -443,7 +443,7 @@ void openPartQcSheet(
           ),
         ),
         const SizedBox(height: 12),
-        FieldLabel(rej > 0 ? 'Photo of the defect' : 'Photo'),
+        FieldLabel(rej > 0 ? 'Photo of the defect' : 'Photo'.tr),
         PhotoStrip(
           photos: photo == null ? const [] : [photo!],
           accent: rej > 0 ? opRed : opPurple,
@@ -460,7 +460,7 @@ void openPartQcSheet(
         ),
         if (rej > 0) ...[
           const SizedBox(height: 12),
-          const FieldLabel('Reject reason (required)'),
+          FieldLabel('Reject reason (required)'.tr),
           Wrap(
             spacing: 7,
             runSpacing: 7,
@@ -497,9 +497,9 @@ void openPartQcSheet(
           // A rejected part does not have to be remade here. If the fault
           // came from an earlier stage, it goes back there and returns —
           // the same choice the item-level QC screen offers.
-          const FieldLabel('The rejected pieces: what now?'),
+          FieldLabel('The rejected pieces: what now?'.tr),
           _qcRoute(
-            'Fix it here',
+            'Fix it here'.tr,
             'Made again at this stage. Nothing moves.',
             Icons.build_rounded,
             !sendBack,
@@ -507,7 +507,7 @@ void openPartQcSheet(
           ),
           const SizedBox(height: 7),
           _qcRoute(
-            'Send it back',
+            'Send it back'.tr,
             'To any earlier stage it came through, then back here.',
             Icons.keyboard_return_rounded,
             sendBack,
@@ -528,18 +528,18 @@ void openPartQcSheet(
         ],
       ];
     },
-    action: 'Save QC',
+    action: 'Save QC'.tr,
     actionLabel: () =>
         (double.tryParse(rejectCtrl.text.trim()) ?? 0) > 0 && sendBack
         ? 'Next: where to send it'
-        : 'Save QC',
+        : 'Save QC'.tr,
     onAction: (sheetContext) async {
       final rej = double.tryParse(rejectCtrl.text.trim()) ?? 0;
       // Reject-and-send-back is ONE call, so nothing is written here: the
       // form does both. Backing out of it must leave no half-record.
       if (rej > 0 && sendBack) {
         if (reason.trim().isEmpty) {
-          opSnack('Reason', 'Pick why it is rejected.');
+          opSnack('Reason'.tr, 'Pick why it is rejected.');
           return;
         }
         Navigator.of(sheetContext).pop();
@@ -657,7 +657,7 @@ void openPartIssueSheet(
     builder: (sheetContext, setSheet) => [
       _qtyField(qtyCtrl, part.canissueqty, 'Qty to hand over'),
       const SizedBox(height: 11),
-      const FieldLabel('Loader name'),
+      FieldLabel('Loader name'.tr),
       TextField(
         controller: loaderCtrl,
         textCapitalization: TextCapitalization.words,
@@ -671,7 +671,7 @@ void openPartIssueSheet(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const FieldLabel('Issue date'),
+                FieldLabel('Issue date'.tr),
                 InkWell(
                   onTap: () async {
                     final d = await showDatePicker(
@@ -707,7 +707,7 @@ void openPartIssueSheet(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const FieldLabel('Issue time'),
+                FieldLabel('Issue time'.tr),
                 InkWell(
                   onTap: () async {
                     final x = await showTimePicker(
@@ -739,7 +739,7 @@ void openPartIssueSheet(
       const SizedBox(height: 11),
       // The gate pass does not leave without its receipt — same rule as the
       // item-level hand-off.
-      const FieldLabel('Issue receipt photo(s) — required'),
+      FieldLabel('Issue receipt photo(s) — required'.tr),
       PhotoStrip(
         photos: receipt,
         accent: opGreen,
@@ -755,7 +755,7 @@ void openPartIssueSheet(
         onRemove: (x) => setSheet(() => receipt = [...receipt]..remove(x)),
       ),
       const SizedBox(height: 11),
-      const FieldLabel('Item photo(s)'),
+      FieldLabel('Item photo(s)'.tr),
       PhotoStrip(
         photos: photos,
         accent: opGreen,
@@ -770,7 +770,7 @@ void openPartIssueSheet(
         onRemove: (x) => setSheet(() => photos = [...photos]..remove(x)),
       ),
       const SizedBox(height: 11),
-      const FieldLabel('Remarks (optional)'),
+      FieldLabel('Remarks (optional)'.tr),
       TextField(
         controller: remarksCtrl,
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -787,7 +787,7 @@ void openPartIssueSheet(
         ),
       ),
     ],
-    action: 'Hand over',
+    action: 'Hand over'.tr,
     onAction: (sheetContext) async {
       final ok = await c.issuePartViaLoader(
         part,
@@ -1134,7 +1134,7 @@ void openBatchIssueSheet(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const FieldLabel('Issue date'),
+                FieldLabel('Issue date'.tr),
                 InkWell(
                   onTap: () async {
                     final d = await showDatePicker(
@@ -1170,7 +1170,7 @@ void openBatchIssueSheet(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const FieldLabel('Issue time'),
+                FieldLabel('Issue time'.tr),
                 InkWell(
                   onTap: () async {
                     final x = await showTimePicker(
@@ -1200,14 +1200,14 @@ void openBatchIssueSheet(
         ],
       ),
       const SizedBox(height: 11),
-      const FieldLabel('Loader name'),
+      FieldLabel('Loader name'.tr),
       TextField(
         controller: loaderCtrl,
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         decoration: opInput(hint: 'Who is carrying it'),
       ),
       const SizedBox(height: 11),
-      const FieldLabel('Issue receipt photo(s) — required'),
+      FieldLabel('Issue receipt photo(s) — required'.tr),
       PhotoStrip(
         photos: receipt,
         accent: opGreen,
@@ -1223,7 +1223,7 @@ void openBatchIssueSheet(
         onRemove: (x) => setSheet(() => receipt = [...receipt]..remove(x)),
       ),
       const SizedBox(height: 11),
-      const FieldLabel('Item photo(s)'),
+      FieldLabel('Item photo(s)'.tr),
       PhotoStrip(
         photos: photos,
         accent: opGreen,
@@ -1238,7 +1238,7 @@ void openBatchIssueSheet(
         onRemove: (x) => setSheet(() => photos = [...photos]..remove(x)),
       ),
       const SizedBox(height: 11),
-      const FieldLabel('Remarks (optional)'),
+      FieldLabel('Remarks (optional)'.tr),
       TextField(
         controller: remarksCtrl,
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -1256,7 +1256,7 @@ void openBatchIssueSheet(
         ),
       ),
     ],
-    action: 'Hand over',
+    action: 'Hand over'.tr,
     onAction: (sheetContext) async {
       final ok = await c.issuePartsTogether(
         {

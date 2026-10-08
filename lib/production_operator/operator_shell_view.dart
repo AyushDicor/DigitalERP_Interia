@@ -47,8 +47,8 @@ class OperatorShellView extends StatelessWidget {
               height: 56,
               child: Row(
                 children: [
-                  _navItem(ctrl, 0, Icons.home_outlined, 'Home'),
-                  _navItem(ctrl, 1, Icons.assignment_outlined, 'My Work'),
+                  _navItem(ctrl, 0, Icons.home_outlined, 'Home'.tr),
+                  _navItem(ctrl, 1, Icons.assignment_outlined, 'My Work'.tr),
                   // Only logins the backend flags can check lots, so nobody
                   // else gets a QC tab.
                   if (ctrl.showQcTab)
@@ -56,10 +56,10 @@ class OperatorShellView extends StatelessWidget {
                       ctrl,
                       OperatorController.qcTab,
                       Icons.verified_outlined,
-                      'QC',
+                      'QC'.tr,
                       badge: ctrl.qcDueJobs.length,
                     ),
-                  _navItem(ctrl, 2, Icons.report_problem_outlined, 'Log'),
+                  _navItem(ctrl, 2, Icons.report_problem_outlined, 'Log'.tr),
                 ],
               ),
             ),
@@ -151,10 +151,10 @@ Widget _loadingOrError(OperatorController c, {required Widget child}) {
       icon: Icons.inbox_outlined,
       title: c.jobsError.isNotEmpty
           ? c.jobsError
-          : 'No jobs issued to you yet.',
+          : 'No jobs issued to you yet.'.tr,
       subtitle:
           'Jobs appear here once the ERP issues a production challan to your employee account.',
-      action: 'Refresh',
+      action: 'Refresh'.tr,
       onAction: c.loadJobs,
     );
   }
@@ -200,9 +200,9 @@ class _HomeTab extends StatelessWidget {
                     // stays locked until each is accepted.
                     if (c.incoming.isNotEmpty) ...[
                       SectionHeader(
-                        'Awaiting receipt',
+                        'Awaiting receipt'.tr,
                         count: c.incoming.length,
-                        trailing: 'See all',
+                        trailing: 'See all'.tr,
                         onTrailing: () =>
                             Get.to(() => const OperatorIncomingView()),
                       ),
@@ -213,7 +213,7 @@ class _HomeTab extends StatelessWidget {
                     // is the most urgent thing on the screen.
                     if (c.sendBackJobs.isNotEmpty) ...[
                       SectionHeader(
-                        'Sent back to fix',
+                        'Sent back to fix'.tr,
                         count: c.sendBackJobs.length,
                       ),
                       ...c.sendBackJobs.map((j) => _sendBackCard(c, j)),
@@ -231,7 +231,7 @@ class _HomeTab extends StatelessWidget {
                           color: opAmber,
                           bg: opAmberBg,
                           value: '${c.pendingJobs.length}',
-                          label: 'Pending',
+                          label: 'Pending'.tr,
                           onTap: () => c.setTab(1),
                         ),
                         KpiTile(
@@ -239,7 +239,7 @@ class _HomeTab extends StatelessWidget {
                           color: opBlue,
                           bg: opBlueBg,
                           value: '${c.runningJobs.length}',
-                          label: 'Running',
+                          label: 'Running'.tr,
                           onTap: () => c.setTab(1),
                         ),
                         KpiTile(
@@ -247,7 +247,7 @@ class _HomeTab extends StatelessWidget {
                           color: opPurple,
                           bg: opPurpleBg,
                           value: '${c.awaitingQcJobs.length}',
-                          label: c.hasQcAccess ? 'QC due' : 'Awaiting QC',
+                          label: c.hasQcAccess ? 'QC due' : 'Awaiting QC'.tr,
                           onTap: () => c.setTab(1),
                         ),
                         KpiTile(
@@ -255,7 +255,7 @@ class _HomeTab extends StatelessWidget {
                           color: opGreen,
                           bg: opGreenBg,
                           value: '${c.doneJobs.length}',
-                          label: 'Done',
+                          label: 'Done'.tr,
                           onTap: () => c.setTab(1),
                         ),
                       ],
@@ -268,7 +268,7 @@ class _HomeTab extends StatelessWidget {
                       SectionHeader(
                         'Running now',
                         count: c.runningJobs.length,
-                        trailing: 'See all',
+                        trailing: 'See all'.tr,
                         onTrailing: () => c.setTab(1),
                       ),
                       ...c.runningJobs
@@ -279,7 +279,7 @@ class _HomeTab extends StatelessWidget {
                               onTap: () => _openJob(c, j),
                               fraction: c.jobFraction(j),
                               wipNote: c.wipNote(j),
-                              ctaLabel: 'Continue',
+                              ctaLabel: 'Continue'.tr,
                               onCta: () => _openJob(c, j),
                             ),
                           ),
@@ -310,7 +310,7 @@ class _HomeTab extends StatelessWidget {
                     // job as QC-able for this login; otherwise status only.
                     if (c.awaitingQcJobs.isNotEmpty) ...[
                       SectionHeader(
-                        c.hasQcAccess ? 'Needs QC' : 'Awaiting QC',
+                        c.hasQcAccess ? 'Needs QC' : 'Awaiting QC'.tr,
                         count: c.awaitingQcJobs.length,
                       ),
                       ...c.awaitingQcJobs
@@ -327,7 +327,7 @@ class _HomeTab extends StatelessWidget {
                           ),
                     ],
                     if (c.reworkJobs.isNotEmpty) ...[
-                      SectionHeader('Rework', count: c.reworkJobs.length),
+                      SectionHeader('Rework'.tr, count: c.reworkJobs.length),
                       ...c.reworkJobs.map(
                         (j) => ReworkJobCard(
                           job: j,
@@ -336,7 +336,7 @@ class _HomeTab extends StatelessWidget {
                       ),
                     ],
                     if (c.pendingJobs.isNotEmpty) ...[
-                      SectionHeader('Pending', count: c.pendingJobs.length),
+                      SectionHeader('Pending'.tr, count: c.pendingJobs.length),
                       ...c.pendingJobs
                           .take(3)
                           .map(
@@ -345,7 +345,7 @@ class _HomeTab extends StatelessWidget {
                               onTap: () => _openJob(c, j),
                               fraction: c.jobFraction(j),
                               wipNote: c.wipNote(j),
-                              ctaLabel: 'Start',
+                              ctaLabel: 'Start'.tr,
                               ctaColor: null,
                               onCta: () => _openJob(c, j),
                             ),
@@ -393,11 +393,11 @@ class _HomeTab extends StatelessWidget {
         const SizedBox(height: 10),
         Row(
           children: [
-            _legend(opPrimary, 'Produced', fmtQty(c.totalProduced)),
+            _legend(opPrimary, 'Produced'.tr, fmtQty(c.totalProduced)),
             const SizedBox(width: 14),
-            _legend(newBorderColor, 'Issued', fmtQty(c.totalIssued)),
+            _legend(newBorderColor, 'Issued'.tr, fmtQty(c.totalIssued)),
             const SizedBox(width: 14),
-            _legend(opGreen, 'QC passed', fmtQty(c.totalQcPassed)),
+            _legend(opGreen, 'QC passed'.tr, fmtQty(c.totalQcPassed)),
           ],
         ),
       ],
@@ -508,7 +508,7 @@ Widget _workCard(OperatorController c, OperatorJob j) {
         ? 'Do QC'
         : j.isDone
         ? null
-        : (j.isPending ? 'Start production' : 'Continue'),
+        : (j.isPending ? 'Start production' : 'Continue'.tr),
     ctaColor: qc ? opPurple : null,
     onCta: qc ? () => _openQc(c, j) : () => _openJob(c, j),
   );
@@ -555,19 +555,19 @@ class _NothingHere extends StatelessWidget {
 /// shown (plus All), each with its count.
 Widget _workChips(OperatorController c) {
   final chips = <(String, String, int, Color)>[
-    ('all', 'All', c.workJobs.length + c.qcDueJobs.length, opPrimary),
-    if (c.qcDueJobs.isNotEmpty) ('qc', 'QC', c.qcDueJobs.length, opPurple),
+    ('all', 'All'.tr, c.workJobs.length + c.qcDueJobs.length, opPrimary),
+    if (c.qcDueJobs.isNotEmpty) ('qc', 'QC'.tr, c.qcDueJobs.length, opPurple),
     if (c.toIssueJobs.isNotEmpty)
-      ('toissue', 'To issue', c.toIssueJobs.length, opGreen),
+      ('toissue', 'To issue'.tr, c.toIssueJobs.length, opGreen),
     if (c.incoming.isNotEmpty)
-      ('incoming', 'Incoming', c.incoming.length, opGreen),
+      ('incoming', 'Incoming'.tr, c.incoming.length, opGreen),
     if (c.reworkJobs.isNotEmpty)
-      ('rework', 'Rework', c.reworkJobs.length, opAmber),
+      ('rework', 'Rework'.tr, c.reworkJobs.length, opAmber),
     if (c.pendingJobs.isNotEmpty)
-      ('todo', 'To do', c.pendingJobs.length, opPrimary),
+      ('todo', 'To do'.tr, c.pendingJobs.length, opPrimary),
     if (c.runningJobs.isNotEmpty)
-      ('running', 'Running', c.runningJobs.length, opBlue),
-    if (c.doneJobs.isNotEmpty) ('done', 'Done', c.doneJobs.length, opGreen),
+      ('running', 'Running'.tr, c.runningJobs.length, opBlue),
+    if (c.doneJobs.isNotEmpty) ('done', 'Done'.tr, c.doneJobs.length, opGreen),
   ];
   return SingleChildScrollView(
     scrollDirection: Axis.horizontal,
@@ -627,7 +627,7 @@ class _MyWorkTab extends StatelessWidget {
     builder: (c) => Column(
       children: [
         OperatorHeader(
-          title: 'My Work',
+          title: 'My Work'.tr,
           subtitle: _stageLine(c),
           avatarLetter: c.firstName.substring(0, 1).toUpperCase(),
         ),
@@ -645,7 +645,7 @@ class _MyWorkTab extends StatelessWidget {
                       Expanded(
                         child: StatBox(
                           value: '${c.pendingJobs.length}',
-                          label: 'To do',
+                          label: 'To do'.tr,
                           color: opPrimary,
                         ),
                       ),
@@ -653,14 +653,14 @@ class _MyWorkTab extends StatelessWidget {
                       Expanded(
                         child: StatBox(
                           value: '${c.runningJobs.length}',
-                          label: 'Running',
+                          label: 'Running'.tr,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: StatBox(
                           value: '${c.doneJobs.length}',
-                          label: 'Done',
+                          label: 'Done'.tr,
                         ),
                       ),
                     ],
@@ -718,7 +718,7 @@ class _QcTab extends StatelessWidget {
     builder: (c) => Column(
       children: [
         OperatorHeader(
-          title: 'Quality Check',
+          title: 'Quality Check'.tr,
           subtitle: c.session.name.trim().isEmpty
               ? 'QC'
               : '${c.session.name.trim()} · QC',
@@ -810,7 +810,7 @@ class _ToQcPane extends StatelessWidget {
                     (j) => JobCard(
                       job: j,
                       onTap: () => _openQc(c, j),
-                      ctaLabel: 'Do QC',
+                      ctaLabel: 'Do QC'.tr,
                       ctaColor: opPurple,
                       onCta: () => _openQc(c, j),
                       showParty: false,
@@ -843,11 +843,11 @@ class _LogTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(13, 12, 13, 0),
             child: Row(
               children: [
-                _chip(c, '', 'All'),
+                _chip(c, '', 'All'.tr),
                 const SizedBox(width: 8),
-                _chip(c, 'Downtime', 'Downtime', color: opRed),
+                _chip(c, 'Downtime'.tr, 'Downtime'.tr, color: opRed),
                 const SizedBox(width: 8),
-                _chip(c, 'Bottleneck', 'Bottleneck', color: opAmber),
+                _chip(c, 'Bottleneck'.tr, 'Bottleneck'.tr, color: opAmber),
               ],
             ),
           ),

@@ -73,8 +73,8 @@ class JobDesignSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Drawings & Details',
+                Text(
+                  'Drawings & Details'.tr,
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w800,
@@ -121,7 +121,7 @@ class JobDesignSection extends StatelessWidget {
   );
 
   String _subtitle(OperatorController c, JobDesign? d) {
-    if (c.designLoading) return 'Loading…';
+    if (c.designLoading) return 'Loading…'.tr;
     if (c.designError.isNotEmpty) return 'Could not load';
     if (d == null || d.isEmpty) return 'Nothing approved yet';
     return [
@@ -150,7 +150,7 @@ class JobDesignSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           SmallButton(
-            'Retry',
+            'Retry'.tr,
             color: opPrimary,
             icon: Icons.refresh_rounded,
             onTap: c.loadJobDesign,

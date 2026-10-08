@@ -7,8 +7,19 @@
 //
 // NUMBERS, DATES AND TIMES STAY IN LATIN DIGITS in both languages — a worker
 // reads "4" and "11:30" the same way whatever the labels say, and Devanagari
-// digits on a qty field would be a step backwards, not forwards. Nothing here
-// touches `fmtQty`, `NumberFormat` or `DateFormat`; see [latinLocale].
+// digits on a qty field would be a step backwards, not forwards.
+//
+// That is achieved by NOT touching Intl: switching the UI language calls
+// `Get.updateLocale` only, and `Intl.defaultLocale` is deliberately left
+// alone, so every `DateFormat` and `NumberFormat` in the app keeps formatting
+// in English. Two rules follow from that, and breaking either one is a crash
+// rather than a cosmetic bug:
+//
+//   * Never set `Intl.defaultLocale` to Hindi.
+//   * Never pass an explicit locale string to `DateFormat`/`NumberFormat`
+//     unless `initializeDateFormatting()` has been called for it first.
+//     Naming even 'en_IN' without that throws LocaleDataException on every
+//     build — which is exactly how this was first shipped and caught.
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -16,10 +27,6 @@ import 'package:get_storage/get_storage.dart';
 
 const Locale enLocale = Locale('en', 'US');
 const Locale hiLocale = Locale('hi', 'IN');
-
-/// Always format numbers, dates and times against this, never the UI locale.
-/// Hindi labels, Latin digits — which is what the floor asked for.
-const String latinLocale = 'en_IN';
 
 /// Remembered on the device, not against the user: a shared handset on the
 /// floor should stay in Hindi whoever signs in next.
@@ -214,6 +221,18 @@ const Map<String, String> _hi = {
   'Can make now': 'अभी बना सकते हैं',
   'Search': 'खोजें',
   'Filter': 'छाँटें',
+
+  // ── home screen ──
+  'See all': 'सभी देखें',
+  'Receive': 'लें',
+  'IN TRANSIT': 'रास्ते में',
+  'Shop floor': 'शॉप फ्लोर',
+  'Awaiting QC': 'QC बाकी',
+  'Issue receipt & item photos': 'रसीद और सामान की फोटो',
+  'Start': 'शुरू करें',
+  'Issue': 'भेजें',
+  'No jobs issued to you yet.': 'अभी आपको कोई काम नहीं मिला।',
+  'Reject consignment': 'खेप वापस करें',
 
   // ── common ──
   'Save': 'सेव करें',

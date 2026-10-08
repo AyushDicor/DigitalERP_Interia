@@ -317,7 +317,7 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                 ),
                 const SizedBox(height: 13),
               ],
-              const FieldLabel('Loader name'),
+              FieldLabel('Loader name'.tr),
               TextField(
                 controller: loaderCtrl,
                 textCapitalization: TextCapitalization.words,
@@ -334,7 +334,7 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const FieldLabel('Issue date'),
+                        FieldLabel('Issue date'.tr),
                         ValueBox(
                           DateFormat('yyyy-MM-dd').format(issuedAt),
                           icon: Icons.calendar_today_outlined,
@@ -348,7 +348,7 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const FieldLabel('Issue time'),
+                        FieldLabel('Issue time'.tr),
                         ValueBox(
                           DateFormat('hh:mm a').format(issuedAt),
                           icon: Icons.schedule_rounded,
@@ -360,7 +360,7 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                 ],
               ),
               const SizedBox(height: 11),
-              const FieldLabel('Issue receipt photo(s) — required'),
+              FieldLabel('Issue receipt photo(s) — required'.tr),
               PhotoStrip(
                 photos: receipt,
                 onAdd: () => _pick(true),
@@ -369,7 +369,7 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                 accent: opGreen,
               ),
               const SizedBox(height: 11),
-              const FieldLabel('Item photo(s)'),
+              FieldLabel('Item photo(s)'.tr),
               PhotoStrip(
                 photos: items,
                 onAdd: () => _pick(false),
@@ -378,7 +378,7 @@ class _GatePassSheetState extends State<_GatePassSheet> {
                 accent: opGreen,
               ),
               const SizedBox(height: 11),
-              const FieldLabel('Remarks (optional)'),
+              FieldLabel('Remarks (optional)'.tr),
               TextField(
                 controller: remarksCtrl,
                 minLines: 2,

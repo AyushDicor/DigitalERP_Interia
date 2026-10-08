@@ -38,7 +38,7 @@ class QcHistoryPane extends StatelessWidget {
               ? c.qcHistoryError
               : 'No QC history yet.',
           subtitle: 'Checks you save appear here, newest first.',
-          action: 'Retry',
+          action: 'Retry'.tr,
           onAction: () => c.loadQcHistory(force: true),
         );
       }
@@ -210,9 +210,9 @@ class QcHistoryPane extends StatelessWidget {
   Widget _resultChips(OperatorController c) => Row(
     children: [
       for (final (key, label, n, color) in [
-        ('all', 'All', c.qcCountAll, opPrimary),
-        ('passed', 'Passed', c.qcCountPassed, opGreen),
-        ('rejected', 'Rejected', c.qcCountRejected, opRed),
+        ('all', 'All'.tr, c.qcCountAll, opPrimary),
+        ('passed', 'Passed'.tr, c.qcCountPassed, opGreen),
+        ('rejected', 'Rejected'.tr, c.qcCountRejected, opRed),
       ]) ...[
         _Chip(
           label: '$label $n',
@@ -650,7 +650,7 @@ void openQcEntrySheet(BuildContext context, QcEntry e) {
                 Expanded(
                   child: Center(
                     child: SmallButton(
-                      'Close',
+                      'Close'.tr,
                       color: newTextSecondary,
                       filled: false,
                       onTap: () => Navigator.of(sheetContext).pop(),
@@ -831,14 +831,14 @@ void openQcFilterSheet(BuildContext context, OperatorController c) {
                           ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    const FieldLabel('Result'),
+                    SizedBox(height: 18),
+                    FieldLabel('Result'),
                     Row(
                       children: [
-                        for (final (key, label, color) in const [
-                          ('all', 'All', opPrimary),
-                          ('passed', 'Passed', opGreen),
-                          ('rejected', 'Rejected', opRed),
+                        for (final (key, label, color) in [
+                          ('all', 'All'.tr, opPrimary),
+                          ('passed', 'Passed'.tr, opGreen),
+                          ('rejected', 'Rejected'.tr, opRed),
                         ]) ...[
                           _Chip(
                             label: label,

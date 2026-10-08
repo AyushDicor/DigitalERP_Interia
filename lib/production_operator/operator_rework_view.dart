@@ -184,14 +184,14 @@ class OperatorReworkView extends StatelessWidget {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _tri(fmtQty(j.issuedqty), 'Issued'),
-                      _tri(fmtQty(j.producedqty), 'Produced'),
+                      _tri(fmtQty(j.issuedqty), 'Issued'.tr),
+                      _tri(fmtQty(j.producedqty), 'Produced'.tr),
                       _tri(
                         fmtQty(j.qcqty),
-                        'Passed',
+                        'Passed'.tr,
                         color: j.qcqty > 0 ? opGreen : null,
                       ),
-                      _tri(fmtQty(due), 'Rework', color: opAmber),
+                      _tri(fmtQty(due), 'Rework'.tr, color: opAmber),
                     ],
                   ),
                 ],
@@ -315,7 +315,7 @@ class OperatorReworkView extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const FieldLabel('Photo'),
+                          FieldLabel('Photo'.tr),
                           InkWell(
                             borderRadius: BorderRadius.circular(10),
                             onTap: c.pickReworkPhotos,

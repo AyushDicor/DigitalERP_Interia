@@ -63,7 +63,7 @@ class OperatorPackView extends StatelessWidget {
                   _saveBar(c, it),
                   if ((c.packJob?.packed ?? []).isNotEmpty) ...[
                     const SizedBox(height: 22),
-                    const _Head('Already packed'),
+                    _Head('Already packed'.tr),
                     const SizedBox(height: 8),
                     ..._savedPacks(context, c),
                   ],
@@ -337,7 +337,7 @@ class OperatorPackView extends StatelessWidget {
         ),
         const SizedBox(height: 9),
         BigButton(
-          'Save packing',
+          'Save packing'.tr,
           icon: Icons.inventory_2_rounded,
           busy: c.saving,
           gradient: opGreenGradient,
@@ -599,7 +599,7 @@ void openAddBoxSheet(
                   ],
                 ),
                 const SizedBox(height: 14),
-                const FieldLabel('What is inside'),
+                FieldLabel('What is inside'.tr),
                 TextField(
                   controller: contentsCtrl,
                   textCapitalization: TextCapitalization.sentences,
@@ -610,7 +610,7 @@ void openAddBoxSheet(
                   decoration: opInput(hint: 'e.g. Drawers'),
                 ),
                 const SizedBox(height: 12),
-                const FieldLabel('How many'),
+                FieldLabel('How many'.tr),
                 TextField(
                   controller: countCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -623,7 +623,7 @@ void openAddBoxSheet(
                   decoration: opInput(hint: 'e.g. 4'),
                 ),
                 const SizedBox(height: 12),
-                const FieldLabel('Photo of the box (optional)'),
+                FieldLabel('Photo of the box (optional)'.tr),
                 PhotoStrip(
                   photos: photos,
                   accent: opPrimary,

@@ -97,24 +97,24 @@ class OperatorJobView extends StatelessWidget {
                   // parts, an earlier branch would swallow it and the Pack
                   // button would silently never appear.
                   if (j.isPackStage) ...[
-                    const _Label('Packing'),
+                    _Label('Packing'.tr),
                     _packCard(context, c, j),
                   ] else if (j.isPartMode) ...[
-                    const _Label('Parts'),
+                    _Label('Parts'.tr),
                     const JobPartsSection(),
                   ] else if (c.pendingConsignmentFor(j) != null) ...[
-                    const _Label('Add production'),
+                    _Label('Add production'.tr),
                     _lockedByConsignment(c, c.pendingConsignmentFor(j)!),
                   ] else if (j.isWaitingForParts) ...[
-                    const _Label('Add production'),
+                    _Label('Add production'.tr),
                     _waitingForParts(j),
                   ] else if (j.balanceqty > 0 || c.producedDelta > 0) ...[
                     // On a send back leg the same entry IS the rework —
                     // calling it "Add production" would read as new work.
-                    _Label(j.isSendBack ? 'Rework here' : 'Add production'),
+                    _Label(j.isSendBack ? 'Rework here' : 'Add production'.tr),
                     _entry(context, c, j),
                   ] else ...[
-                    const _Label('Production'),
+                    _Label('Production'.tr),
                     _completeCard(c, j),
                   ],
                   const SizedBox(height: 12),
@@ -123,7 +123,7 @@ class OperatorJobView extends StatelessWidget {
                       Expanded(
                         child: _quickBtn(
                           Icons.error_outline_rounded,
-                          'Downtime',
+                          'Downtime'.tr,
                           opRed,
                           opRedBg,
                           () => showStoppageSheet(
@@ -138,7 +138,7 @@ class OperatorJobView extends StatelessWidget {
                       Expanded(
                         child: _quickBtn(
                           Icons.warning_amber_rounded,
-                          'Bottleneck',
+                          'Bottleneck'.tr,
                           opAmber,
                           opAmberBg,
                           () => showStoppageSheet(
@@ -162,7 +162,7 @@ class OperatorJobView extends StatelessWidget {
                     _Label(
                       c.isSplit
                           ? 'Issue to next stages'
-                          : 'Issue to next stage',
+                          : 'Issue to next stage'.tr,
                     ),
                     _issueCard(context, c, j),
                   ],
@@ -170,7 +170,7 @@ class OperatorJobView extends StatelessWidget {
                   // the whole route of the job (client rule, 2026-09-23).
                   // The trail is still fetched — it backs the issue lock.
                   if (c.entries.isNotEmpty || c.entriesLoading) ...[
-                    const _Label('Production log'),
+                    _Label('Production log'.tr),
                     _log(c, j),
                   ],
                   if (!c.demoMode &&
@@ -243,7 +243,7 @@ class OperatorJobView extends StatelessWidget {
                   StagePill(j.stagename),
                   if (j.isRework) ...[
                     const SizedBox(height: 5),
-                    const SoftPill('Rework', color: opRed, bg: opRedBg),
+                    SoftPill('Rework'.tr, color: opRed, bg: opRedBg),
                   ],
                 ],
               ),
@@ -254,15 +254,15 @@ class OperatorJobView extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              _tri(fmtQty(issued), 'Issued'),
+              _tri(fmtQty(issued), 'Issued'.tr),
               _tri(
                 fmtQty(produced),
-                'Produced',
+                'Produced'.tr,
                 color: produced > 0 ? opGreen : null,
               ),
               _tri(
                 fmtQty(balance),
-                'Balance',
+                'Balance'.tr,
                 color: allDone ? opGreen : opAmber,
               ),
             ],
@@ -702,8 +702,8 @@ class OperatorJobView extends StatelessWidget {
                         style: const TextStyle(color: newTextSecondary),
                       ),
                       const TextSpan(text: '. Next: '),
-                      const TextSpan(
-                        text: 'QC',
+                      TextSpan(
+                        text: 'QC'.tr,
                         style: TextStyle(color: newTextSecondary),
                       ),
                       const TextSpan(text: '.'),
@@ -747,7 +747,7 @@ class OperatorJobView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 11),
-          const FieldLabel('Remarks (optional)'),
+          FieldLabel('Remarks (optional)'.tr),
           // Saved on both the produce row and the progress row, so the note
           // shows against this entry in the day-wise log.
           TextField(
@@ -944,7 +944,7 @@ class OperatorJobView extends StatelessWidget {
         // Do QC only when the backend flagged this job as QC-able for me.
         if (j.canqc)
           SmallButton(
-            'Do QC',
+            'Do QC'.tr,
             color: opPurple,
             icon: Icons.verified_outlined,
             onTap: () {
@@ -1009,7 +1009,7 @@ class OperatorJobView extends StatelessWidget {
                           ? 'Nothing here to send back'
                           : n > 1
                           ? 'Send back · $n to choose from'
-                          : 'Send back',
+                          : 'Send back'.tr,
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
@@ -1088,7 +1088,7 @@ class OperatorJobView extends StatelessWidget {
             ),
             const SizedBox(height: 11),
             BigButton(
-              'Pack',
+              'Pack'.tr,
               icon: Icons.inventory_2_outlined,
               busy: c.saving,
               gradient: opGreenGradient,
@@ -1308,15 +1308,15 @@ class OperatorJobView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SoftPill('QC passed', color: opGreen, bg: opGreenBg),
+              SoftPill('QC passed'.tr, color: opGreen, bg: opGreenBg),
             ],
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              _tri(fmtQty(j.producedqty), 'Produced'),
-              _tri(fmtQty(j.qcqty), 'QC passed', color: opGreen),
-              _tri(fmtQty(max), 'To issue', color: max > 0 ? opGreen : null),
+              _tri(fmtQty(j.producedqty), 'Produced'.tr),
+              _tri(fmtQty(j.qcqty), 'QC passed'.tr, color: opGreen),
+              _tri(fmtQty(max), 'To issue'.tr, color: max > 0 ? opGreen : null),
             ],
           ),
           const SizedBox(height: 12),
@@ -1340,7 +1340,7 @@ class OperatorJobView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const FieldLabel('Qty to issue'),
+                    FieldLabel('Qty to issue'.tr),
                     TextField(
                       controller: c.issueQtyCtrl,
                       enabled: max > 0,
@@ -1796,7 +1796,7 @@ class OperatorJobView extends StatelessWidget {
   /// rather than attachment records.
   Widget _urlThumb(String url, double size) => InkWell(
     borderRadius: BorderRadius.circular(9),
-    onTap: () => Get.to(() => _PhotoViewer(url, 'Photo')),
+    onTap: () => Get.to(() => _PhotoViewer(url, 'Photo'.tr)),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(9),
       child: Container(
@@ -1885,7 +1885,7 @@ class OperatorJobView extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         BigButton(
-          'Receive consignment',
+          'Receive consignment'.tr,
           icon: Icons.local_shipping_outlined,
           gradient: opGreenGradient,
           onTap: () => Get.to(() => OperatorReceiveView(cn: cn)),
@@ -1937,11 +1937,11 @@ class OperatorJobView extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              _tri(fmtQty(j.producedqty), 'Produced'),
-              _tri(fmtQty(j.qcqty), 'QC passed', color: opGreen),
+              _tri(fmtQty(j.producedqty), 'Produced'.tr),
+              _tri(fmtQty(j.qcqty), 'QC passed'.tr, color: opGreen),
               _tri(
                 fmtQty(shared ? c.sharedRemaining : c.toIssue),
-                'To issue',
+                'To issue'.tr,
                 color: opGreen,
               ),
             ],
@@ -2055,7 +2055,7 @@ class OperatorJobView extends StatelessWidget {
             const SoftPill('All sent', color: opGreen, bg: opGreenBg)
           else if (!shared)
             SmallButton(
-              'Issue',
+              'Issue'.tr,
               color: opGreen,
               icon: Icons.arrow_forward_rounded,
               onTap: () {
@@ -2272,7 +2272,7 @@ class OperatorJobView extends StatelessWidget {
           ],
           if (made.isNotEmpty) ...[
             SizedBox(height: incoming.isEmpty ? 11 : 10),
-            const FieldLabel('Make here'),
+            FieldLabel('Make here'.tr),
             _partChips(made, made: true),
           ],
           const SizedBox(height: 9),

@@ -145,7 +145,7 @@ class OperatorSendBackForm extends StatelessWidget {
     final good = c.sbGood!;
     final heldInside = c.sbOptions?.heldInside ?? '';
     return _card(
-      'What goes back?',
+      'What goes back?'.tr,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -194,12 +194,12 @@ class OperatorSendBackForm extends StatelessWidget {
             const SizedBox(height: 11),
             // Two different quantities with two different caps — the server
             // refuses a worked piece sent as untouched, and says so.
-            const FieldLabel('Already worked on here?'),
+            FieldLabel('Already worked on here?'.tr),
             Row(
               children: [
                 Expanded(
                   child: _seg(
-                    'Not worked yet',
+                    'Not worked yet'.tr,
                     '${fmtQty(good.stageqty)} here',
                     !c.sbWorked,
                     good.canUnworked ? () => c.setSendBackWorked(false) : null,
@@ -208,7 +208,7 @@ class OperatorSendBackForm extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _seg(
-                    'Already worked',
+                    'Already worked'.tr,
                     '${fmtQty(good.qcqty)} here',
                     c.sbWorked,
                     good.canWorked ? () => c.setSendBackWorked(true) : null,
@@ -234,7 +234,7 @@ class OperatorSendBackForm extends StatelessWidget {
   Widget _fixAtCard(OperatorController c) {
     final stages = c.sbOptions?.fixstages ?? const <SendBackFixStage>[];
     return _card(
-      'Fix at',
+      'Fix at'.tr,
       stages.isEmpty
           ? const _Hint('No earlier stage to send this back to.')
           : Column(
@@ -260,7 +260,7 @@ class OperatorSendBackForm extends StatelessWidget {
     final home = _t(j?.stagename ?? '');
     final between = c.sbBetween;
     return _card(
-      'Way back',
+      'Way back'.tr,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -347,7 +347,7 @@ class OperatorSendBackForm extends StatelessWidget {
   // ── Qty, and whether it travels with a loader ──
 
   Widget _qtyAndHow(OperatorController c, SendBackGood good) => _card(
-    'How many, and how',
+    'How many, and how'.tr,
     Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -358,7 +358,7 @@ class OperatorSendBackForm extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const FieldLabel('Qty'),
+                  FieldLabel('Qty'.tr),
                   TextField(
                     controller: c.sbQtyCtrl,
                     keyboardType: const TextInputType.numberWithOptions(
@@ -392,7 +392,7 @@ class OperatorSendBackForm extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _seg(
-                          'Direct',
+                          'Direct'.tr,
                           '',
                           !c.sbViaLoader,
                           () => c.setSendBackViaLoader(false),
@@ -401,7 +401,7 @@ class OperatorSendBackForm extends StatelessWidget {
                       const SizedBox(width: 6),
                       Expanded(
                         child: _seg(
-                          'Loader',
+                          'Loader'.tr,
                           '',
                           c.sbViaLoader,
                           () => c.setSendBackViaLoader(true),
@@ -416,7 +416,7 @@ class OperatorSendBackForm extends StatelessWidget {
         ),
         if (c.sbViaLoader) ...[
           const SizedBox(height: 11),
-          const FieldLabel('Loader name'),
+          FieldLabel('Loader name'.tr),
           TextField(
             controller: c.sbLoaderCtrl,
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
@@ -432,7 +432,7 @@ class OperatorSendBackForm extends StatelessWidget {
   );
 
   Widget _reasonCard(OperatorController c) => _card(
-    'Reason',
+    'Reason'.tr,
     Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -466,7 +466,7 @@ class OperatorSendBackForm extends StatelessWidget {
     final stages = c.sbOptions?.fixstages ?? const <SendBackFixStage>[];
     if (stages.isEmpty) return const SizedBox.shrink();
     return _card(
-      'Whose work is faulty?',
+      'Whose work is faulty?'.tr,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -492,7 +492,7 @@ class OperatorSendBackForm extends StatelessWidget {
   }
 
   Widget _photoCard(OperatorController c) => _card(
-    'Photo',
+    'Photo'.tr,
     PhotoStrip(
       photos: c.sbPhotos,
       accent: opAmber,

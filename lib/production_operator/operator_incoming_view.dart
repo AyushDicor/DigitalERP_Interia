@@ -65,7 +65,7 @@ class ConsignmentCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               SoftPill(
-                back ? 'SENT BACK' : 'IN TRANSIT',
+                back ? 'SENT BACK' : 'IN TRANSIT'.tr,
                 color: accent,
                 bg: accentBg,
               ),
@@ -212,8 +212,8 @@ class ConsignmentCard extends StatelessWidget {
           ),
           if (photos.isNotEmpty) ...[
             const SizedBox(height: 8),
-            const Text(
-              'Issue receipt & item photos',
+            Text(
+              'Issue receipt & item photos'.tr,
               style: TextStyle(
                 fontSize: 9.5,
                 fontWeight: FontWeight.w800,
@@ -287,7 +287,7 @@ class ConsignmentCard extends StatelessWidget {
               Expanded(
                 flex: onReject != null ? 2 : 1,
                 child: BigButton(
-                  'Receive',
+                  'Receive'.tr,
                   icon: Icons.check_rounded,
                   gradient: opGreenGradient,
                   onTap: onReceive,
@@ -345,7 +345,7 @@ class OperatorIncomingView extends StatelessWidget {
       body: Column(
         children: [
           OperatorHeader(
-            title: 'Incoming',
+            title: 'Incoming'.tr,
             subtitle:
                 '${c.firstName} · ${c.myStageName.isEmpty ? 'Shop floor' : '${_t(c.myStageName)} stage'}',
             avatarLetter: c.firstName.substring(0, 1).toUpperCase(),
@@ -379,7 +379,10 @@ class OperatorIncomingView extends StatelessWidget {
                         ),
                       ),
                     ),
-                  SectionHeader('Awaiting receipt', count: c.incoming.length),
+                  SectionHeader(
+                    'Awaiting receipt'.tr,
+                    count: c.incoming.length,
+                  ),
                   if (c.incomingLoading && c.incoming.isEmpty)
                     const Padding(
                       padding: EdgeInsets.only(top: 40),
@@ -436,8 +439,8 @@ Future<String?> askRejectReason(BuildContext context) async {
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setD) => AlertDialog(
-        title: const Text(
-          'Reject consignment',
+        title: Text(
+          'Reject consignment'.tr,
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
         ),
         content: Column(
@@ -757,7 +760,7 @@ class _OperatorReceiveViewState extends State<OperatorReceiveView> {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const FieldLabel('Loader name'),
+                  FieldLabel('Loader name'.tr),
                   TextField(
                     controller: loaderCtrl,
                     textCapitalization: TextCapitalization.words,
@@ -765,7 +768,7 @@ class _OperatorReceiveViewState extends State<OperatorReceiveView> {
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
-                    decoration: opInput(hint: 'Loader name'),
+                    decoration: opInput(hint: 'Loader name'.tr),
                   ),
                   const SizedBox(height: 11),
                   Row(
@@ -898,7 +901,7 @@ class _OperatorReceiveViewState extends State<OperatorReceiveView> {
                     ),
                   ],
                   const SizedBox(height: 11),
-                  const FieldLabel('Remarks (optional)'),
+                  FieldLabel('Remarks (optional)'.tr),
                   TextField(
                     controller: remarksCtrl,
                     minLines: 1,
