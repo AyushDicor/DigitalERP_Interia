@@ -491,6 +491,17 @@ class JobCard extends StatelessWidget {
                 bg: opAmberBg,
               ),
             ],
+            // This stage fits its parts together to check them before they
+            // separate — worth seeing in the list, because the work there
+            // is one fit rather than a part at a time.
+            if (j.hasFitCheck) ...[
+              const SizedBox(height: 6),
+              SoftPill(
+                'FIT CHECK: ${j.fitCheck!.partname}',
+                color: opPurple,
+                bg: opPurpleBg,
+              ),
+            ],
             // The parts this stage makes or receives — one line, written
             // by the server so the wording stays in step with tracking.
             if (j.subitemstext.isNotEmpty) ...[

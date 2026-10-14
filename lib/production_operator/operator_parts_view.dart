@@ -44,6 +44,13 @@ class JobPartsSection extends StatelessWidget {
           // Hand-over is the maker's job, never the QC login's.
           if (batch != null && !(j.canqc))
             _batchIssueCard(context, c, batch.value),
+
+          // The fit check comes first: at this stage it is the thing being
+          // worked on, and the parts below it are only fitted into it.
+          if (j.fitCheck != null) ...[
+            _Label('Fit check'),
+            _FitCheckCard(fit: j.fitCheck!, parts: j.partsInFit(j.fitCheck!)),
+          ],
           if (incoming.isNotEmpty) ...[
             _Label('Coming in'.tr),
             ...incoming.map((p) => _PartCard(part: p)),
@@ -65,8 +72,11 @@ class JobPartsSection extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Each part is recorded on its own. The item moves forward '
-                    'by itself once a full set is done.',
+                    j.fitCheck != null
+                        ? 'The parts are fitted only to check them. After QC '
+                              'they come apart and each one goes on by itself.'
+                        : 'Each part is recorded on its own. The item moves '
+                              'forward by itself once a full set is done.',
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -97,6 +107,209 @@ class _Label extends StatelessWidget {
         fontWeight: FontWeight.w800,
         letterSpacing: 0.6,
         color: newTextSecondary,
+      ),
+    ),
+  );
+}
+
+/// The stage's fit check: the parts below are fitted together only to prove
+/// they fit, the QC department checks the fit, then the set comes apart and
+/// every part travels on by itself.
+///
+/// Its figures count SETS, not pieces, and it is never handed over — the
+/// Send buttons live on the parts themselves, below this card.
+class _FitCheckCard extends StatelessWidget {
+  final JobSubItem fit;
+  final List<JobSubItem> parts;
+  const _FitCheckCard({required this.fit, required this.parts});
+
+  @override
+  Widget build(BuildContext context) => GetBuilder<OperatorController>(
+    builder: (c) {
+      final isQcLogin = c.job?.canqc ?? false;
+      final canFit = fit.canProduce && !isQcLogin;
+      final canQc = fit.canQc && isQcLogin;
+      final tone = _statusTone(fit);
+      return Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(13),
+        decoration: opCard(
+          border: (canFit || canQc)
+              ? opPurple.withValues(alpha: 0.45)
+              : opPurple.withValues(alpha: 0.22),
+          radius: 14,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fit.partname,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: newTextPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Check only — nothing new is made here',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: newTextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (fit.status.isNotEmpty)
+                  SoftPill(fit.status, color: tone.fg, bg: tone.bg),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            /// Sets, not pieces: "Need" is the sets the plan asks for,
+            /// "Fitted" the sets put together so far.
+            Row(
+              children: [
+                _fitFig('Need', fit.needqty),
+                _fitFig('Fitted', fit.madeqty, color: opPrimary),
+                _fitFig('QC', fit.qcqty, color: opGreen),
+                if (fit.rejectqty > 0)
+                  _fitFig('Failed', fit.rejectqty, color: opRed),
+              ],
+            ),
+            if (parts.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: opPurpleBg,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'FITTED TOGETHER HERE',
+                      style: TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        color: opPurple,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    // Each part with where it goes AFTER the fit passes —
+                    // they separate here, so no two need share a stage.
+                    for (final p in parts)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Text(
+                          '${p.label}  →  ${p.nextstage.isEmpty ? 'stays here' : _t(p.nextstage)}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: newTextPrimary,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+
+            /// Only ever the server's own cap: how many complete sets of the
+            /// parts are standing here.
+            if (fit.fitableqty > 0 && fit.canproduceqty <= 0) ...[
+              const SizedBox(height: 9),
+              _fitStrip(
+                'Parts here for ${fmtQty(fit.fitableqty)} set(s)',
+                opBlue,
+                opBlueBg,
+              ),
+            ],
+            if (canFit || canQc) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (canFit)
+                    SmallButton(
+                      'Fit ${fmtQty(fit.canproduceqty)}',
+                      color: opPrimary,
+                      icon: Icons.handyman_outlined,
+                      onTap: () => openPartProduceSheet(context, c, fit),
+                    ),
+                  if (canQc)
+                    SmallButton(
+                      'QC ${fmtQty(fit.canqcqty)}',
+                      color: opPurple,
+                      icon: Icons.verified_outlined,
+                      onTap: () => openPartQcSheet(context, c, fit),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      );
+    },
+  );
+
+  Widget _fitFig(String label, double value, {Color? color}) => Expanded(
+    child: Column(
+      children: [
+        Text(
+          fmtQty(value),
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: value > 0 ? (color ?? newTextPrimary) : newTextHint,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 9.5,
+            fontWeight: FontWeight.w700,
+            color: newTextSecondary,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _fitStrip(String text, Color fg, Color bg) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(9),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(
+        fontSize: 10.5,
+        fontWeight: FontWeight.w700,
+        color: fg,
+        height: 1.35,
       ),
     ),
   );
@@ -188,6 +401,22 @@ class _PartCard extends StatelessWidget {
                 _fig('Sent'.tr, p.sentqty, color: opBlue),
               ],
             ),
+            // Why this part has no QC button of its own: it is checked as
+            // part of the fit, and only afterwards does it get a Send.
+            if (p.isInFit) ...[
+              const SizedBox(height: 9),
+              _strip(
+                p.fittedqty > 0
+                    ? 'Fitted ${fmtQty(p.fittedqty)} into '
+                          '${p.fitname.isEmpty ? 'the fit check' : p.fitname}'
+                          ' · QC\'d with the fit'
+                    : 'Fitted into '
+                          '${p.fitname.isEmpty ? 'the fit check' : p.fitname}'
+                          ' · QC\'d with the fit, not on its own',
+                opPurple,
+                opPurpleBg,
+              ),
+            ],
             // What has arrived, for a part this stage only works on.
             if (!p.isMadeHere && (p.receivedqty > 0 || p.intransitqty > 0)) ...[
               const SizedBox(height: 9),
@@ -344,25 +573,33 @@ void openPartProduceSheet(
   final qtyCtrl = TextEditingController(text: fmtQty(part.canproduceqty));
   final remarksCtrl = TextEditingController();
   var photos = <PickedAttachment>[];
+  // A fit check is fitted, not produced, and it counts sets.
+  final isFit = part.isfit;
   _sheet(
     context,
-    title: '${part.produceVerb} ${part.partname}',
-    subtitle: '${fmtQty(part.canproduceqty)} left of ${fmtQty(part.needqty)}',
+    title: isFit ? 'Fit ${part.partname}' : '${part.produceVerb} ${part.partname}',
+    subtitle: isFit
+        ? '${fmtQty(part.canproduceqty)} set(s) can be fitted now'
+        : '${fmtQty(part.canproduceqty)} left of ${fmtQty(part.needqty)}',
     accent: opPrimary,
     builder: (sheetContext, setSheet) => [
-      _qtyField(qtyCtrl, part.canproduceqty, 'Qty'.tr),
+      _qtyField(qtyCtrl, part.canproduceqty, isFit ? 'Sets' : 'Qty'.tr),
       const SizedBox(height: 11),
       FieldLabel('Remarks (optional)'.tr),
       TextField(
         controller: remarksCtrl,
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        decoration: opInput(hint: 'e.g. 1 leg left to weld'),
+        decoration: opInput(
+          hint: isFit ? 'e.g. gap at the left joint' : 'e.g. 1 leg left to weld',
+        ),
       ),
       const SizedBox(height: 12),
       FieldLabel('Photo'.tr),
       PhotoStrip(
         photos: photos,
-        hint: 'Photo of the finished part (optional)',
+        hint: isFit
+            ? 'Photo of the fit (optional)'
+            : 'Photo of the finished part (optional)',
         onAdd: () async {
           final picked = await pickAttachments(
             allowedExtensions: const ['jpg', 'jpeg', 'png'],
@@ -406,8 +643,10 @@ void openPartQcSheet(
   bool sendBack = false;
   _sheet(
     context,
-    title: 'QC ${part.partname}',
-    subtitle: '${fmtQty(part.canqcqty)} waiting for a check',
+    title: part.isfit ? 'QC fit check: ${part.partname}' : 'QC ${part.partname}',
+    subtitle: part.isfit
+        ? '${fmtQty(part.canqcqty)} set(s) waiting for a check'
+        : '${fmtQty(part.canqcqty)} waiting for a check',
     accent: opPurple,
     builder: (sheetContext, setSheet) {
       final rej = double.tryParse(rejectCtrl.text.trim()) ?? 0;
@@ -494,28 +733,38 @@ void openPartQcSheet(
             ],
           ),
           const SizedBox(height: 12),
-          // A rejected part does not have to be remade here. If the fault
-          // came from an earlier stage, it goes back there and returns —
-          // the same choice the item-level QC screen offers.
-          FieldLabel('The rejected pieces: what now?'.tr),
-          _qcRoute(
-            'Fix it here'.tr,
-            'Made again at this stage. Nothing moves.',
-            Icons.build_rounded,
-            !sendBack,
-            () => setSheet(() => sendBack = false),
-          ),
-          const SizedBox(height: 7),
-          _qcRoute(
-            'Send it back'.tr,
-            'To any earlier stage it came through, then back here.',
-            Icons.keyboard_return_rounded,
-            sendBack,
-            () => setSheet(() => sendBack = true),
-          ),
+          // A failed FIT is always fitted again — the server refuses Scrap
+          // and refuses a send back on a fit check. If one part is the
+          // cause, the fit is failed here and that part is then sent back
+          // from the stage, on its own card.
+          if (part.isfit)
+            _fitRejectNote()
+          else ...[
+            // A rejected part does not have to be remade here. If the fault
+            // came from an earlier stage, it goes back there and returns —
+            // the same choice the item-level QC screen offers.
+            FieldLabel('The rejected pieces: what now?'.tr),
+            _qcRoute(
+              'Fix it here'.tr,
+              'Made again at this stage. Nothing moves.',
+              Icons.build_rounded,
+              !sendBack,
+              () => setSheet(() => sendBack = false),
+            ),
+            const SizedBox(height: 7),
+            _qcRoute(
+              'Send it back'.tr,
+              'To any earlier stage it came through, then back here.',
+              Icons.keyboard_return_rounded,
+              sendBack,
+              () => setSheet(() => sendBack = true),
+            ),
+          ],
           const SizedBox(height: 8),
           Text(
-            sendBack
+            part.isfit
+                ? 'Failed sets go back to "Fit again" and can be fitted once more.'
+                : sendBack
                 ? 'Next you pick the stage that fixes it. Nothing is saved until then.'
                 : 'Rejected parts go back to be made again.',
             style: const TextStyle(
@@ -571,6 +820,38 @@ void openPartQcSheet(
 }
 
 /// One of the two outcomes for a rejected part.
+/// A fit check has only one route when it fails: fit it again. Shown in
+/// place of the route picker so the rule is visible rather than a button
+/// that the server would refuse.
+Widget _fitRejectNote() => Container(
+  width: double.infinity,
+  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+  decoration: BoxDecoration(
+    color: opPurpleBg,
+    borderRadius: BorderRadius.circular(10),
+    border: Border.all(color: opPurple.withValues(alpha: 0.25)),
+  ),
+  child: Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Icon(Icons.handyman_outlined, size: 15, color: opPurple),
+      const SizedBox(width: 8),
+      const Expanded(
+        child: Text(
+          'The set is taken apart and fitted again. To send one bad part '
+          'back, fail the fit here, then use Send back on that part.',
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+            color: newTextPrimary,
+            height: 1.35,
+          ),
+        ),
+      ),
+    ],
+  ),
+);
+
 Widget _qcRoute(
   String title,
   String sub,

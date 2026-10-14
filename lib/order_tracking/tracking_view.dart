@@ -1081,6 +1081,10 @@ class _OverviewTab extends StatelessWidget {
     'green' => (fg: trkGreen, bg: trkGreenBg),
     'blue' => (fg: trkBlue, bg: trkBlueBg),
     'amber' => (fg: trkOrangeText, bg: trkOrangeBg),
+    // 'orange' marks work that came back — a send back, or a fit check that
+    // failed QC and has to be fitted again. It used to fall through to the
+    // gray default, which drew a failure as "nothing happening here".
+    'orange' => (fg: trkRed, bg: trkRedBg),
     _ => (fg: trkGray, bg: trkGrayBg),
   };
 
@@ -1136,7 +1140,9 @@ class _OverviewTab extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  row.partname,
+                  // A fit check names its stage: it is fitted and taken
+                  // apart there, so it has one cell and no path.
+                  row.label,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -1146,7 +1152,9 @@ class _OverviewTab extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '×${_n(row.qtyperpiece)} per piece',
+                row.isfit
+                    ? 'check only'
+                    : '×${_n(row.qtyperpiece)} per piece',
                 style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,

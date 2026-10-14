@@ -415,13 +415,39 @@ class OperatorJob {
   /// This stage records each part separately instead of the whole item.
   bool get isPartMode => partmode == 1 && subitems.isNotEmpty;
 
+  /// The stage's fit check, or null. It rides in [subitems] like any other
+  /// row, so every list below has to keep it out: it is not a part, nothing
+  /// is made against it and it is never sent.
+  JobSubItem? get fitCheck {
+    for (final s in subitems) {
+      if (s.isfit) return s;
+    }
+    return null;
+  }
+
+  bool get hasFitCheck => fitCheck != null;
+
   /// Parts made at this stage, and parts arriving from an earlier one.
-  List<JobSubItem> get madeHere => subitems.where((s) => s.isMadeHere).toList();
-  List<JobSubItem> get comesIn => subitems.where((s) => !s.isMadeHere).toList();
+  List<JobSubItem> get madeHere =>
+      subitems.where((s) => !s.isfit && s.isMadeHere).toList();
+  List<JobSubItem> get comesIn =>
+      subitems.where((s) => !s.isfit && !s.isMadeHere).toList();
+
+  /// The parts fitted into [fit] at this stage, in the order the server sent
+  /// them (incoming first, then the ones made here).
+  List<JobSubItem> partsInFit(JobSubItem fit) => [
+    ...comesIn.where((s) => s.fitid == fit.partid),
+    ...madeHere.where((s) => s.fitid == fit.partid),
+  ];
 
   /// Every part stops here — this stage assembles the finished item.
-  bool get buildsFinishedItem =>
-      subitems.isNotEmpty && subitems.every((s) => s.nextstage.isEmpty);
+  ///
+  /// The fit check is excluded: it carries no next stage by design, and
+  /// counting it would read a fit-check stage as the final assembly.
+  bool get buildsFinishedItem {
+    final parts = subitems.where((s) => !s.isfit).toList();
+    return parts.isNotEmpty && parts.every((s) => s.nextstage.isEmpty);
+  }
 
   /// Production cannot be recorded right now.
   bool get productionLocked => isInTransit || isWaitingForParts;
@@ -1800,6 +1826,35 @@ class JobSubItem {
   final String originstagename;
   final int originstageid;
 
+  // ── Fit check (live 2026-10-14) ──
+  //
+  // A stage can be planned "fit together to check, then separate": its parts
+  // are fitted ONLY to prove they fit, the QC department checks the fit, then
+  // the set comes apart and every part travels on by itself. Nothing is made
+  // and nothing is consumed, and the fit check is never sent anywhere.
+  //
+  // Until the server release lands these arrive false / 0 / "", so a job
+  // behaves exactly as it does today.
+
+  /// This row IS the fit check (`kind` = "fit"). Its qty figures count SETS
+  /// fitted, not pieces made.
+  final bool isfit;
+
+  /// Fit check only: complete sets of its parts standing at the stage now,
+  /// fitted ones included. [canproduceqty] is still what the Fit button
+  /// obeys — this is the context line beside it.
+  final double fitableqty;
+
+  /// Part row only: the `partid` of the fit check it is fitted into at this
+  /// stage; 0 = this part is in no fit.
+  final int fitid;
+
+  /// Name of that fit check, for the label under the part.
+  final String fitname;
+
+  /// How many of this part are already fitted, in part units.
+  final double fittedqty;
+
   const JobSubItem({
     this.kind = '',
     this.partname = '',
@@ -1834,6 +1889,11 @@ class JobSubItem {
     this.awayqty = 0,
     this.originstagename = '',
     this.originstageid = 0,
+    this.isfit = false,
+    this.fitableqty = 0,
+    this.fitid = 0,
+    this.fitname = '',
+    this.fittedqty = 0,
   });
 
   factory JobSubItem.fromJson(Map<String, dynamic> j) => JobSubItem(
@@ -1874,6 +1934,13 @@ class JobSubItem {
         ? _str(j['originstagename'])
         : _str(j['fromstage'] ?? j['fromstagename']),
     originstageid: _int(j['originstageid']),
+    // `kind: "fit"` is the authority; `isfit` is the server's own flag and
+    // either one alone marks the row.
+    isfit: j['isfit'] == true || _str(j['kind']).toLowerCase() == 'fit',
+    fitableqty: _dbl(j['fitableqty']),
+    fitid: _int(j['fitid']),
+    fitname: _str(j['fitname']),
+    fittedqty: _dbl(j['fittedqty']),
   );
 
   bool get isMadeHere => kind.toLowerCase() == 'made';
@@ -1920,6 +1987,16 @@ class JobSubItem {
   /// "MS leg ×4" — the per-piece qty, which is what the operator works to.
   String get label => '$partname ×${fmtQty(qtyperpiece)}';
 
+  // ── Fit check helpers ──
+
+  /// This part is fitted into a fit check at this stage, so it is worked and
+  /// QC'd only through that fit — never on its own.
+  bool get isInFit => fitid > 0;
+
+  /// The fit check counts SETS, so its own progress reads in sets.
+  String get fitProgressLabel =>
+      'Fitted ${fmtQty(madeqty)} / ${fmtQty(needqty)}';
+
   static List<JobSubItem> listFrom(dynamic v) => v is List
       ? v
             .whereType<Map>()
@@ -1939,12 +2016,17 @@ class StageParts {
   final List<JobSubItem> made;
   final List<JobSubItem> comesin;
 
+  /// The stage's fit check, or null where the plan has none. Its parts are
+  /// the rows of [made] and [comesin] whose `fitid` is this row's `partid`.
+  final JobSubItem? fitcheck;
+
   const StageParts({
     this.stageid = 0,
     this.stagename = '',
     this.text = '',
     this.made = const [],
     this.comesin = const [],
+    this.fitcheck,
   });
 
   factory StageParts.fromJson(Map<String, dynamic> j) => StageParts(
@@ -1953,6 +2035,9 @@ class StageParts {
     text: _str(j['text']),
     made: JobSubItem.listFrom(j['made']),
     comesin: JobSubItem.listFrom(j['comesin']),
+    fitcheck: j['fitcheck'] is Map
+        ? JobSubItem.fromJson(Map<String, dynamic>.from(j['fitcheck'] as Map))
+        : null,
   );
 }
 

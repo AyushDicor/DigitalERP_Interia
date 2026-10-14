@@ -883,8 +883,14 @@ class SubItemGridRow {
   final double totalqty;
   final String path;
 
-  /// The stage that makes it.
+  /// The stage that makes it — for a fit check, the stage it is fitted at.
   final String madeat;
+
+  /// This row is a FIT CHECK (live 2026-10-14): parts fitted together at
+  /// [madeat] only to prove they fit, then taken apart again. It has one
+  /// cell, at that stage, and travels nowhere — every other cell is null.
+  final bool isfit;
+
   final List<StageSubItem?> cells;
 
   const SubItemGridRow({
@@ -893,8 +899,15 @@ class SubItemGridRow {
     this.totalqty = 0,
     this.path = '',
     this.madeat = '',
+    this.isfit = false,
     this.cells = const [],
   });
+
+  /// "Raw Side Table · fit check at CARPENTRY ASSEMBLY" — the label the row
+  /// carries in the grid, so a fit check is never read as a travelling part.
+  String get label => isfit
+      ? '$partname · fit check${madeat.isEmpty ? '' : ' at $madeat'}'
+      : partname;
 
   factory SubItemGridRow.fromJson(Map<String, dynamic> j) => SubItemGridRow(
     partname: _str(j['partname']),
@@ -902,6 +915,7 @@ class SubItemGridRow {
     totalqty: _dbl(j['totalqty']),
     path: _str(j['path']),
     madeat: _str(j['madeat']),
+    isfit: j['isfit'] == true,
     cells: j['cells'] is List
         ? (j['cells'] as List)
               .map(
